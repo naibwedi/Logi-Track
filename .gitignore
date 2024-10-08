@@ -1,0 +1,42 @@
+# Rider specific files
+.idea/
+*.sln.iml
+
+# Visual Studio Code specific files
+.vscode/
+
+# ASP.NET Core specific ignores
+bin/
+obj/
+out/
+
+# NuGet packages
+*.nupkg
+packages/
+*.snupkg
+
+# Publish output
+publish/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.csproj.user
+
+# Application secrets
+appsettings.json
+appsettings.Development.json
+
+# Logs
+logs/
+*.log
+
+# Database files
+*.db
+*.sqlite
+*.sql
+
+# Coverage files
+coverage/
