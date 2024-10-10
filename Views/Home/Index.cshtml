@@ -1,6 +1,39 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<h2>Welcome to the Home Page!</h2>
-<p>This is the public home page of the site.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Truck Tracker</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+<!-- Header Section -->
+<div class="header">
+    <div>
+        <a href="~/">Home</a>
+        <a href="~/Privacy">Privacy</a>
+    </div>
+    <div>
+        <a href="~/Login">Login</a>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="content">
+    <h1><strong>Best way to monitor your business!</strong> </h1>
+
+    <img src="~/images/logitrack_logo.webp" alt="Truck Tracker" id="logitruck_lgo">
+    <br>
+    <button class="cta-button">Log In</button>
+</div>
+
+<!-- Footer Section -->
+<div class="footer">
+    <p>&copy; 2024 - logirack - <a href="~/Privacy">Privacy</a></p>
+</div>
+</body>
+</html>
