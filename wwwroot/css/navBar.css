@@ -1,0 +1,26 @@
+﻿.navbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Styling for Admin navbar */
+.admin-dashboard a {
+    font-style: italic;
+    font-size: 2rem; /* Larger font size for Admin Dashboard */
+    font-weight: bold; /* Bold to make it stand out */
+    padding: 5px 15px; /* Custom padding so it doesn't enlarge the entire navbar */
+    line-height: 1; /* Ensure it doesn't affect the navbar height */
+    margin-right: 50px;
+}
+
+/* Styling for Driver navbar */
+.driver-dashboard a {
+    font-style: italic;
+    font-size: 2rem; /* Larger font size for Admin Dashboard */
+    font-weight: bold; /* Bold to make it stand out */
+    padding: 5px 15px; /* Custom padding so it doesn't enlarge the entire navbar */
+    line-height: 1; /* Ensure it doesn't affect the navbar height */
+    margin-right: 200px;
+}
+    

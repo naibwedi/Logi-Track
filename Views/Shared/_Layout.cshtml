@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - logirack</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/navBar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/logirack.styles.css" asp-append-version="true" />
 </head>
 <body>
@@ -22,37 +22,41 @@
 
                         @if (User.IsInRole("Admin"))
                         {
-						@:Freight Management System
+                            <li class="nav-item admin-dashboard">
+                                <a class="nav-link text-dark">Admin</a>
+                            </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Admin" asp-action="Dashboard">Admin Dashboard</a>
+                            <a class="nav-link" asp-controller="Admin" asp-action="Dashboard">Admin Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="" asp-action="">Driver Management</a>
+                            <a class="nav-link" asp-controller="" asp-action="">Driver Management</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="" asp-action="">Add New Trip</a>
+                            <a class="nav-link" asp-controller="" asp-action="">Add New Trip</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="" asp-action="">Invoice Generation</a>
+                            <a class="nav-link" asp-controller="" asp-action="">Invoice Generation</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="" asp-action="">Payment Management</a>
+                            <a class="nav-link" asp-controller="" asp-action="">Payment Management</a>
                         </li>
                         }
                         else if (User.IsInRole("Driver"))
                         {
-						@:Driver Dashboard
+                            <li class="nav-item driver-dashboard">
+                                <a class="nav-link text-dark">Driver</a>
+                            </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Driver" asp-action="Dashboard">Trip Log</a>
+                            <a class="nav-link" asp-controller="Driver" asp-action="Dashboard">Trip Log</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="" asp-action="">View Invoices</a>
+                            <a class="nav-link" asp-controller="" asp-action="">View Invoices</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="" asp-action="">Payment Tracking</a>
+                            <a class="nav-link" asp-controller="" asp-action="">Payment Tracking</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="" asp-action="">Driver Trip Management</a>
+                            <a class="nav-link" asp-controller="" asp-action="">Driver Trip Management</a>
                         </li>
                         }
                         else

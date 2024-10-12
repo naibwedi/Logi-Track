@@ -115,7 +115,23 @@ namespace logirack.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
-                    return LocalRedirect(returnUrl);
+                    
+                    var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
+                    
+                    var roles = await _signInManager.UserManager.GetRolesAsync(user);
+
+                    if (roles.Contains("Admin"))
+                    {
+                        return RedirectToAction("Dashboard", "Admin");
+                    }
+                    else if (roles.Contains("Driver"))
+                    {
+                        return RedirectToAction("Dashboard", "Driver");
+                    }
+                    else
+                    {
+                        return LocalRedirect(returnUrl);
+                    }
                 }
                 if (result.RequiresTwoFactor)
                 {
