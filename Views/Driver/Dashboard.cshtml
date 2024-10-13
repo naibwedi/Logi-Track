@@ -1,6 +1,83 @@
-﻿@{
-    ViewData["Title"] = "My Trips";
-}
+﻿<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard</title>
+    <link rel="stylesheet" href="~/css/driverDashboard.css">
+</head>
+<body>
 
-<h2>My Trips</h2>
-<p>Here you can see your upcoming and completed trips.</p>
+<!-- Trip Log Section -->
+<section class="trip-log">
+    <h2>Trip Log</h2>
+    <div class="trip-details">
+        <div class="trip">
+        <img src="~/images/delivery-truck.png" alt="Trip 1" class="trip-icon">
+        <div>
+            <h3>Trip 1</h3>
+            <p>Origin: Address, Destination: Address</p>
+        </div>
+    </div>
+    <div class="trip">
+        <img src="~/images/delivery-truck2.png" alt="Trip 2" class="trip-icon">
+        <div>
+            <h3>Trip 2</h3>
+            <p>Origin: Address, Destination: Address</p>
+        </div>
+    </div>
+    </div>
+</section>
+
+<!-- View Invoices Section -->
+<section class="view-invoices">
+    <h2>View Invoices</h2>
+    <div class="invoice-details">
+        <div class="invoice">
+            <img src="~/images/money.png" alt="Invoice 1">
+            <h3>Invoice 1</h3>
+            <p>Invoice date: Date</p>
+            <h3>Total payment: $100</h3>
+        </div>
+        <div class="invoice">
+            <img src="~/images/money.png" alt="Invoice 2">
+            <h3>Invoice 2</h3>
+            <p>Invoice date: Date</p>
+            <h3>Total payment: $150</h3>
+        </div>
+    </div>
+</section>
+
+
+<!-- Payment Tracking Section -->
+<section class="payment-tracking">
+    <h2>Payment Tracking</h2>
+    <div class="tracking-details">
+    <div class="tracking-card">
+        <h3>Pending Payments</h3>
+        <p>2</p>
+    </div>
+    <div class="tracking-card">
+        <h3>Amount Owed</h3>
+        <p>$250</p>
+    </div>
+    </div>
+</section>
+
+
+<!-- Driver Trip Management -->
+<section class="driver-trip-management">
+    <h2>Driver Trip Management</h2>
+    <div class="management-details">
+        <div class="management-card">
+            <img src="~/images/highway.png" alt="View Assigned Trips">
+            <p>View Assigned Trips</p>
+        </div>
+        <div class="management-card">
+            <img src="~/images/traffic-lights.png" alt="Trip Status">
+            <p>Trip Status</p>
+        </div>
+    </div>
+</section>
+
+</body>
+

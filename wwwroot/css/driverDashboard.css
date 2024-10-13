@@ -1,0 +1,183 @@
+﻿body {
+    background-color: #f8f9fa;
+}
+/* Trip Log Section */
+.trip-log {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e4e4e4;
+}
+
+.trip-log h2 {
+    margin-right: 40px;
+    font-size: 2rem;
+}
+.trip-details {
+    margin-left: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.trip {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.trip img {
+    width: 50px;
+    border-radius: 40%;
+    background-color: #f0f0f0;
+    padding: 10px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+    margin-right: 15px;
+}
+
+.trip div {
+    display: flex;
+    flex-direction: column;
+}
+
+.trip h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.trip p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666
+}
+
+
+/* View Invoices Section */
+.view-invoices {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    margin-top: 40px;
+}
+
+.view-invoices h2 {
+    font-size: 2rem;
+}
+
+.invoice-details {
+    margin-left: 440px;
+    display: flex;
+    justify-content: flex-start;
+    gap: 40px;
+}
+
+.invoice-details h3 {
+    margin-top: 10px;
+    font-size: 1.2rem;
+}
+
+.invoice-details p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666
+}
+
+.invoice {
+    text-align: center;
+}
+
+.invoice img {
+        width: 60px;
+        border-radius: 40%;
+        background-color: #f0f0f0;
+        padding: 10px;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+        margin-right: 15px;
+}
+
+/* Payment Tracking Section */
+
+.payment-tracking {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+    margin-bottom: 50px;
+    border-bottom: 1px solid #ddd;
+    margin-top: 40px;
+}
+
+.tracking-details {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 800px;
+}
+
+.tracking-card {
+    background-color: #f8f9fa;
+    padding: 20px;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin-right: 20px;
+}
+
+.tracking-card:last-child {
+    margin-right: 0; /* Remove margin for the last card */
+}
+
+.tracking-card h3 {
+    font-size: 1.2rem;
+}
+
+.tracking-card p {
+    font-size: 1.5rem;
+    margin: 5px 0;
+}
+
+
+/* Driver Trip Managament */
+.driver-trip-management {
+    display: flex;
+    align-items: flex-start;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    margin-top: 60px;
+}
+
+.driver-trip-management h2 {
+    margin-right: 300px;
+    font-size: 2rem;
+}
+
+.management-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 20px;
+}
+
+.management-card {
+    display: flex;
+    align-items: center;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.management-card img {
+    width: 50px;
+    margin-right: 15px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+}
+
+.management-card p {
+    font-size: 1.2rem;
+    font-weight: 500;
+}

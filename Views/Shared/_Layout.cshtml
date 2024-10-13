@@ -46,8 +46,11 @@
                             <li class="nav-item driver-dashboard">
                                 <a class="nav-link text-dark">Driver</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Driver" asp-action="Dashboard">Driver Dashboard</a>
+                            </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Driver" asp-action="Dashboard">Trip Log</a>
+                            <a class="nav-link" asp-controller="" asp-action="">Trip Log</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="" asp-action="">View Invoices</a>
@@ -61,7 +64,6 @@
                         }
                         else
                         {
-                            
                             <li class="nav-item">
                                 <a id="LogiTrack" class="nav-link text-white" asp-controller="Home" asp-action="Index">LogiTrack</a>
                             </li>
