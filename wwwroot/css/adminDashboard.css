@@ -35,7 +35,7 @@
     margin-top: 10px;
 }
 
-/* Add new trip section */
+/* Add New Trip Section */
 .add-new-trip {
     text-align: center;
     padding: 40px;
@@ -47,13 +47,27 @@
     margin-bottom: 20px;
 }
 
-.add-new-trip .form-row {
+.form-row {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     margin-bottom: 20px;
 }
 
-.add-new-trip input {
+.form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 0 10px;
+}
+
+.form-group label {
+    font-size: 1rem;
+    margin-bottom: 5px; /* Space between label and input */
+    color: #333;
+    font-weight: bold;
+}
+
+.form-group input {
     padding: 10px;
     width: 180px;
     border: 1px solid #ccc;
@@ -73,6 +87,7 @@
 .add-new-trip button:hover {
     background-color: #333;
 }
+
 
 
 /* Financial Overview Section */

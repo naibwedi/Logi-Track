@@ -35,10 +35,10 @@
                             <a class="nav-link" asp-controller="" asp-action="">Add New Trip</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="" asp-action="">Invoice Generation</a>
+                            <a class="nav-link" asp-controller="Admin" asp-action="InvoiceAndPayment">Invoice Generation</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="" asp-action="">Payment Management</a>
+                            <a class="nav-link" asp-controller="Admin" asp-action="InvoiceAndPayment">Payment Management</a>
                         </li>
                         }
                         else if (User.IsInRole("Driver"))

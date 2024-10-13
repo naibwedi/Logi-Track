@@ -8,4 +8,10 @@ public class AdminController : Controller
     {
         return View();
     }
+    
+    
+    public IActionResult InvoiceAndPayment()
+    {
+        return View();
+    }
 }
