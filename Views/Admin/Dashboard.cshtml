@@ -1,2 +1,137 @@
-﻿<h2>Admin Dashboard</h2>
-<p>Welcome to the Admin Dashboard!</p>
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freight Management System Dashboard</title>
+    <!-- Correct link to CSS -->
+    <link rel="stylesheet" href="~/css/adminDashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
+</head>
+
+<body>
+
+<!-- Manage Drivers -->
+<section class="manage-drivers">
+    <h2>Manage Drivers</h2>
+    <div class="drivers">
+        <div class="driver-card">
+            <img src="~/images/profile-user.png" alt="Driver A"/>
+            <h3>Driver A</h3>
+            <p>Active</p>
+        </div>
+        
+        <div class="driver-card">
+            <img src="~/images/profile-user.png" alt="Driver B">
+            <h3>Driver B</h3>
+            <p>Active</p>
+        </div>
+        
+        <div class="driver-card">
+            <img src="~/images/profile-user.png" alt="Driver C">
+            <h3>Driver C</h3>
+            <p>Active</p>
+        </div>
+    </div>
+</section>
+
+<!-- Add New Trip Section -->
+<section class="add-new-trip">
+    <h2>Add New Trip</h2>
+    <form action="#">
+        <div class="form-row">
+            <input type="date" placeholder="Select Date">
+            <input type="text" placeholder="Enter load number">
+            <input type="text" placeholder="Enter starting location">
+            <input type="text" placeholder="Enter destination">
+            <input type="text" placeholder="Enter rate per km">
+        </div>
+        <button type="submit">Submit</button>
+    </form>
+</section>
+
+
+
+<!-- Financial Overview Section -->
+<section class="financial-overview">
+    <h2>Financial Overview</h2>
+    <div class="financial-stats">
+        <div class="revenue-comparison">
+            <h3>Revenue Comparison</h3>
+            <canvas id="revenueChart" width="400px" height="150px"></canvas>
+            <div class="bar-chart">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+        </div>
+        <div class="financial-details">
+            <div class="detail">
+                <h3>Total Revenue</h3>
+                <p>$10,000</p>
+                <p class="positive">+15%</p>
+            </div>
+            <div class="detail">
+                <h3>Pending Payments</h3>
+                <p>$2,500</p>
+                <p class="negative">-10%</p>
+            </div>
+            <div class="detail">
+                <h3>Paid Payments</h3>
+                <p>$7,500</p>
+                <p class="positive">+25%</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+
+
+<!-- JavaScript for Chart.js -->
+<script>
+    var ctx = document.getElementById('revenueChart').getContext('2d');
+    var revenueChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'], // Months
+            datasets: [{
+                label: 'Amount',
+                data: [5000, 3000, 4000, 2000, 3500, 6000, 4500], // Varying heights of the bars
+                backgroundColor: '#007bff',
+                borderColor: '#007bff',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Amount' // Y-axis label
+                    },
+                    grid: {
+                        display: true // Grid lines on Y-axis
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Months' // X-axis label
+                    },
+                    grid: {
+                        display: false // No grid lines on X-axis
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+</body>

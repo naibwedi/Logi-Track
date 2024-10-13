@@ -1,0 +1,141 @@
+﻿* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+body {
+    background-color: #f8f9fa;
+
+}
+.manage-drivers {
+    text-align: center;
+    padding: 40px;
+}
+
+.manage-drivers h2 {
+    font-size: 50px;
+    margin-bottom: 20px;
+}
+
+.drivers {
+    display: flex;
+    justify-content: space-around;
+}
+
+.driver-card {
+    text-align: center;
+}
+
+.driver-card img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+}
+
+.driver-card h3 {
+    margin-top: 10px;
+}
+
+/* Add new trip */
+.add-new-trip {
+    text-align: center;
+    padding: 40px;
+}
+
+.add-new-trip h2 {
+    margin-bottom: 20px;
+}
+
+.add-new-trip .form-row {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.add-new-trip input {
+    padding: 10px;
+    width: 180px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.add-new-trip button {
+    width: 150px;
+    padding: 10px 20px;
+    background-color: black;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.add-new-trip button:hover {
+    background-color: #333;
+}
+
+
+/* Financial Overview Section */
+.financial-overview {
+    padding: 40px;
+}
+
+.financial-overview h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+
+.financial-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 40px;
+}
+
+.revenue-comparison {
+    max-width: 600px; /* Set max width of the container */
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Financial Details Section */
+
+.financial-details {
+    flex: 1;
+    display: flex;
+    margin-top: 50px;
+}
+
+.financial-details .detail {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-right: 20px;
+}
+
+.financial-details .detail h3 {
+    margin-bottom: 10px;
+}
+
+.financial-details .detail p {
+    font-size: 1.25rem;
+    margin-bottom: 5px;
+}
+
+.financial-details .detail .negative {
+    color: red;
+    font-size: 1rem;
+}
+
+.financial-details .detail .positive {
+    color: green;
+    font-size: 1rem;
+}
+
