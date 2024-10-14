@@ -1,36 +1,144 @@
-﻿@{
-    ViewData["Title"] = "Home";
-}
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewData["Title"] - Truck Tracker</title>
-    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/HomePage.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <!-- Header Section -->
-<div class="header">
-    <div>
+<header class="header">
+    <div class="logo">
+        <a href="~/"><img src="" alt="Truck Tracker Logo"></a>
+    </div>
+    <nav class="nav-links">
         <a href="~/">Home</a>
-        <a href="~/Privacy">Privacy</a>
+        <a href="~/Services">Services</a>
+        <a href="~/Features">Features</a>
+        <a href="~/About">About Us</a>
+        <a href="~/Contact">Contact</a>
+    </nav>
+    
+        
+    
+</header>
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <h1>Effortless Fleet Management</h1>
+        <p>Empower your business with real-time tracking and advanced fleet management solutions.</p>
+        <div class="hero-buttons">
+            <button class="btn learn-more" onclick="window.location.href='~/LearnMore'">Learn More</button>
+            <button class="btn get-started" onclick="window.location.href='~/GetStarted'">Get Started</button>
+        </div>
     </div>
-    <div>
-        <a href="~/Login">Login</a>
+</section>
+
+<!-- Services Section -->
+<section class="services">
+    <h2>Our Services</h2>
+    <div class="service-cards">
+        <div class="card">
+            <img src="~/images/gpstracking.jpg" alt="GPS Tracking">
+            <h3>Real-Time GPS Tracking</h3>
+            <p>Monitor your fleet's location in real-time with precision and ease.</p>
+        </div>
+        <div class="card">
+            <img src="~/images/RouteOptimization.jpg" alt="Route Optimization">
+            <h3>Route Optimization</h3>
+            <p>Improve efficiency with intelligent route planning and scheduling.</p>
+        </div>
+        <div class="card">
+            <img src="~/images/hazard_logo.jpg" alt="Driver Safety">
+            <h3>Driver Safety Monitoring</h3>
+            <p>Enhance safety with driver behavior analysis and alerts.</p>
+        </div>
     </div>
-</div>
+</section>
 
-<!-- Main Content -->
-<div class="content">
-    <h1><strong>Best way to monitor your business!</strong> </h1>
+<!-- Features Section -->
+<section class="features">
+    <h2>Why Choose Us</h2>
+    <div class="feature-list">
+        <div class="feature-item">
+            <i class="icon fa fa-tachometer"></i>
+            <h3>High Performance</h3>
+            <p>Experience seamless and fast fleet management with our cutting-edge technology.</p>
+        </div>
+        <div class="feature-item">
+            <i class="icon fa fa-shield"></i>
+            <h3>Secure Platform</h3>
+            <p>Your data is protected with top-tier security protocols and encryption.</p>
+        </div>
+        <div class="feature-item">
+            <i class="icon fa fa-cogs"></i>
+            <h3>Customizable Solutions</h3>
+            <p>Tailor our services to meet your specific business needs.</p>
+        </div>
+    </div>
+</section>
 
-    <img src="~/images/logitrack_logo.webp" alt="Truck Tracker" id="logitruck_lgo">
-    <br>
-    <button class="cta-button">Log In</button>
-</div>
+<!-- Testimonials Section -->
+<section class="testimonials">
+    <h2>What Our Clients Say</h2>
+    <div class="testimonial-cards">
+        <div class="testimonial">
+            <p>"Truck Tracker has transformed our fleet operations. The real-time insights are invaluable."</p>
+            <h4>- Martin Svensen, Fleet Manager</h4>
+        </div>
+        <div class="testimonial">
+            <p>"The user-friendly interface makes managing our drivers and vehicles a breeze."</p>
+            <h4>- William Høyvik, Operations Director</h4>
+        </div>
+    </div>
+</section>
 
+<!-- Call to Action Section -->
+<section class="cta">
+    <h2>Ready to Optimize Your Fleet?</h2>
+    <button class="btn cta-button" onclick="window.location.href='~/Contact'">Contact Us Today</button>
+</section>
 
+<!-- Footer Section -->
+<footer class="footer">
+    <div class="footer-content">
+        <div class="footer-section about">
+            <h3>About Truck Tracker</h3>
+            <p>We are a leading provider of fleet management solutions, dedicated to helping businesses streamline their operations and reduce costs.</p>
+            <div class="socials">
+                <a href="#"><i class="fa fa-facebook"></i></a>
+                <a href="#"><i class="fa fa-twitter"></i></a>
+                <a href="#"><i class="fa fa-linkedin"></i></a>
+            </div>
+        </div>
+        <div class="footer-section links">
+            <h3>Quick Links</h3>
+            <ul>
+                <li><a href="~/">Home</a></li>
+                <li><a href="~/Services">Services</a></li>
+                <li><a href="~/Features">Features</a></li>
+                <li><a href="~/About">About Us</a></li>
+                <li><a href="~/Contact">Contact</a></li>
+                <li><a href="~/Privacy">Privacy Policy</a></li>
+            </ul>
+        </div>
+        <div class="footer-section contact-form">
+            <h3>Contact Us</h3>
+            <form action="~/Contact" method="post">
+                <input type="email" name="email" placeholder="Your Email Address" required>
+                <textarea name="message" rows="4" placeholder="Your Message" required></textarea>
+                <button type="submit" class="btn">Send</button>
+            </form>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        &copy; 2023 Truck Tracker | Designed by Group 15
+    </div>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+</footer>
 </body>
 </html>
