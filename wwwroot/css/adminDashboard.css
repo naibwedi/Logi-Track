@@ -1,17 +1,14 @@
-﻿* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-
-body {
+﻿body {
     background-color: #f8f9fa;
 
 }
+
+/* Manage Drivers Section */
 .manage-drivers {
     text-align: center;
     padding: 40px;
+    border-bottom: 1px solid #e4e4e4;
+    margin-bottom: 40px;
 }
 
 .manage-drivers h2 {
@@ -38,23 +35,39 @@ body {
     margin-top: 10px;
 }
 
-/* Add new trip */
+/* Add New Trip Section */
 .add-new-trip {
     text-align: center;
     padding: 40px;
+    border-bottom: 1px solid #e4e4e4;
+    margin-bottom: 40px;
 }
 
 .add-new-trip h2 {
     margin-bottom: 20px;
 }
 
-.add-new-trip .form-row {
+.form-row {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     margin-bottom: 20px;
 }
 
-.add-new-trip input {
+.form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 0 10px;
+}
+
+.form-group label {
+    font-size: 1rem;
+    margin-bottom: 5px; /* Space between label and input */
+    color: #333;
+    font-weight: bold;
+}
+
+.form-group input {
     padding: 10px;
     width: 180px;
     border: 1px solid #ccc;
@@ -76,9 +89,11 @@ body {
 }
 
 
+
 /* Financial Overview Section */
 .financial-overview {
     padding: 40px;
+    border-bottom: 1px solid #e4e4e4;
 }
 
 .financial-overview h2 {
@@ -95,7 +110,7 @@ body {
 }
 
 .revenue-comparison {
-    max-width: 600px; /* Set max width of the container */
+    max-width: 600px; 
     padding: 20px;
     background-color: #fff;
     border-radius: 8px;
