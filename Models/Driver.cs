@@ -2,7 +2,7 @@
 
 public class Driver : ApplicationUser
 {
-    public decimal PricePerKm { get; set; }
+    public double PricePerKm { get; set; }
     public PaymentFreq PaymentFreq { get; set; }
     public bool IsAvailable { get; set; }
     public List<DriverTrip> DriverTrips { get; set; }

@@ -14,11 +14,11 @@ public class Trip
     public string ToAddress { get; set; }
     public string FromZipCode { get; set; }
     public string ToZipCode { get; set; }
-    public decimal Weight { get; set; }
-    public decimal Volume { get; set; }
-    public decimal Distance { get; set; }
+    public double Weight { get; set; }
+    public double Volume { get; set; }
+    public double Distance { get; set; }
     public string Notes { get; set; }
-    public decimal AdminPrice { get; set; }
+    public double AdminPrice { get; set; }
     public bool IsPrAcceptedBeyCustomer  { get; set; }
     public bool IsAcceptedBeyAdmin { get; set; }
     public TripStatus Status { get; set; }

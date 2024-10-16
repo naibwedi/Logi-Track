@@ -29,10 +29,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     //admin
     public DbSet<AdminActionLog> AdminActionLogs { get; set; }
 
+    //Fluent API
     protected override void OnModelCreating(ModelBuilder mbuilder)
     {
         base.OnModelCreating(mbuilder);
-        
         //----------------------------------||
         //          Inheritance             ||
         //--------------------------------- ||
@@ -115,7 +115,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(aal=>aal.AdminId);
         //TODO Trip to .hasFK<DriverTrip> DriverTrip to PaymentPeriod PaymentPeriod to Payment
         //@ilyassb finish at  1:04
-        
+        mbuilder.Entity<PaymentPeriod>()
+            .HasOne(p=>p.Payment)
+            .WithOne(p=>p.PaymentPeriod)
+            .HasForeignKey<Payment>(p=>p.PaymentPeriodId);
 
     }
 }
