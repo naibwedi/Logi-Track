@@ -10,9 +10,4 @@ public class ApplicationUser : IdentityUser
     public DateTime CreatedOn { get; set; } = DateTime.Now;
     public DateTime ModifiedOn { get; set; } = DateTime.Now;
     
-    public Customer Customer { get; set; }
-    public Driver Driver { get; set; }
-    public Admin Admin { get; set; }
-    public SuperAdmin SuperAdmin { get; set; }
-    
 }

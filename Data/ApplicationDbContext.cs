@@ -103,7 +103,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         mbuilder.Entity<Admin>()
             .HasMany(a => a.AssignedDriverT)
             .WithOne(dt => dt.Admin)
-            .HasForeignKey(dt => dt.AssignedDTByAdmin);
+            .HasForeignKey(dt => dt.AssignedByAdminId);
         
         mbuilder.Entity<Admin>()
             .HasMany(a=>a.ProcessedPayments)
@@ -115,10 +115,25 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(aal=>aal.AdminId);
         //TODO Trip to .hasFK<DriverTrip> DriverTrip to PaymentPeriod PaymentPeriod to Payment
         //@ilyassb finish at  1:04
+        //@ilyass start at 5:51 10/16
+
+        //trip
+        mbuilder.Entity<Trip>()
+            .HasOne(t => t.DriverTrip)
+            .WithOne(dt => dt.Trip)
+            .HasForeignKey<DriverTrip>(dt => dt.TripId);
+        
+        //Driver trip
+        mbuilder.Entity<DriverTrip>()
+            .HasOne(dt => dt.PaymentPeriod)
+            .WithMany(pp=>pp.DriverTrips)
+            .HasForeignKey(pp=>pp.PaymentPeriodId);
+        
+        //Payment Period
         mbuilder.Entity<PaymentPeriod>()
-            .HasOne(p=>p.Payment)
+            .HasOne(pp=>pp.Payment)
             .WithOne(p=>p.PaymentPeriod)
             .HasForeignKey<Payment>(p=>p.PaymentPeriodId);
-
+        
     }
 }
