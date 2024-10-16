@@ -10,7 +10,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     { }
-    //users
+    //users and roles
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Driver> Drivers { get; set; }
     public DbSet<SuperAdmin> SuperAdmins { get; set; }
