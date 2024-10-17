@@ -1,0 +1,56 @@
+﻿@model IEnumerable<logirack.Models.Admin>
+
+@{
+    ViewBag.Title = "Admin List";
+    Layout = "_Layout";
+}
+
+<h2>Admin List</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<a asp-action="CreateAdmin" class="btn btn-primary mb-3">Create New Admin</a>
+
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Email</th>
+        <th>Phone Number</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var admin in Model)
+    {
+        <tr>
+            <td>@admin.FirstName</td>
+            <td>@admin.LastName</td>
+            <td>@admin.Email</td>
+            <td>@admin.PhoneNumber</td>
+            <td>
+                <form asp-action="DeleteAdmin" asp-route-id="@admin.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this admin?');">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
