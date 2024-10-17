@@ -2,12 +2,22 @@
 using Microsoft.AspNetCore.Identity;
 
 namespace logirack.Models;
-
+/// <summary>
+/// Base class for all user types in the LogiTruck system.
+/// Inherits from IdentityUser to include ASP.NET Core Identity functionality.
+/// </summary>
 public class ApplicationUser : IdentityUser
 {
+    /// <summary>
+    /// Indicates whether the user is approved by an admin.
+    /// </summary>
     //is the user approved by the admin or not 
     [Required]
     public bool IsApproved { get; set; } = false;
+    /// <summary>
+    /// Specifies the role type of the user (e.g., SuperAdmin, Admin, Customer, Driver).
+    /// </summary>
+
     [Required]
     [MaxLength(10)]
     public string RoleType { get; set; }=string.Empty;

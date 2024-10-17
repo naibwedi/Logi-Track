@@ -1,6 +1,10 @@
 ﻿using Microsoft.Build.Framework;
 
 namespace logirack.Models;
+/// <summary>
+/// Represents a driver in the LogiTruck system.
+/// Inherits from ApplicationUser.
+/// </summary>
 
 public class Driver : ApplicationUser
 {

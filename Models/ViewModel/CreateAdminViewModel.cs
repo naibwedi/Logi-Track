@@ -2,7 +2,9 @@
 
 namespace logirack.Models.ViewModel;
 
-
+/// <summary>
+/// ViewModel for creating a new Admin user.
+/// </summary>
 public class CreateAdminViewModel
 {
     [Required]

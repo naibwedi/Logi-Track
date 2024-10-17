@@ -5,9 +5,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
-
+/// <summary>
+/// Provides methods to seed the database with initial data.
+/// </summary>
 public class SeedData
 {
+    /// <summary>
+    /// Initializes the database with default roles and a SuperAdmin user.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider to get required services.</param>
     public static async Task Initialize(IServiceProvider serviceProvider)
     {
         using var db = new ApplicationDbContext(

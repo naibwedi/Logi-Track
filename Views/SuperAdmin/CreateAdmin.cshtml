@@ -1,17 +1,20 @@
 ﻿@model logirack.Models.ViewModel.CreateAdminViewModel
 
 @{
-    ViewBag.Title = "Create Admin";
-    Layout = "_Layout";
+ViewBag.Title = "Create Admin";
+Layout = "_Layout";
 }
 
 <h2>Create Admin</h2>
+
 @if (TempData["Success"] != null)
 {
-    <div class="alert alert-success">
-        @TempData["Success"]
-    </div>
+<div class="alert alert-success">
+    @TempData["Success"]
+</div>
 }
+
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
 <form asp-action="CreateAdmin" method="post">
     <div class="form-group">
@@ -48,5 +51,5 @@
 </form>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

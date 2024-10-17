@@ -4,7 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace logirack.Data;
 //// TOREAD dont use decimal on models use double for SQLite compatibility start 
-
+/// <summary>
+/// The database context for the LogiRack application.
+/// Inherits from IdentityDbContext to include Identity functionality.
+/// </summary>
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
@@ -29,7 +32,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     //admin
     public DbSet<AdminActionLog> AdminActionLogs { get; set; }
 
-    //Fluent API
+    /// <summary>
+    /// Configures the model relationships and properties using Fluent API.
+    /// </summary>
+    /// <param name="modelBuilder">The builder used to construct the model.</param>
     protected override void OnModelCreating(ModelBuilder mbuilder)
     {
         base.OnModelCreating(mbuilder);
@@ -60,7 +66,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         
         
         ///<summary>
-        /// $Driver table relationship $
+        /// $Driver relationship $
         /// driver 1-M Driver trip                  d = driver dt = DriverTrip
         /// driver 1-M PaymentPeriod
         /// driver 1-1 location
