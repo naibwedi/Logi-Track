@@ -1,4 +1,12 @@
-﻿.navbar-nav {
+﻿.body {
+    width: 100%;
+    background-color: #000;
+}
+
+.navbar-nav {
+    
+    
+    
     display: flex;
     align-items: center;
     gap: 20px;
