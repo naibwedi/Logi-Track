@@ -1,0 +1,74 @@
+﻿/* General form styles */
+form {
+    background-color: #222; /* Dark background for the form */
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 600px;
+    margin: 0 auto;
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+    color: white; /* White text color */
+}
+
+/* Input field styles */
+input[type="text"], input[type="email"], input[type="number"], input[type="datetime-local"], select, textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: #333; /* Dark input background */
+    border: 1px solid #555; /* Border color */
+    color: white; /* White text color */
+    border-radius: 4px;
+}
+
+/* Placeholder styling */
+input::placeholder, textarea::placeholder {
+    color: #ccc; /* Lighter placeholder color */
+}
+
+/* Label styling */
+label {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Button styling */
+button, input[type="submit"] {
+    background-color: white;
+    color: black;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button:hover, input[type="submit"]:hover {
+    background-color: #555; /* Hover effect with darker background */
+    color: white;
+}
+
+/* Heading styling */
+h2 {
+    text-align: center;
+    font-size: 2em;
+    margin-bottom: 30px;
+    color: white; /* White heading text */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    form {
+        width: 100%;
+        padding: 15px;
+    }
+
+    input[type="text"], input[type="email"], input[type="number"], input[type="datetime-local"], select, textarea {
+        font-size: 1em;
+    }
+
+    button, input[type="submit"] {
+        font-size: 1em;
+    }
+}

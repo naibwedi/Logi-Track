@@ -1,0 +1,30 @@
+﻿@model logirack.Models.OrderModel
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truck Service Order Form</title>
+    <link rel="stylesheet" href="~/css/OrderSuccess.css" />
+</head>
+
+<div class="order-success-container">
+    <h2>Order Submitted Successfully</h2>
+
+    <p>Thank you, @Model.CustomerName! We have received your order.</p>
+    
+    <p>Here are the details:</p>
+
+    <ul>
+        <li><strong>Pickup Location:</strong> @Model.PickupLocation</li>
+        <li><strong>Drop-off Location:</strong> @Model.DropoffLocation</li>
+        <li><strong>Type of Goods:</strong> @Model.GoodsType</li>
+        <li><strong>Weight:</strong> @Model.Weight kg</li>
+        <li><strong>Pickup Date:</strong> @Model.PickupDate.ToShortDateString()</li>
+        <li><strong>Pickup Time:</strong> @Model.PickupTime</li>
+        <li><strong>Distance:</strong> @Model.Distance km</li>
+        <li><strong>Additional Services:</strong> @Model.AdditionalServices</li>
+    </ul>
+
+    <p><strong>Estimated Price:</strong> <strong>$@Model.PriceEstimate</strong></p>
+
+    <a href="/" class="btn">Continue to Homepage</a>
+</div>

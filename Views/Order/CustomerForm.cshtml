@@ -1,0 +1,72 @@
+﻿@model logirack.Models.OrderModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truck Service Order Form</title>
+    <link rel="stylesheet" href="~/css/order.css" />
+</head>
+<body>
+    <h2>Truck Service Order Form</h2>
+
+    <form asp-action="SubmitOrder" method="post">
+        <div>
+            <label for="CustomerName">Name</label>
+            <input type="text" id="CustomerName" name="CustomerName" placeholder="Enter your name" required />
+        </div>
+
+        <div>
+            <label for="ContactInfo">Contact Information</label>
+            <input type="text" id="ContactInfo" name="ContactInfo" placeholder="Phone or Email" required />
+        </div>
+
+        <div>
+            <label for="PickupLocation">Pickup Location</label>
+            <input type="text" id="PickupLocation" name="PickupLocation" placeholder="Pickup address" required />
+        </div>
+
+        <div>
+            <label for="DropoffLocation">Drop-off Location</label>
+            <input type="text" id="DropoffLocation" name="DropoffLocation" placeholder="Drop-off address" required />
+        </div>
+
+        <div>
+            <label for="GoodsType">Type of Goods</label>
+            <input type="text" id="GoodsType" name="GoodsType" placeholder="Type of goods" required />
+        </div>
+
+        <div>
+            <label for="Weight">Weight (kg)</label>
+            <input type="number" id="Weight" name="Weight" required />
+        </div>
+
+        <!-- Separated Date and Time fields -->
+        <div>
+            <label for="PickupDate">Pickup Date</label>
+            <input type="date" id="PickupDate" name="PickupDate" required />
+        </div>
+
+        <div>
+            <label for="PickupTime">Pickup Time</label>
+            <input type="time" id="PickupTime" name="PickupTime" required />
+        </div>
+
+        <div>
+            <label for="Distance">Distance (in kilometers)</label>
+            <input type="number" id="Distance" name="Distance" required />
+        </div>
+
+        <div>
+            <label for="AdditionalServices">Additional Services</label>
+            <select id="AdditionalServices" name="AdditionalServices">
+                <option value="none">None</option>
+                <option value="expedited">Expedited Delivery</option>
+                <option value="insurance">Insurance</option>
+            </select>
+        </div>
+
+        <input type="submit" value="Submit Order" />
+    </form>
+</body>
+</html>

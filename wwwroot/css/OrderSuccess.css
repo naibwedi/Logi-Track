@@ -1,0 +1,80 @@
+﻿/* General container styling */
+.order-success-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 30px;
+    background-color: #f8f9fa; /* Light background color */
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Soft shadow */
+    font-family: 'Arial', sans-serif;
+}
+
+/* Heading styling */
+.order-success-container h2 {
+    text-align: center;
+    font-size: 2.5em;
+    color: #333; /* Darker color for emphasis */
+    margin-bottom: 20px;
+}
+
+/* Text and details list styling */
+.order-success-container p {
+    font-size: 1.2em;
+    color: #555; /* Neutral text color */
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.order-success-container ul {
+    list-style-type: none;
+    padding-left: 0;
+    font-size: 1.1em;
+}
+
+.order-success-container ul li {
+    padding: 10px;
+    border-bottom: 1px solid #ddd; /* Light border between items */
+}
+
+.order-success-container ul li:last-child {
+    border-bottom: none;
+}
+
+/* Highlight the price */
+.order-success-container p strong {
+    font-size: 1.5em;
+    color: #2a9d8f; /* Use a strong color like teal or green for the price */
+}
+
+/* Button styling for continuing */
+.order-success-container .btn {
+    display: inline-block;
+    padding: 12px 25px;
+    background-color: #2a9d8f; /* Accent button color */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 1.2em;
+    transition: background-color 0.3s ease;
+}
+
+.order-success-container .btn:hover {
+    background-color: #21867a; /* Darker shade on hover */
+}
+
+/* Add responsive styles */
+@media (max-width: 768px) {
+    .order-success-container {
+        padding: 20px;
+    }
+
+    .order-success-container h2 {
+        font-size: 2em;
+    }
+
+    .order-success-container ul li {
+        font-size: 1em;
+    }
+}
