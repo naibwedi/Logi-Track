@@ -1,28 +1,27 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace logirack.Models.ViewModel;
+﻿namespace logirack.Models.ViewModel;
+using System.ComponentModel.DataAnnotations;
 
 /// <summary>
-/// ViewModel for creating a new Admin user.
+/// ViewModel for creating a new Driver.
 /// </summary>
-public class CreateAdminViewModel
+public class CreateDriverViewModel
 {
     [Required]
     [EmailAddress]
     [StringLength(30, MinimumLength = 3)]
-    [Display(Name = "Admin Email")]
-    public string AdminEmail { get; set; }
+    [Display(Name = "Driver Email")]
+    public string DriverEmail { get; set; }
     
     [Required]
-    [StringLength(100,ErrorMessage = "The password must at least {2} Characters long.", MinimumLength = 6)]
+    [StringLength(100,ErrorMessage = "The password must at least {2} Characters long.", MinimumLength = 5)]
     [DataType(DataType.Password)]
-    [Display(Name = "Admin Password")]
-    public string AdminPassword { get; set; }
+    [Display(Name = "Driver Password")]
+    public string DriverPassword { get; set; }
     
-    [DataType(DataType.Password)]
     [StringLength(100)]
+    [DataType(DataType.Password)]
     [Display(Name = "Confirm Password")]
-    [Compare("AdminPassword", ErrorMessage = "The password and confirmation password do not match.")]
+    [Compare("DriverPassword", ErrorMessage = "The password and confirmation password do not match.")]
     public string ConfirmPassword { get; set; }
     
     [Required]
@@ -38,10 +37,19 @@ public class CreateAdminViewModel
     public string LastName { get; set; }
     
     [Required]
+    [Range(0.1, 1000, ErrorMessage = "Price per kn must be between 0 and 1000 Nok.")]
+    [Display(Name = "Price per kn on Nok")]
+    public double PricePerKm { get; set; }
+
+    [Required]
     [StringLength(15,MinimumLength = 3 , ErrorMessage = "Phone Number must be between 3 and 15 characters.")]
     [DataType(DataType.PhoneNumber)]
     [Display(Name = "Phone Number")]
+
     public string PhoneNumber { get; set; }
     
+    [Required]
+    [Display(Name = "Payment Frequency")]
+    public PaymentFreq PaymentFreq { get; set; }
     
 }

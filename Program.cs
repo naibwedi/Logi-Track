@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using logirack.Data;
 using logirack.Models;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
