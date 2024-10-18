@@ -1,4 +1,6 @@
-﻿namespace logirack.Data;
+﻿using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+
+namespace logirack.Data;
 using logirack.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -77,7 +79,43 @@ public class SeedData
         {
             logger.LogInformation("SuperAdmin already exists.");
         }
+        
+        // admin 
+        var adminEmail = "admin@uia.no";
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
+        if (adminUser == null)
+        {
+            var admin = new Admin
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                IsApproved = true,
+                EmailConfirmed = true,
+                PhoneNumber = "0987654321",
+                FirstName = "Admin",
+                LastName = "User",
+                RoleType = "Admin",
+            };
+            var result = await userManager.CreateAsync(admin, "Admin@12345");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(admin, "Admin");
+                logger.LogInformation("Admin user created successfully.");
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    logger.LogError($"Error CreateAdmin: {error.Description}");
+                }
+            }
+        }
+        else
+        {
+            logger.LogInformation("Admin already exists.");
+        }
+        
 
     }
     
