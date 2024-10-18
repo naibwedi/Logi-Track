@@ -144,6 +144,92 @@ public class AdminController : Controller
         }
         return RedirectToAction(nameof(DriverList));
     }
+
+    [HttpGet]
+    public async Task<IActionResult> EditDriver(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest();
+        }
+
+        var driver = await _userManager.FindByIdAsync(id) as Driver;
+        if (driver== null)
+        {
+            return NotFound();
+        }
+
+        var model = new EditDriverViewModel
+        {
+            id = driver.Id,
+            FirstName = driver.FirstName,
+            LastName = driver.LastName,
+            Email = driver.Email,
+            PhoneNumber = driver.PhoneNumber,
+            PricePerKm = driver.PricePerKm,
+            PaymentFreq = driver.PaymentFreq,
+            IsAvailable = driver.IsAvailable
+        };
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditDriver(EditDriverViewModel model)
+    {
+        if (ModelState.IsValid)
+        {
+            var driver = await _userManager.FindByIdAsync(model.id) as Driver;
+            if (driver==null)
+            {
+                return NotFound();
+            }
+            //cheking email uniqueness 
+            if (!string.Equals(driver.Email, model.Email,StringComparison.OrdinalIgnoreCase))
+            {
+                var euser = await _userManager.FindByEmailAsync(model.Email);
+                if (euser!=null && euser.Id!=model.id)
+                {
+                    ModelState.AddModelError(nameof(EditDriverViewModel.Email), "Email Already Exists");
+                    return View(model);
+                }
+                driver.Email = model.Email;
+                driver.UserName = model.Email;
+                driver.EmailConfirmed=true;
+            }
+            //checking phonenumber 
+            if (!string.Equals(driver.PhoneNumber, model.PhoneNumber, StringComparison.OrdinalIgnoreCase))
+            {
+                var ephone= await _userManager.Users.FirstOrDefaultAsync(x => x.PhoneNumber == model.PhoneNumber && x.Id!=model.id);
+                if (ephone!=null)
+                {
+                    ModelState.AddModelError(nameof(EditDriverViewModel.PhoneNumber), "PhoneNumber Already Exists");
+                    return View(model);
+                }
+                driver.PhoneNumber = model.PhoneNumber;
+            }
+            driver.FirstName = model.FirstName;
+            driver.LastName = model.LastName;
+            driver.PricePerKm = model.PricePerKm;
+            driver.PaymentFreq = model.PaymentFreq;
+            driver.IsAvailable = model.IsAvailable;
+            driver.ModifiedOn = DateTime.Now;
+            var result = await _userManager.UpdateAsync(driver);
+            if (result.Succeeded)
+            {
+                return RedirectToAction(nameof(DriverList));
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                    _logger.LogError("Error updating driver {1} ",error.Description);
+                }
+            }
+        }
+        return View(model);
+    }
     public IActionResult ManageDrivers()
     {
         return View();

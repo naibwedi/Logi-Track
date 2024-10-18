@@ -1,4 +1,6 @@
-﻿using Microsoft.Build.Framework;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace logirack.Models;
 /// <summary>
@@ -8,6 +10,8 @@ namespace logirack.Models;
 
 public class Driver : ApplicationUser
 {
+    [Required]
+    [Range(0, double.MaxValue, ErrorMessage = "Please enter a valid price.")]
     public double PricePerKm { get; set; }
     [Required]
     public PaymentFreq PaymentFreq { get; set; }

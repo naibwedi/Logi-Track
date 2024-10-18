@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 
+
 namespace logirack.Models;
 /// <summary>
 /// Base class for all user types in the LogiTruck system.
@@ -34,5 +35,9 @@ public class ApplicationUser : IdentityUser
     [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Use letters only please")]
     [Display(Name = "Last Name")]
     public string LastName { get; set; }
+
+    [StringLength(50, ErrorMessage = "Company name cannot exceed 50 characters.")]
+    [Display(Name = "Company Name")]
+    public string CompanyName { get; set; }
     
 }
