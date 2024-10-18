@@ -38,6 +38,6 @@ public class ApplicationUser : IdentityUser
 
     [StringLength(50, ErrorMessage = "Company name cannot exceed 50 characters.")]
     [Display(Name = "Company Name")]
-    public string CompanyName { get; set; }
+    public string CompanyName { get; set; }=string.Empty;
     
 }
