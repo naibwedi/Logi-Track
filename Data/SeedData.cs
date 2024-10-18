@@ -58,7 +58,7 @@ public class SeedData
                 FirstName = "Super",
                 LastName = "Admin"
             };
-            var result = await userManager.CreateAsync(superAdnin, "P@ssw0rd123");
+            var result = await userManager.CreateAsync(superAdnin, "P@ssw0rd12");
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(superAdnin, "SuperAdmin");
