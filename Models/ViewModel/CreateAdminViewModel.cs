@@ -38,7 +38,7 @@ public class CreateAdminViewModel
     public string LastName { get; set; }
     
     [Required]
-    [StringLength(30, MinimumLength = 3)]
+    [StringLength(15,MinimumLength = 3 , ErrorMessage = "Phone Number must be between 3 and 15 characters.")]
     [DataType(DataType.PhoneNumber)]
     [Display(Name = "Phone Number")]
     public string PhoneNumber { get; set; }

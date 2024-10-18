@@ -11,6 +11,7 @@ public class CreateDriverViewModel
     [StringLength(30, MinimumLength = 3)]
     [Display(Name = "Driver Email")]
     public string DriverEmail { get; set; }
+    
     [Required]
     [StringLength(100,ErrorMessage = "The password must at least {2} Characters long.", MinimumLength = 5)]
     [DataType(DataType.Password)]
@@ -20,7 +21,7 @@ public class CreateDriverViewModel
     [StringLength(100)]
     [DataType(DataType.Password)]
     [Display(Name = "Confirm Password")]
-    [Compare("Confirm Password", ErrorMessage = "The password and confirmation password do not match.")]
+    [Compare("DriverPassword", ErrorMessage = "The password and confirmation password do not match.")]
     public string ConfirmPassword { get; set; }
     
     [Required]
@@ -39,6 +40,13 @@ public class CreateDriverViewModel
     [Range(0.1, 1000, ErrorMessage = "Price per kn must be between 0 and 1000 Nok.")]
     [Display(Name = "Price per kn on Nok")]
     public double PricePerKm { get; set; }
+
+    [Required]
+    [StringLength(15,MinimumLength = 3 , ErrorMessage = "Phone Number must be between 3 and 15 characters.")]
+    [DataType(DataType.PhoneNumber)]
+    [Display(Name = "Phone Number")]
+
+    public string PhoneNumber { get; set; }
     
     [Required]
     [Display(Name = "Payment Frequency")]
