@@ -78,7 +78,8 @@ public class AdminController : Controller
                 LastName = model.LastName,
                 PricePerKm = model.PricePerKm,
                 PaymentFreq = model.PaymentFreq,
-                IsAvailable = true
+                IsAvailable = true,
+                DateOfBirth= model.DateOfBirth,
             };
             var result = await _userManager.CreateAsync(newDriver, model.DriverPassword);
             if (result.Succeeded)
@@ -168,7 +169,8 @@ public class AdminController : Controller
             PhoneNumber = driver.PhoneNumber,
             PricePerKm = driver.PricePerKm,
             PaymentFreq = driver.PaymentFreq,
-            IsAvailable = driver.IsAvailable
+            IsAvailable = driver.IsAvailable,
+           
         };
         return View(model);
     }
