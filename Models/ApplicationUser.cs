@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
+    
 
 
 namespace logirack.Models;
@@ -42,7 +43,9 @@ public class ApplicationUser : IdentityUser
     
     [Required]
     [DataType(DataType.Date)]
+    [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}", ApplyFormatInEditMode = true)]
     [Display(Name = "Date of Birth")]
     public DateTime DateOfBirth { get; set; }
-    
 }
+;
+
