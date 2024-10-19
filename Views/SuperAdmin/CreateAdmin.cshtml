@@ -39,7 +39,7 @@ Layout = "_Layout";
 </div>
     <div class="form-group">
         <label asp-for="DateOfBirth"></label>
-        <input asp-for="DateOfBirth" class="form-control" type="date" />
+        <input asp-for="DateOfBirth" class="form-control" type="date" asp-format="{0:yyyy-mm-dd}" />
         <span asp-validation-for="DateOfBirth" class="text-danger"></span>
         </div>
         
