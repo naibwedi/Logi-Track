@@ -102,6 +102,18 @@ namespace logirack.Areas.Identity.Pages.Account
             [Required]
             [Display(Name = "Company Name")]
             public string CompanyName { get; set; }
+            
+            [Required]
+            [Display(Name = "First Name")]
+            public string FirstName { get; set; }
+            
+            [Required]
+            [Display(Name = "Last Name")]
+            public string LastName { get; set; }
+            
+            [Required]
+            [Display(Name = "Date Of Birth")]
+            public DateTime DateOfBirth { get; set; }
         }
 
 
