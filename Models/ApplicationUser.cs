@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Identity;
 
 
 namespace logirack.Models;
-
+/// <summary>
+/// Base class for all user types in the LogiTruck system.
+/// Inherits from IdentityUser to include ASP.NET Core Identity functionality.
+/// </summary>
 public class ApplicationUser : IdentityUser
 {
     /// <summary>
@@ -36,5 +39,10 @@ public class ApplicationUser : IdentityUser
     [StringLength(50, ErrorMessage = "Company name cannot exceed 50 characters.")]
     [Display(Name = "Company Name")]
     public string CompanyName { get; set; }=string.Empty;
+    
+    [Required]
+    [DataType(DataType.Date)]
+    [Display(Name = "Date of Birth")]
+    public DateTime DateOfBirth { get; set; }
     
 }
