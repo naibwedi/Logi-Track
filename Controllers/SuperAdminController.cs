@@ -79,7 +79,9 @@ public class SuperAdminController : Controller
                 PhoneNumber = model.PhoneNumber,
                 RoleType = "Admin",
                 FirstName = model.FirstName,
-                LastName = model.LastName
+                LastName = model.LastName,
+                DateOfBirth = model.DateOfBirth
+                
                 
             };
             

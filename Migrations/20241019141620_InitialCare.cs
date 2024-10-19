@@ -30,6 +30,7 @@ namespace logirack.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
+<<<<<<<< HEAD:Migrations/20241019141620_InitialCare.cs
                     RoleType = table.Column<string>(type: "TEXT", maxLength: 21, nullable: false),
                     IsApproved = table.Column<bool>(type: "INTEGER", nullable: true),
                     CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: true),
@@ -38,6 +39,16 @@ namespace logirack.Migrations
                     LastName = table.Column<string>(type: "TEXT", maxLength: 20, nullable: true),
                     CompanyName = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
                     DateOfBirth = table.Column<DateTime>(type: "TEXT", nullable: true),
+========
+                    IsApproved = table.Column<bool>(type: "INTEGER", nullable: false),
+                    RoleType = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
+                    CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ModifiedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    FirstName = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    LastName = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    CompanyName = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    DateOfBirth = table.Column<DateTime>(type: "TEXT", nullable: false),
+>>>>>>>> bf8abb3da899b669c56e1df3fb68b59661c796c5:Migrations/20241019115902_InitialCreate.cs
                     PricePerKm = table.Column<double>(type: "REAL", nullable: true),
                     PaymentFreq = table.Column<int>(type: "INTEGER", nullable: true),
                     IsAvailable = table.Column<bool>(type: "INTEGER", nullable: true),
