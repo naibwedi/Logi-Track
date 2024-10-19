@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using logirack.Data;
 using logirack.Models;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -49,6 +48,18 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+        // Ensure roles exist
+        string[] roleNames = { "SuperAdmin", "Admin", "Customer" };
+        foreach (var roleName in roleNames)
+        {
+            if (!await roleManager.RoleExistsAsync(roleName))
+            {
+                await roleManager.CreateAsync(new IdentityRole(roleName));
+            }
+        }
+
         await SeedData.Initialize(services);
     }
     catch (Exception ex)
