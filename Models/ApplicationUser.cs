@@ -37,4 +37,9 @@ public class ApplicationUser : IdentityUser
     [Display(Name = "Company Name")]
     public string CompanyName { get; set; }=string.Empty;
     
+    [Required]
+    [DataType(DataType.Date)]
+    [Display(Name = "Date of Birth")]
+    public DateTime DateOfBirth { get; set; }
 }
+

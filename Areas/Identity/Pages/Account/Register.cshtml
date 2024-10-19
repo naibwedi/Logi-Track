@@ -13,9 +13,28 @@
             <hr />
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
             <div class="form-floating mb-3">
+                <input asp-for="Input.FirstName" class="form-control" autocomplete="FirstName" aria-required="true" placeholder="First Name" />
+                <label asp-for="Input.FirstName">First Name</label>
+                <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+            </div>
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.LastName" class="form-control" autocomplete="LastName" aria-required="true" placeholder="Last Name" />
+                <label asp-for="Input.LastName">Last Name</label>
+                <span asp-validation-for="Input.LastName" class="text-danger"></span>
+            </div>
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div class="form-floating mb-3">
                 <input asp-for="Input.CompanyName" class="form-control" autocomplete="CompanyName" aria-required="true" placeholder="Company Name" />
                 <label asp-for="Input.CompanyName">Company Name</label>
                 <span asp-validation-for="Input.CompanyName" class="text-danger"></span>
+            </div>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.DateOfBirth" class="form-control" autocomplete="DateOfBirth" aria-required="true" placeholder="Date Of Birth" />
+                <label asp-for="Input.DateOfBirth">Date Of Birth</label>
+                <span asp-validation-for="Input.DateOfBirth" class="text-danger"></span>
             </div>
             
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
