@@ -105,7 +105,11 @@ namespace logirack.Areas.Identity.Pages.Account
                     // Get the user's roles to redirect accordingly
                     var roles = await _userManager.GetRolesAsync(user);
 
-                    if (roles.Contains("Admin"))
+                    if (roles.Contains("SuperAdmin"))
+                    {
+                        return RedirectToAction("AdminList", "SuperAdmin");
+                    }
+                    else if (roles.Contains("Admin"))
                     {
                         return RedirectToAction("Dashboard", "Admin");
                     }
