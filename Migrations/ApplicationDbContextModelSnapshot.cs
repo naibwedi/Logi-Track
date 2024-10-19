@@ -208,9 +208,14 @@ namespace logirack.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SuperAdminId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AdminId");
+
+                    b.HasIndex("SuperAdminId");
 
                     b.ToTable("AdminActionLogs");
                 });
@@ -233,6 +238,9 @@ namespace logirack.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
@@ -649,6 +657,10 @@ namespace logirack.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("logirack.Models.SuperAdmin", null)
+                        .WithMany("ActionLogs")
+                        .HasForeignKey("SuperAdminId");
+
                     b.Navigation("Admin");
                 });
 
@@ -786,6 +798,11 @@ namespace logirack.Migrations
 
                     b.Navigation("PermanentAddress")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("logirack.Models.SuperAdmin", b =>
+                {
+                    b.Navigation("ActionLogs");
                 });
 #pragma warning restore 612, 618
         }

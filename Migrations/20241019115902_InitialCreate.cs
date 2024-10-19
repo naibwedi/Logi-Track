@@ -37,6 +37,7 @@ namespace logirack.Migrations
                     FirstName = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
                     LastName = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
                     CompanyName = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    DateOfBirth = table.Column<DateTime>(type: "TEXT", nullable: false),
                     PricePerKm = table.Column<double>(type: "REAL", nullable: true),
                     PaymentFreq = table.Column<int>(type: "INTEGER", nullable: true),
                     IsAvailable = table.Column<bool>(type: "INTEGER", nullable: true),
@@ -114,7 +115,8 @@ namespace logirack.Migrations
                     AdminId = table.Column<string>(type: "TEXT", nullable: false),
                     ASction = table.Column<string>(type: "TEXT", nullable: false),
                     DeTails = table.Column<string>(type: "TEXT", nullable: false),
-                    ADate = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    ADate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    SuperAdminId = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -125,6 +127,11 @@ namespace logirack.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AdminActionLogs_AspNetUsers_SuperAdminId",
+                        column: x => x.SuperAdminId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -386,6 +393,11 @@ namespace logirack.Migrations
                 name: "IX_AdminActionLogs_AdminId",
                 table: "AdminActionLogs",
                 column: "AdminId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdminActionLogs_SuperAdminId",
+                table: "AdminActionLogs",
+                column: "SuperAdminId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
