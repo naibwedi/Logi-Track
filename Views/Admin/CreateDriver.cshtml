@@ -37,6 +37,14 @@
         <input asp-for="PhoneNumber" class="form-control" />
         <span asp-validation-for="PhoneNumber" class="text-danger"></span>
     </div>
+    <div>
+    <div class="form-group">
+        <label asp-for="DateOfBirth"></label>
+        <input asp-for="DateOfBirth" class="form-control" type="date" />
+        <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+        </div>
+    </div>
+
     <div class="form-group">
         <label asp-for="PricePerKm"></label>
         <input asp-for="PricePerKm" class="form-control" />

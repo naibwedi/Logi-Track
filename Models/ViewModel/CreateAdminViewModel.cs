@@ -43,5 +43,11 @@ public class CreateAdminViewModel
     [Display(Name = "Phone Number")]
     public string PhoneNumber { get; set; }
     
+    [Required]
+    [DataType(DataType.Date)]
+    [Display(Name = "Date of Birth")]
+ 
+    public DateTime DateOfBirth { get; set; }
+    
     
 }
