@@ -11,7 +11,7 @@ using logirack.Data;
 namespace logirack.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241018150809_InitialCreate")]
+    [Migration("20241018155220_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

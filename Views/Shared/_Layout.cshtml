@@ -37,9 +37,12 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="" asp-action="">Invoice Generation</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="" asp-action="">Payment Management</a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="" asp-action="">Payment Management</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="PendingApprovals">Pending Approval</a>
+                            </li>
                         }
                         else if (User.IsInRole("Driver"))
                         {

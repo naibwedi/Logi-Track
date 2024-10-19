@@ -1,0 +1,28 @@
+﻿@model List<logirack.Models.ApplicationUser>
+
+<h2>Pending Approvals</h2>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Email</th>
+        <th>Company Name</th>
+        <th>Approve</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var user in Model)
+    {
+        <tr>
+            <td>@user.Email</td>
+            <td>@user.CompanyName</td>
+            <td>
+                <form asp-action="ApproveUser" method="post">
+                    <input type="hidden" name="userId" value="@user.Id" />
+                    <button type="submit" class="btn btn-primary">Approve</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

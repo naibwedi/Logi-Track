@@ -1,6 +1,7 @@
 ﻿using logirack.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace logirack.Data;
 //// TOREAD dont use decimal on models use double for SQLite compatibility start 
@@ -8,7 +9,7 @@ namespace logirack.Data;
 /// The database context for the LogiRack application.
 /// Inherits from IdentityDbContext to include Identity functionality.
 /// </summary>
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+public class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)

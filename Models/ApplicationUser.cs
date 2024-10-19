@@ -3,10 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 
 namespace logirack.Models;
-/// <summary>
-/// Base class for all user types in the LogiTruck system.
-/// Inherits from IdentityUser to include ASP.NET Core Identity functionality.
-/// </summary>
+
 public class ApplicationUser : IdentityUser
 {
     /// <summary>

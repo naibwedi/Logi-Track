@@ -250,7 +250,26 @@ public class AdminController : Controller
     {
         return View();
     }
+    
+    // List all customers pending approval
+    [HttpGet]
+    public IActionResult PendingApprovals()
+    {
+        var unapprovedUsers = _userManager.Users.Where(u => !u.IsApproved).ToList();
+        return View(unapprovedUsers);
+    }
 
+    // Approve a customer
+    [HttpPost]
+    public async Task<IActionResult> ApproveUser(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user != null)
+        {
+            user.IsApproved = true;
+            await _userManager.UpdateAsync(user);
+        }
 
-
+        return RedirectToAction("PendingApprovals");
+    }
 }
