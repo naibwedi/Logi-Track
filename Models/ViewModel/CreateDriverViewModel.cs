@@ -27,6 +27,7 @@ public class CreateDriverViewModel
     
     [Required]
     [Range(0.1, 1000, ErrorMessage = "Price per kn must be between 0 and 1000 Nok.")]
+    [DataType(DataType.Currency)]
     [Display(Name = "Price per kn on Nok")]
     public double PricePerKm { get; set; }
 

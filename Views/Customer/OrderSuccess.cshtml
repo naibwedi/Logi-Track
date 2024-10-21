@@ -1,4 +1,4 @@
-﻿@model logirack.Models.OrderModel
+﻿@model logirack.Models.ViewModel.OrderSuccessViewModel
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,13 +15,13 @@
 
     <ul>
         <li><strong>Pickup Location:</strong> @Model.PickupLocation</li>
-        <li><strong>Drop-off Location:</strong> @Model.DropoffLocation</li>
+        <li><strong>Drop-off Location:</strong> @Model.DropofLocation</li>
         <li><strong>Type of Goods:</strong> @Model.GoodsType</li>
         <li><strong>Weight:</strong> @Model.Weight kg</li>
         <li><strong>Pickup Date:</strong> @Model.PickupDate.ToShortDateString()</li>
-        <li><strong>Pickup Time:</strong> @Model.PickupTime</li>
+        <li><strong>Pickup Time:</strong> @Model.PickupDate</li>
         <li><strong>Distance:</strong> @Model.Distance km</li>
-        <li><strong>Additional Services:</strong> @Model.AdditionalServices</li>
+        <li><strong>Additional Services:</strong> @Model.AdditionalService</li>
     </ul>
 
     <p><strong>Estimated Price:</strong> <strong>$@Model.PriceEstimate</strong></p>
