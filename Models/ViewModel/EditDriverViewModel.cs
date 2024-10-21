@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.Build.Framework;
+
+
 
 namespace logirack.Models.ViewModel;
 
@@ -7,25 +8,25 @@ public class EditDriverViewModel
 {
     public string id { get; set; }
     
-    [System.ComponentModel.DataAnnotations.Required]
+    [Required]
     [Display(Name = "First Name")]
     public string FirstName { get; set; }
     
-    [System.ComponentModel.DataAnnotations.Required]
+    [Required]
     [Display(Name = "Last Name")]
     public string LastName { get; set; }
     
-    [System.ComponentModel.DataAnnotations.Required]
+    [Required]
     [EmailAddress]
     [Display(Name = "Email")]
-    public string Email { get; set; }
+    public string Email { get; set; }=string.Empty;
     
-    [System.ComponentModel.DataAnnotations.Required]
+    [Required]
     [Phone]
     [Display(Name = "Phone Number")]
-    public string PhoneNumber { get; set; }
+    public string PhoneNumber { get; set; }=string.Empty;
     
-    [System.ComponentModel.DataAnnotations.Required]
+    [Required]
     [Display(Name = "Price per Km")]
     [Range(0, double.MaxValue, ErrorMessage = "Please enter a valid price.")]
     public double PricePerKm { get; set; }
