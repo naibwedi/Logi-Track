@@ -15,6 +15,7 @@ public class Driver : ApplicationUser
     public double PricePerKm { get; set; }
     [Required]
     public PaymentFreq PaymentFreq { get; set; }
+     public string DriverEmail { get; set; } // i added this for the email
     public bool IsAvailable { get; set; }
     public List<DriverTrip> DriverTrips { get; set; }
     public List<PaymentPeriod> PaymentPeriods { get; set; }
