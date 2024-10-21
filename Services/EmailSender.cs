@@ -2,7 +2,8 @@
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using System.Threading.Tasks;
-
+//evan code i just move it to different folder 
+namespace logirack.Services;
 public class EmailSender : IEmailSender
 {
     private readonly ISendGridClient _sendGridClient;

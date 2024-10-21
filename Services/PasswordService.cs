@@ -1,15 +1,16 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System;
-
+namespace logirack.Services;
 public class PasswordService
 {
+    //evan code just redirected to Services file 
     public string GeneratePassword()
     {
         // Create a PasswordOptions object with required options
         var passwordOptions = new PasswordOptions
         {
             RequireDigit = true,
-            RequiredLength = 8,
+            RequiredLength = 12,
             RequireLowercase = true,
             RequireNonAlphanumeric = true,
             RequireUppercase = true,

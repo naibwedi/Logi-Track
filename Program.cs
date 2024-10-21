@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using logirack.Data;
 using logirack.Models;
 using SendGrid;
+using logirack.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);

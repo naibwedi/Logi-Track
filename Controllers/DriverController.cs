@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+namespace logirack.Services;
+
 
 [Authorize(Roles = "Driver")]
 public class DriverController : Controller
