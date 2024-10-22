@@ -20,28 +20,29 @@ public class PasswordService
         return password;
     }
 
-    private string GeneratePasswordWithOptions(PasswordOptions options)
+    private string GeneratePasswordWithOptions(PasswordOptions pOptions)
     {
-        // Use randomization to generate a password based on PasswordOptions
         var random = new Random();
-        string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        string nonAlphanumericChars = "!@#$%^&*()_-+=[{]}|;:',.<>?";
-
-        char[] password = new char[options.RequiredLength];
-        for (int i = 0; i < options.RequiredLength; i++)
-        {
-            if (options.RequireNonAlphanumeric && i == 0)
-            {
-                // Ensure the first character is a non-alphanumeric character
-                password[i] = nonAlphanumericChars[random.Next(nonAlphanumericChars.Length)];
-            }
-            else
-            {
-                // Fill the rest with alphanumeric characters
-                password[i] = chars[random.Next(chars.Length)];
-            }
-        }
-
-        return new string(password);
+        const string upperC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const string loweC = "abcdefghijklmnopqrstuvwxyz";
+        const string numbers = "0123456789";
+        const string nonAlphanumeric = "!@#$%^&*()_-+=[{]}|;:',.<>?\"";
+        
+        //ensure we have at least one of each  required character type 
+        var password = new List<char>();
+        if (pOptions.RequireDigit)
+            password.Add(numbers[random.Next(numbers.Length)]);
+        if (pOptions.RequireLowercase)
+            password.Add(loweC[random.Next(loweC.Length)]);
+        if(pOptions.RequireNonAlphanumeric)
+            password.Add(nonAlphanumeric[random.Next(nonAlphanumeric.Length)]);
+        if (pOptions.RequireUppercase)
+            password.Add(upperC[random.Next(upperC.Length)]);
+        //the rest with random char
+        string allchars=upperC+numbers+nonAlphanumeric+loweC;
+        while (password.Count<pOptions.RequiredLength)
+            password.Add(allchars[random.Next(allchars.Length)]);
+        
+        return new string(password.OrderBy(x => x).ToArray());
     }
 }
