@@ -17,20 +17,37 @@ public class EmailSender : IEmailSender
     }
 
     public async Task SendEmailAsync(string email, string subject, string htmlMessage)
+    
     {
-        var from = new EmailAddress("logirack694@gmail.com", "Logirack");
-        var to = new EmailAddress(email);
-        var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent: null, htmlContent: htmlMessage);
-
-        var response = await _sendGridClient.SendEmailAsync(msg);
-
-        // Optionally, handle the response
-        if (response.StatusCode >= System.Net.HttpStatusCode.BadRequest)
+        //try just for debug 
+        try
         {
-            // Log or handle the error as needed
-            //throw new Exception($"Failed to send email: {response.StatusCode}");
-            _logger.LogError( "Error sending email to {Email}", email);
+            //change the email 
+            var from = new EmailAddress("logitrucktest@gmail.com", "Logirack");
+            var to = new EmailAddress(email);
+            //include the html content 
+            var plainTextContent = htmlMessage.Replace("<br>", "\n").Replace("<br/>", "\n");
+            //i removed the null
+            var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent: htmlMessage);
+            var response = await _sendGridClient.SendEmailAsync(msg);
+            //debug 
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Email sent successfully");
+            }
+            else
+            {
+                _logger.LogError("Email sending failed");
+
+                throw new Exception(response.ToString()); 
+            }
 
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Email sending failed");
+            throw;
+        }
+        
     }
 }
