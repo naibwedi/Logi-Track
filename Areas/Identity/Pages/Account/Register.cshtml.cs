@@ -164,13 +164,21 @@ namespace logirack.Areas.Identity.Pages.Account
         {
             try
             {
-                return Activator.CreateInstance<ApplicationUser>();
+                var customer = new Customer
+                {
+                    RoleType = "Customer",   
+                    IsApproved = false,       
+                    CreatedOn = DateTime.Now,
+                    ModifiedOn = DateTime.Now,
+                    Trips = new List<Trip>(),  
+                    EmailConfirmed = false
+                };
+                return customer;
             }
             catch
             {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(IdentityUser)}'. " +
-                    $"Ensure that '{nameof(IdentityUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                    $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
+                throw new InvalidOperationException($"Can't create an instance of 'Customer'. " +
+                                                    $"Ensure that 'Customer' class has a parameterless constructor and all required properties are properly initialized.");
             }
         }
 

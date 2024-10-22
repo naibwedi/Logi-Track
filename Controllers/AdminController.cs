@@ -47,7 +47,7 @@ public class AdminController : Controller
     }
 
     /// <summary>
-    /// Processes the creation of a new Driver.
+    /// Processes  the creation of a new Driver.
     /// </summary>
     /// <param name="model">The data submitted from the form.</param>
     [HttpPost]
@@ -258,6 +258,15 @@ public class AdminController : Controller
         }
         return RedirectToAction(nameof(DriverList));
     }
+    
+    [HttpGet]
+    public async Task<IActionResult> PendingApprovals()
+    {
+        var pendingUsers=await _userManager.Users.Where(x => x.IsApproved == false ).ToListAsync();
+        return View(pendingUsers);
+    }
+    
+    
 
     // The rest of the controller's methods remain unchanged...
 }

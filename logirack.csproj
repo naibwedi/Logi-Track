@@ -31,8 +31,4 @@
     <!-- Removed Zen.SendGrid.Extensions.DependencyInjection -->
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Views\Order\" />
-  </ItemGroup>
-
 </Project>

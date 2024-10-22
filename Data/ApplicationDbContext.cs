@@ -9,7 +9,7 @@ namespace logirack.Data;
 /// The database context for the LogiRack application.
 /// Inherits from IdentityDbContext to include Identity functionality.
 /// </summary>
-public class ApplicationDbContext : IdentityDbContext<IdentityUser>
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -45,6 +45,7 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
         //--------------------------------- ||
          
         mbuilder.Entity<ApplicationUser>().HasDiscriminator<string>("RoleType")
+            .HasValue<ApplicationUser>("ApplicationUser")
             .HasValue<SuperAdmin>("SuperAdmin")
             .HasValue<Admin>("Admin")
             .HasValue<Customer>("Customer")

@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace logirack.Controllers
 {
     [Authorize(Roles = "Customer")]
+    [ApprovedOnly]
     public class CustomerController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -161,9 +162,11 @@ namespace logirack.Controllers
                 _db.Trips.Add(trip);
                 await _db.SaveChangesAsync();
                 //Send email Notification to the customer 
-                await _emailSender.SendEmailAsync(user.Email, "Thank you for your order!", $"Dear {user.FirstName} {user.LastName}, <br/>"
+                /*
+                 await _emailSender.SendEmailAsync(user.Email, "Thank you for your order!", $"Dear {user.FirstName} {user.LastName}, <br/>"
                     +"Your order from {model.FromCity} to {model.ToCity}, has been submitted successfully."
                     +"Estimated price is <strong>{model.PriceEstimate} NOK </strong><br/> an admin will review your order and set the final price <br/> Best regards LogiTrack team ") ;
+                */
                 //Create the Order success View model to redirect to it 
                 var successModl = new OrderSuccessViewModel
                 {
@@ -187,7 +190,7 @@ namespace logirack.Controllers
         }
 
         /// <summary>
-        /// Displays the order success page with order details.
+        /// Displays the order success page with order details
         /// </summary>
         [Authorize(Roles = "Customer")]
         public IActionResult OrderSuccess(OrderSuccessViewModel model)

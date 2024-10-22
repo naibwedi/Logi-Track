@@ -19,10 +19,25 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Configure Identity
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+// builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+//     .AddRoles<IdentityRole>()
+//     .AddEntityFrameworkStores<ApplicationDbContext>();
+//for dev only --------------------------------------------------------------
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            options.SignIn.RequireConfirmedAccount = true;
+            options.SignIn.RequireConfirmedEmail = false;
+        }
+        else
+        {
+            options.SignIn.RequireConfirmedAccount = true;
+            options.SignIn.RequireConfirmedEmail = true;
+        }
+    })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
-
 // Add controllers and Razor pages
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();

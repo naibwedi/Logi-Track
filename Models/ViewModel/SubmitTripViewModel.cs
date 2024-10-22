@@ -9,37 +9,37 @@ public class SubmitTripViewModel
     [Required]
     [StringLength(100)]
     [Display(Name = "From city")]
-    public string FromCity { get; set; }
+    public string FromCity { get; set; }=string.Empty;
     
     [Required]
     [StringLength(100)]
     [Display(Name = "To city")]
-    public string ToCity { get; set; }
+    public string ToCity { get; set; }=string.Empty;
     
     [Required]
     [StringLength(100)]
     [Display(Name = "From Address")]
-    public string FromAddress { get; set; }
+    public string FromAddress { get; set; }=string.Empty;
     
     [Required]
     [StringLength(100)]
     [Display(Name = "Goods  types")]
-    public string GoodType { get; set; }
+    public string GoodType { get; set; }=string.Empty;
     
     [Required]
     [StringLength(100)]
     [Display(Name = "To Address")]
-    public string ToAddress { get; set; }
+    public string ToAddress { get; set; }=string.Empty;
     
     [Required]
     [StringLength(100 ,MinimumLength = 5 , ErrorMessage ="You must provide at least 5 characters long")]
     [Display(Name = "From Zip Code")]
-    public string FromZipCode { get; set; }
+    public string FromZipCode { get; set; }=string.Empty;
 
     [Required]
     [StringLength(100 ,MinimumLength = 5 , ErrorMessage ="You must provide at least 5 characters long")]
     [Display(Name = "To Zip Code")]
-    public string ToZipCode { get; set; }
+    public string ToZipCode { get; set; }=string.Empty;
     [Required]
     [Range(10, double.MaxValue, ErrorMessage ="Weight must be greater than 10kg")]
     [Display(Name = "Weight in Kg")]
@@ -54,7 +54,7 @@ public class SubmitTripViewModel
     [Display(Name = "Volum in m^3")]
     public double Volume { get; set; }
     [Display(Name = "Aditional Notes")]
-    public string Notes { get; set; }
+    public string Notes { get; set; }=string.Empty;
     [Required]
     [DataType(DataType.DateTime)]
     public DateTime PickupDate { get; set; }

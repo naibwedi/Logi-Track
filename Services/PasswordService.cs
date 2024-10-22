@@ -3,7 +3,6 @@ using System;
 namespace logirack.Services;
 public class PasswordService
 {
-    //evan code just redirected to Services file 
     public string GeneratePassword()
     {
         // Create a PasswordOptions object with required options
