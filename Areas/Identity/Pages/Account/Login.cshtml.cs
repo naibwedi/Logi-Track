@@ -71,75 +71,70 @@ namespace logirack.Areas.Identity.Pages.Account
             ReturnUrl = returnUrl;
         }
 
-      public async Task<IActionResult> OnPostAsync(string returnUrl = null)
-      {
-          returnUrl ??= Url.Content("~/");
-      
-          ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-      
-          if (ModelState.IsValid)
-          {
-              // Find the user by email
-              var user = await _userManager.FindByEmailAsync(Input.Email);
-      
-              if (user == null)
-              {
-                  ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                  return Page();
-              }
-      
-              // Check if the user is approved
-              if (!user.IsApproved)
-              {
-                  _logger.LogWarning("User account is not approved.");
-                  return RedirectToAction("ApprovalPending", "Customer");  // Redirect to approval pending page
-              }
-      
-              // Proceed with login
-              var result = await _signInManager.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-      
-              if (result.Succeeded)
-              {
-                  _logger.LogInformation("User logged in.");
-      
-                  // Get the user's roles to redirect accordingly
-                  var roles = await _userManager.GetRolesAsync(user);
-      
-                  if (roles.Contains("SuperAdmin"))
-                  {
-                      return RedirectToAction("AdminList", "SuperAdmin");
-                  }
-                  else if (roles.Contains("Admin"))
-                  {
-                      return RedirectToAction("DriverList", "Admin");  // Redirect Admin to DriverList
-                  }
-                  else if (roles.Contains("Driver"))
-                  {
-                      return RedirectToAction("Dashboard", "Driver");
-                  }
-                  else
-                  {
-                      return LocalRedirect(returnUrl);
-                  }
-              }
-      
-              if (result.RequiresTwoFactor)
-              {
-                  return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
-              }
-      
-              if (result.IsLockedOut)
-              {
-                  _logger.LogWarning("User account locked out.");
-                  return RedirectToPage("./Lockout");
-              }
-              else
-              {
-                  ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                  return Page();
-              }
-          }
-      
-          // If we got this far, something failed, redisplay form
-          return Page();
+public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+{
+    returnUrl ??= Url.Content("~/");
+
+    ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
+    if (ModelState.IsValid)
+    {
+        // Finn brukeren basert på e-posten
+        var user = await _userManager.FindByEmailAsync(Input.Email);
+
+        if (user == null)
+        {
+            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+            return Page();
+        }
+
+        // Forsøk innlogging uavhengig av godkjenning
+        var result = await _signInManager.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
+        if (result.Succeeded)
+        {
+            _logger.LogInformation("User {Email} logged in.", Input.Email);
+
+            // Sjekk om brukeren er godkjent etter innlogging
+            if (!user.IsApproved)
+            {
+                _logger.LogWarning("User account is not approved.");
+                return RedirectToAction("ApprovalPending", "Customer", new { area = "" });  // Omdiriger til godkjenningsside
+            }
+
+            // Omdiriger basert på rollen til brukeren
+            var roles = await _userManager.GetRolesAsync(user);
+            if (roles.Contains("Admin"))
+            {
+                return RedirectToAction("Dashboard", "Admin");
+            }
+            else if (roles.Contains("Driver"))
+            {
+                return RedirectToAction("Dashboard", "Driver");
+            }
+            else
+            {
+                return LocalRedirect(returnUrl);
+            }
+        }
+
+        if (result.RequiresTwoFactor)
+        {
+            return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
+        }
+
+        if (result.IsLockedOut)
+        {
+            _logger.LogWarning("User account locked out.");
+            return RedirectToPage("./Lockout");
+        }
+        else
+        {
+            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+            return Page();
+        }
+    }
+
+    return Page();
+
       }}}

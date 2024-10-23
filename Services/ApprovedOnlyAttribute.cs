@@ -14,11 +14,6 @@ public class ApprovedOnlyAttribute : AuthorizeAttribute, IAuthorizationFilter
             var userManager = context.HttpContext.RequestServices.GetService(typeof(UserManager<ApplicationUser>)) as UserManager<ApplicationUser>;
             var userId = userManager.GetUserId(context.HttpContext.User);
             var appUser = userManager.FindByIdAsync(userId).Result;
-
-            if (!appUser.IsApproved)
-            {
-                context.Result = new RedirectToActionResult("ApprovalPending", "Account", null);
-            }
         }
     }
 }
