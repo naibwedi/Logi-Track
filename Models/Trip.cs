@@ -57,7 +57,7 @@ public enum TripStatus
 {
     Requested,
     PriceSet,
-    Accepted,
+    isApproved,
     Assigned,
     InProgress,
     Completed,

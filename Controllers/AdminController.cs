@@ -352,7 +352,7 @@ public class AdminController : Controller
         var admin = await _userManager.GetUserAsync(User) as Admin;
         if (admin == null)
             return Forbid();
-        trip.Status = isApproved ? TripStatus.Accepted : TripStatus.Requested;
+        trip.Status = isApproved ? TripStatus.isApproved : TripStatus.Requested;
         trip.AdminId=admin.Id;
         trip.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
@@ -362,5 +362,4 @@ public class AdminController : Controller
 
     }
     
-
 }
