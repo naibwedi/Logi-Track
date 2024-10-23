@@ -17,7 +17,7 @@ public class TripDetailsViewModel
     public double Distance { get; set; }
     public string GoodTypes { get; set; }
     public string Notes { get; set; }
-    public double EstimatedTime { get; set; }
+    public double EstimatedPrice { get; set; }
     public TripStatus Status { get; set; }
     public DateTime CreatedOn { get; set; }
     public DateTime PickupDate { get; set; }
