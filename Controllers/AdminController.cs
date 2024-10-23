@@ -265,7 +265,12 @@ public class AdminController : Controller
         var pendingUsers=await _userManager.Users.Where(x => x.IsApproved == false ).ToListAsync();
         return View(pendingUsers);
     }
-
+    
+    /// <summary>
+    /// Displays a list of trip requests filtered by status.
+    /// </summary>
+    /// <param name="sFilter">The status to filter trips by. Defaults to "Requested".</param>
+    /// <returns>The TripRequests view with a list of filtered trips.</returns>
     [HttpGet]
     public async Task<IActionResult> TripRequests(string sFilter = "Requested")
     {
@@ -293,6 +298,11 @@ public class AdminController : Controller
         return BadRequest("Invalid filter check db relations");
     }
 
+    /// <summary>
+    /// Displays detailed information about a specific trip.
+    /// </summary>
+    /// <param name="id">The ID of the trip to display details for.</param>
+    /// <returns>The TripDetails view with the trip's detailed information.</returns>
     [HttpGet]
     public async Task<IActionResult> TripDetails(int id)
     {
@@ -324,6 +334,12 @@ public class AdminController : Controller
         return View(viewModel);
     }
 
+    /// <summary>
+    /// Processes the approval or rejection of a trip request.
+    /// </summary>
+    /// <param name="tId">The ID of the trip to review.</param>
+    /// <param name="isApproved">Indicates whether the trip is approved (true) or rejected (false).</param>
+    /// <returns>Redirects to the TripRequests view after processing.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReviwTrip(int tId, bool isApproved)
