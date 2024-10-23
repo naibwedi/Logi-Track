@@ -43,6 +43,18 @@
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="PendingApprovals">Pending Approval</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="TripDetails">Trips Details</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="TripRequests">Trips Request</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="DriverList"> Driver list</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="CreateDriver"> create a driver</a>
+                            </li>
                         }
                         else if (User.IsInRole("Driver"))
                         {

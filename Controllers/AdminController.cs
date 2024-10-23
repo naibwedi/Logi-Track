@@ -266,7 +266,101 @@ public class AdminController : Controller
         return View(pendingUsers);
     }
     
+    /// <summary>
+    /// Displays a list of trip requests filtered by status.
+    /// </summary>
+    /// <param name="sFilter">The status to filter trips by. Defaults to "Requested".</param>
+    /// <returns>The TripRequests view with a list of filtered trips.</returns>
+    [HttpGet]
+    public async Task<IActionResult> TripRequests(string sFilter = "Requested")
+    {
+        if (Enum.TryParse<TripStatus>(sFilter, out var status))
+        {
+            var trips = await _db.Trips.Include(t => t.Customer)
+                .Where(t => t.Status == status)
+                .OrderByDescending(t => t.CreatedAt)
+                .Select(t => new TripRequestViewModel
+                {
+                    TripId = t.Id,
+                    CustomerName = $"{t.Customer.FirstName} {t.Customer.LastName}",
+                    FromCity = t.FromCity,
+                    ToCity = t.ToCity,
+                    Weight = t.Weight,
+                    Distance = t.Distance,
+                    EstimatedPrice = t.EstimatedPrice,
+                    Status = t.Status,
+                    CreatedAt = t.CreatedAt,
+                    PickUpAt = t.PickupTime
+                }).ToListAsync();
+            ViewBag.CurrentFilter = sFilter;
+            return View(trips);
+        }
+        return BadRequest("Invalid filter check db relations");
+    }
+
+    /// <summary>
+    /// Displays detailed information about a specific trip.
+    /// </summary>
+    /// <param name="id">The ID of the trip to display details for.</param>
+    /// <returns>The TripDetails view with the trip's detailed information.</returns>
+    [HttpGet]
+    public async Task<IActionResult> TripDetails(int id)
+    {
+        var trip = await _db.Trips.Include(t => t.Customer).FirstOrDefaultAsync(t=>t.Id == id);
+        if(trip == null)
+            return NotFound();
+        var viewModel = new TripDetailsViewModel
+        {
+            TripId = trip.Id,
+            CustomerName = $"{trip.Customer.FirstName} {trip.Customer.LastName}",
+            CustomerEmail = trip.Customer.Email,
+            CustomerPhone = trip.Customer.PhoneNumber,
+            FromCity = trip.FromCity,
+            ToCity = trip.ToCity,
+            FromAddress = trip.FromAddress,
+            ToAddress = trip.ToAddress,
+            FromZipCode = trip.FromZipCode,
+            ToZipCode = trip.ToZipCode,
+            Weight = trip.Weight,
+            Volume = trip.Volume,
+            Distance = trip.Distance,
+            GoodTypes = trip.GoodsType,
+            Notes = trip.Notes,
+            EstimatedPrice = trip.EstimatedPrice,
+            Status = trip.Status,
+            CreatedOn = trip.CreatedAt,
+            PickupDate = trip.PickupTime
+        };
+        return View(viewModel);
+    }
+
+    /// <summary>
+    /// Processes the approval or rejection of a trip request.
+    /// </summary>
+    /// <param name="tId">The ID of the trip to review.</param>
+    /// <param name="isApproved">Indicates whether the trip is approved (true) or rejected (false).</param>
+    /// <returns>Redirects to the TripRequests view after processing.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReviwTrip(int tId, bool isApproved)
+    {
+        var trip = await _db.Trips.FindAsync(tId);
+        if (trip == null)
+            return NotFound();
+        
+        //for getting curent admin like assignment 4 
+        var admin = await _userManager.GetUserAsync(User) as Admin;
+        if (admin == null)
+            return Forbid();
+        trip.Status = isApproved ? TripStatus.Accepted : TripStatus.Requested;
+        trip.AdminId=admin.Id;
+        trip.UpdatedAt = DateTime.Now;
+        await _db.SaveChangesAsync();
+        //notification to customer about trip status 
+        TempData["Success"] =isApproved ? "Trip Approved" : "Trip Rejected";
+        return RedirectToAction(nameof(TripRequests));
+
+    }
     
 
-    // The rest of the controller's methods remain unchanged...
 }
