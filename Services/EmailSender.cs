@@ -23,7 +23,7 @@ public class EmailSender : IEmailSender
         try
         {
             //change the email 
-            var from = new EmailAddress("logitrucktest@gmail.com", "Logirack");
+            var from = new EmailAddress("123@hotmail.com", "123");
             var to = new EmailAddress(email);
             //include the html content 
             var plainTextContent = htmlMessage.Replace("<br>", "\n").Replace("<br/>", "\n");

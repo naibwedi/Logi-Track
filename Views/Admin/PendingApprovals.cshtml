@@ -8,6 +8,7 @@
         <th>Email</th>
         <th>Company Name</th>
         <th>Approve</th>
+        <th>Do Not Approve</th> <!-- Ny kolonne -->
     </tr>
     </thead>
     <tbody>
@@ -19,7 +20,15 @@
             <td>
                 <form asp-action="ApproveUser" method="post">
                     <input type="hidden" name="userId" value="@user.Id" />
+                    <input type="hidden" name="approve" value="true" />
                     <button type="submit" class="btn btn-primary">Approve</button>
+                </form>
+            </td>
+            <td>
+                <form asp-action="ApproveUser" method="post">
+                    <input type="hidden" name="userId" value="@user.Id" />
+                    <input type="hidden" name="approve" value="false" />
+                    <button type="submit" class="btn btn-danger">Do Not Approve</button>
                 </form>
             </td>
         </tr>

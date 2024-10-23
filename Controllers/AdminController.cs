@@ -266,6 +266,42 @@ public class AdminController : Controller
         return View(pendingUsers);
     }
     
+    
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApproveUser(string userId, bool approve)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return BadRequest("User ID cannot be null or empty.");
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        // Oppdater godkjenningsstatusen basert på admin-valget
+        if (approve)
+        {
+            user.IsApproved = true;
+            TempData["Success"] = "User has been approved.";
+            _logger.LogInformation("User {Email} approved by admin.", user.Email);
+        }
+        else
+        {
+            // Hvis brukeren ikke er godkjent, kan du velge å slette brukeren eller sette en annen status
+            await _userManager.DeleteAsync(user);
+            TempData["Success"] = "User has been rejected and deleted.";
+            _logger.LogInformation("User {Email} rejected by admin and deleted.", user.Email);
+        }
+
+        await _db.SaveChangesAsync();
+        return RedirectToAction(nameof(PendingApprovals));
+    }
+
+    
     /// <summary>
     /// Displays a list of trip requests filtered by status.
     /// </summary>
