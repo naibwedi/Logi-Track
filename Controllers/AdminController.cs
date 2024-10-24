@@ -39,7 +39,40 @@ public class AdminController : Controller
         _emailSender = emailSender;
         _passwordService = passwordService;
     }
+/// <summary>
+/// creating functionality for searching drivers based on filters
+/// </summary>
+/// <param name="searchString"></param>
+/// <param name="searchCriteria"></param>
+/// <returns></returns>
+public IActionResult SearchDrivers(string searchString, string searchCriteria)
+{
+    var drivers = from d in _db.Drivers // Changed _context to _db
+        select d;
 
+    if (!String.IsNullOrEmpty(searchString))
+    {
+        switch (searchCriteria)
+        {
+            case "FirstName":
+                drivers = drivers.Where(d => d.FirstName.Contains(searchString));
+                break;
+            case "LastName":
+                drivers = drivers.Where(d => d.LastName.Contains(searchString));
+                break;
+            case "Email":
+                drivers = drivers.Where(d => d.Email.Contains(searchString));
+                break;
+            case "PhoneNumber":
+                drivers = drivers.Where(d => d.PhoneNumber.Contains(searchString));
+                break;
+        }
+    }
+
+    return PartialView("_DriverManagmentPartial", drivers.ToList());
+}
+
+    
     [HttpGet]
     public IActionResult CreateDriver()
     {
@@ -110,7 +143,7 @@ public class AdminController : Controller
                 }
 
                 TempData["Success"] = "Driver Created";
-                return RedirectToAction(nameof(DriverList));
+                return RedirectToAction(nameof(DriverManagment));
             }
             else
             {
@@ -128,7 +161,7 @@ public class AdminController : Controller
     /// Displays a list of all Driver users.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> DriverList()
+    public async Task<IActionResult> DriverManagment()
     {
         var allDrivers = await _userManager.GetUsersInRoleAsync("Driver");
         var drivers = allDrivers.OfType<Driver>().ToList();
@@ -216,7 +249,7 @@ public class AdminController : Controller
             var result = await _userManager.UpdateAsync(driver);
             if (result.Succeeded)
             {
-                return RedirectToAction(nameof(DriverList));
+                return RedirectToAction(nameof(DriverManagment));
             }
             else
             {
@@ -256,7 +289,7 @@ public class AdminController : Controller
         {
             _logger.LogError("Error deleting driver {Email}", driver.Email);
         }
-        return RedirectToAction(nameof(DriverList));
+        return RedirectToAction(nameof(DriverManagment));
     }
     
     [HttpGet]

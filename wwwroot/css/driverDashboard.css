@@ -1,6 +1,14 @@
 ﻿body {
     background-color: #f8f9fa;
 }
+
+/* driver managment section*/
+.btnCreateDirver{
+    margin-left: 5em;
+}
+
+
+
 /* Trip Log Section */
 .trip-log {
     display: flex;
