@@ -1,0 +1,125 @@
+﻿@model IEnumerable<logirack.Models.Driver>
+
+@{
+ViewBag.Title = "Driver List";
+Layout = "_Layout";
+}
+
+<h2 class="mb-4 text-center">Driver List</h2>
+
+@if (TempData["Success"] != null)
+{
+<div class="alert alert-success">
+    @TempData["Success"]
+</div>
+}
+
+@if (TempData["Error"] != null)
+{
+<div class="alert alert-danger">
+    @TempData["Error"]
+</div>
+}
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <!-- Create New Driver button on the left -->
+    <a asp-action="CreateDriver" class="btnCreateDriver btn btn-primary">Create New Driver</a>
+
+    <!-- Search form aligned to the right -->
+    <div class="input-group w-50">
+        <!-- Dropdown filter for search criteria -->
+        <div class="form-control input-group-append">
+            <select class="custom-select" name="searchCriteria" id="searchCriteria">
+                <option value="FirstName" selected>First Name</option>
+                <option value="LastName">Last Name</option>
+                <option value="Email">Email</option>
+                <option value="PhoneNumber">Phone Number</option>
+            </select>
+        </div>
+
+        <!-- Search input field with keyup event -->
+        <input type="text" name="searchString" id="searchString" class="form-control mr-2" placeholder="Enter search term..." value="@ViewData["CurrentFilter"]" onkeyup="performSearch()" />
+
+        <!-- Search button -->
+        <div class="input-group-append">
+            <button class="btn btn-primary lh-4 m-1" type="button" onclick="performSearch()">Search</button>
+        </div>
+    </div>
+</div>
+
+<!-- Driver List Table -->
+<div id="driverList">
+    <table class="table table-hover table-bordered">
+        <thead class="thead-dark">
+        <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Phone Number</th>
+            <th>Price P Km</th>
+            <th>Status</th> <!-- Updated -->
+            <th>Payment Freq</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        @if (!Model.Any())
+        {
+        <tr>
+            <td colspan="8" class="text-center">No drivers found.</td>
+        </tr>
+        }
+        else
+        {
+        @foreach (var driver in Model)
+        {
+        <tr>
+            <td>@driver.FirstName</td>
+            <td>@driver.LastName</td>
+            <td>@driver.Email</td>
+            <td>@driver.PhoneNumber</td>
+            <td>@driver.PricePerKm</td>
+            <td>
+                <!-- Custom green/red status display for availability -->
+                <span style="color:@(driver.IsAvailable ? "green" : "red"); font-weight: bold;">
+                            @(driver.IsAvailable ? "Available" : "Unavailable")
+                        </span>
+            </td>
+            <td>@driver.PaymentFreq</td>
+            <td>
+                <a asp-action="EditDriver" asp-route-id="@driver.Id" class="btn btn-warning btn-sm">Edit</a>
+                <form asp-action="DeleteDriver" asp-route-id="@driver.Id" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this driver?');">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+        }
+        
+        }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+<script type="text/javascript">
+    function performSearch() {
+        // Get search term and search criteria
+        var searchString = document.getElementById("searchString").value;
+        var searchCriteria = document.getElementById("searchCriteria").value;
+
+        // Send AJAX request to the server
+        $.ajax({
+            url: '@Url.Action("SearchDrivers", "Admin")', // Correct the controller reference to "Admin"
+            type: 'GET',
+            data: { searchString: searchString, searchCriteria: searchCriteria },
+            success: function (result) {
+                // Update the driver list dynamically with the returned HTML
+                $('#driverList').html(result);
+            },
+            error: function () {
+                alert("Error while searching.");
+            }
+        });
+    }
+</script>
+}

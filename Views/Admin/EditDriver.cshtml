@@ -1,15 +1,15 @@
 ﻿@model logirack.Models.ViewModel.EditDriverViewModel
 
 @{
-    ViewBag.Title = "Edit Driver";
-    Layout = "_Layout";
+ViewBag.Title = "Edit Driver";
+Layout = "_Layout";
 }
 
 <h2>Edit Driver</h2>
 
 @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-<form asp-action="EditDriver" method="post">
+<form asp-action="EditDriver" method="post" class="w-50">
     @Html.HiddenFor(model => model.id)
 
     <div class="form-group">
@@ -37,20 +37,23 @@
         <input asp-for="PricePerKm" class="form-control" />
         <span asp-validation-for="PricePerKm" class="text-danger"></span>
     </div>
-    <div class="form-group">
+    <div class="form-group mb-2">
         <label asp-for="PaymentFreq"></label>
         <select asp-for="PaymentFreq" class="form-control" asp-items="Html.GetEnumSelectList<logirack.Models.PaymentFreq>()"></select>
         <span asp-validation-for="PaymentFreq" class="text-danger"></span>
     </div>
-    <div class="form-group">
-        <label asp-for="IsAvailable"></label>
-        <input asp-for="IsAvailable" class="form-control" type="checkbox" />
+
+    <!-- Checkbox for IsAvailable -->
+    <div class="form-check">
+        <input asp-for="IsAvailable" class="form-check-input" type="checkbox" />
+        <label asp-for="IsAvailable" class="form-check-label"></label>
         <span asp-validation-for="IsAvailable" class="text-danger"></span>
     </div>
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-    <a asp-action="DriverList" class="btn btn-secondary">Cancel</a>
+
+    <button type="submit" class="btn btn-primary mt-3">update Changes</button>
+    <a asp-action="DriverList" class="btn btn-secondary mt-3">Cancel</a>
 </form>
 
 @section Scripts {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
