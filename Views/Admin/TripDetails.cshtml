@@ -1,0 +1,111 @@
+﻿@model logirack.Models.ViewModel.TripDetailsViewModel
+
+@{
+    ViewData["Title"] = "Trip Details";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Ensure this path is correct
+}
+
+<div class="container my-4">
+    <div class="card">
+        <!-- Header -->
+        <div class="card-header">
+            <h1 class="h4">Trip Details #@Model.TripId</h1>
+        </div>
+
+        <div class="card-body">
+            <!-- Customer Information -->
+            <div class="mb-4">
+                <h2 class="h5">Customer Information</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> @Model.CustomerName</p>
+                        <p><strong>Email:</strong> @Model.CustomerEmail</p>
+                        <p><strong>Phone:</strong> @Model.CustomerPhone</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trip Information -->
+            <div class="mb-4">
+                <h2 class="h5">Trip Information</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Pickup</h5>
+                        <p>City: @Model.FromCity</p>
+                        <p>Address: @Model.FromAddress</p>
+                        <p>Zip: @Model.FromZipCode</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Delivery</h5>
+                        <p>City: @Model.ToCity</p>
+                        <p>Address: @Model.ToAddress</p>
+                        <p>Zip: @Model.ToZipCode</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cargo Details -->
+            <div class="mb-4">
+                <h2 class="h5">Cargo Details</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Weight:</strong> @Model.Weight kg</p>
+                        <p><strong>Volume:</strong> @Model.Volume m³</p>
+                        <p><strong>Distance:</strong> @Model.Distance km</p>
+                        <p><strong>Goods Type:</strong> @Model.GoodTypes</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Pickup Time:</strong> @Model.PickupDate.ToString("g")</p>
+                        <p><strong>Estimated Price:</strong> @Model.EstimatedPrice NOK</p>
+                        <p><strong>Status:</strong> 
+                            <span class="badge 
+                                @(Model.Status == TripStatus.Requested ? "badge-warning" : 
+                                Model.Status == TripStatus.isApproved ? "badge-success" : 
+                                "badge-danger")">
+                                @Model.Status
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- Admin Actions -->
+            <div class="mb-4">
+                <h2 class="h5">Admin Actions</h2>
+                <div class="row">
+                    <div class="col-md-12">
+                        @if (Model.Status == TripStatus.Requested)
+                        {
+                        <form asp-action="ReviewTrip" method="post" class="mb-3">
+                            <input type="hidden" name="tripId" value="@Model.TripId" />
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Admin Notes</label>
+                                <textarea name="adminNotes" rows="3"
+                                          class="form-control"></textarea>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="submit" name="isApproved" value="true"
+                                        class="btn btn-success me-2">
+                                    Approve Trip
+                                </button>
+                                <button type="submit" name="isApproved" value="false"
+                                        class="btn btn-danger">
+                                    Reject Trip
+                                </button>
+                            </div>
+                        </form>
+                        }
+                        @if (Model.Status == TripStatus.isApproved)
+                        {
+                        <a href="@Url.Action("SetPrice", new { id = Model.TripId })"
+                           class="btn btn-primary">
+                            Set Final Price
+                        </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
