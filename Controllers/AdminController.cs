@@ -397,5 +397,52 @@ public class AdminController : Controller
         return RedirectToAction(nameof(TripRequests));
 
     }
-    
+
+    [HttpGet]
+    public async Task<IActionResult> SetPrice(int id)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.Customer)
+            .FirstOrDefaultAsync(t => t.Id == id);
+        if (trip==null)
+        {
+            return NotFound();
+        }
+
+        var viewModel = new SetPriceViewModel
+        {
+            TripId = trip.Id,
+            CustomerName = trip.Customer.FirstName + " " + trip.Customer.LastName,
+            FromCity = trip.FromCity,
+            ToCity = trip.ToCity,
+            Distance = trip.Distance,
+            Weight = trip.Weight,
+            EstimatedPrice = trip.EstimatedPrice
+        };
+        return View(viewModel);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetPrice(SetPriceViewModel model)
+    {
+        if (ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var trip = await _db.Trips.FindAsync(model.TripId);
+        var admin = await _userManager.GetUserAsync(User) as Admin;
+        if (admin == null)
+        {
+            return Forbid();
+        }
+
+        trip.AdminPrice = model.AdminPrice;
+        trip.Status = TripStatus.PriceSet;
+        trip.UpdatedAt = DateTime.Now;
+        trip.Notes = $"Price Justification :{model.PriceJustification}";
+        await _db.SaveChangesAsync();
+        return RedirectToAction(nameof(TripDetails),new{id = model.TripId});
+    }
 }
