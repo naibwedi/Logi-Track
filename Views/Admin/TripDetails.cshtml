@@ -68,39 +68,45 @@
                     </div>
                 </div>
             </div>
-            <!-- Admin Actions -->
             <div class="mb-4">
                 <h2 class="h5">Admin Actions</h2>
                 <div class="row">
                     <div class="col-md-12">
                         @if (Model.Status == TripStatus.Requested)
                         {
-                            <form asp-controller="Admin" 
-                                  asp-action="ReviewTrip" 
-                                  method="post">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="tId" value="@Model.TripId" />  @* Changed from tripId to tId to match action parameter *@
-                                <div class="btn-group">
-                                    <button type="submit" 
-                                            name="isApproved" 
-                                            value="true" 
-                                            class="btn btn-success me-2">
-                                        Approve Trip
-                                    </button>
-                                    <button type="submit" 
-                                            name="isApproved" 
-                                            value="false" 
-                                            class="btn btn-danger">
-                                        Reject Trip
-                                    </button>
-                                </div>
-                            </form>
+                        <form asp-controller="Admin"
+                              asp-action="ReviewTrip"
+                              method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="tId" value="@Model.TripId" />
+                            <div class="btn-group">
+                                <button type="submit"
+                                        name="isApproved"
+                                        value="true"
+                                        class="btn btn-success me-2">
+                                    Approve Trip
+                                </button>
+                                <button type="submit"
+                                        name="isApproved"
+                                        value="false"
+                                        class="btn btn-danger">
+                                    Reject Trip
+                                </button>
+                            </div>
+                        </form>
                         }
-                        @if (Model.Status == TripStatus.ApprovedByAdmin) 
+                        @if (Model.Status == TripStatus.ApprovedByAdmin)
                         {
                         <a href="@Url.Action("SetPrice", new { id = Model.TripId })"
                            class="btn btn-primary">
                             Set Final Price
+                        </a>
+                        }
+                        @if (Model.Status == TripStatus.ApprovedByCustomer)
+                        {
+                        <a href="@Url.Action("AssignTrip", "Admin", new { id = Model.TripId })"
+                           class="btn btn-primary">
+                            Assign to Driver
                         </a>
                         }
                     </div>
