@@ -103,11 +103,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         /// amind 1-M AAL
         /// </summary>
         
-        mbuilder.Entity<Admin>()
-            .HasMany(a=>a.ManagedTrips)
-            .WithOne(t => t.Admin)
-            .HasForeignKey(trip => trip.AdminId);
-
+        // mbuilder.Entity<Admin>()
+        //     .HasMany(a=>a.ManagedTrips)
+        //     .WithOne(t => t.Admin)
+        //     .HasForeignKey(trip => trip.AdminId);
+        mbuilder.Entity<Trip>()
+            .HasOne(t => t.Admin)
+            .WithMany(a => a.ManagedTrips)
+            .HasForeignKey(t => t.AdminId)
+            .IsRequired(false);
         mbuilder.Entity<Admin>()
             .HasMany(a => a.AssignedDriverT)
             .WithOne(dt => dt.Admin)

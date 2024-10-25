@@ -1,0 +1,112 @@
+﻿@model logirack.Models.ViewModel.SubmitTripViewModel
+
+@{
+    ViewData["Title"] = "Create Trip";
+}
+
+<h2>Create a New Trip</h2>
+
+<form asp-action="CreateTrip" method="post">
+    @Html.AntiForgeryToken()
+    
+    <div class="form-group">
+        <label asp-for="FromAddress"></label>
+        <input asp-for="FromAddress" class="form-control" />
+        <span asp-validation-for="FromAddress" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="FromCity"></label>
+        <input asp-for="FromCity" class="form-control" />
+        <span asp-validation-for="FromCity" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="FromZipCode"></label>
+        <input asp-for="FromZipCode" class="form-control" />
+        <span asp-validation-for="FromZipCode" class="text-danger"></span>
+    </div>
+
+    <!-- Repeat similar blocks for ToAddress, ToCity, ToZipCode -->
+
+    <div class="form-group">
+        <label asp-for="ToAddress"></label>
+        <input asp-for="ToAddress" class="form-control" />
+        <span asp-validation-for="ToAddress" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="ToCity"></label>
+        <input asp-for="ToCity" class="form-control" />
+        <span asp-validation-for="ToCity" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="ToZipCode"></label>
+        <input asp-for="ToZipCode" class="form-control" />
+        <span asp-validation-for="ToZipCode" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Weight"></label>
+        <input asp-for="Weight" class="form-control" />
+        <span asp-validation-for="Weight" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Volume"></label>
+        <input asp-for="Volume" class="form-control" />
+        <span asp-validation-for="Volume" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Distance"></label>
+        <input asp-for="Distance" class="form-control" />
+        <span asp-validation-for="Distance" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="GoodType"></label>
+        <input asp-for="GoodType" class="form-control" />
+        <span asp-validation-for="GoodType" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="PickupDate">Pickup Date and Time</label>
+        <input asp-for="PickupDate"
+               class="form-control"
+               type="datetime-local"
+               value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")"
+               min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+        <span asp-validation-for="PickupDate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Notes"></label>
+        <textarea asp-for="Notes" class="form-control"></textarea>
+        <span asp-validation-for="Notes" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit Trip Request</button>
+</form>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        $(document).ready(function() {
+            // Set minimum date to current date/time
+            var now = new Date();
+            var localDateTime = now.toISOString().slice(0, 16);
+            $('#PickupDate').attr('min', localDateTime);
+            
+            // Validate selection is in future
+            $('#PickupDate').change(function() {
+                var selectedDate = new Date($(this).val());
+                if (selectedDate <= now) {
+                    alert('Please select a future date and time');
+                    $(this).val(localDateTime);
+                }
+            });
+        });
+    </script>
+}

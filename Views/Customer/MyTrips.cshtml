@@ -1,0 +1,37 @@
+﻿@model IEnumerable<logirack.Models.Trip>
+
+@{
+    ViewData["Title"] = "My Trips";
+}
+
+<h2>My Trips</h2>
+
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Trip ID</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Pickup Date</th>
+        <th>Status</th>
+        <th>Admin Price</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var trip in Model)
+    {
+        <tr>
+            <td>@trip.Id</td>
+            <td>@trip.FromCity</td>
+            <td>@trip.ToCity</td>
+            <td>@trip.PickupTime.ToString("MM/dd/yyyy")</td>
+            <td>@trip.Status.ToString()</td>
+            <td>@(trip.AdminPrice > 0 ? trip.AdminPrice.ToString("C") : "Pending")</td>
+            <td>
+                <a asp-action="TripDetails" asp-route-id="@trip.Id" class="btn btn-info btn-sm">Details</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
