@@ -423,7 +423,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         var admin = await _userManager.GetUserAsync(User) as Admin;
         if (admin == null)
             return Forbid();
-        trip.Status = isApproved ? TripStatus.ApprovedByAdmin : TripStatus.Requested;
+        trip.Status = isApproved ? TripStatus.ApprovedByAdmin : TripStatus.CancelledByAdmin;
         trip.AdminId=admin.Id;
         trip.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
