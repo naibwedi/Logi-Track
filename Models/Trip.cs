@@ -11,9 +11,9 @@ public class Trip
     [Required]
     public string CustomerId { get; set; }
     public Customer Customer { get; set; }
-    [Required]
-    public string AdminId { get; set; }
-    public Admin Admin { get; set; }
+    //[Required]
+    public string? AdminId { get; set; }
+    public Admin? Admin { get; set; }
     [Required]
     [StringLength(100)]
     public string FromCity { get; set; }
@@ -39,11 +39,10 @@ public class Trip
     public string Notes { get; set; }=String.Empty;
     [Required]
     public string GoodsType { get; set; }
+    [DataType(DataType.DateTime)]
     public DateTime PickupTime { get; set; }
     public double EstimatedPrice { get; set; }
     public double AdminPrice { get; set; }
-    public bool IsPrAcceptedBeyCustomer  { get; set; }
-    public bool IsAcceptedBeyAdmin { get; set; }
     public TripStatus Status { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
@@ -56,8 +55,9 @@ public class Trip
 public enum TripStatus
 {
     Requested,
+    ApprovedByAdmin,
     PriceSet,
-    isApproved,
+    ApprovedByCustomer,
     Assigned,
     InProgress,
     Completed,
