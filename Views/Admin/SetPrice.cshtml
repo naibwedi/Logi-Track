@@ -1,0 +1,44 @@
+﻿@model logirack.Models.ViewModel.SetPriceViewModel
+
+@{
+    ViewData["Title"] = "Set Trip Price";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container my-4">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="h4">Set Price for Trip #@Model.TripId</h2>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Trip Details</h5>
+                    <p><strong>Customer:</strong> @Model.CustomerName</p>
+                    <p><strong>Route:</strong> @Model.FromCity → @Model.ToCity</p>
+                    <p><strong>Distance:</strong> @Model.Distance km</p>
+                    <p><strong>Weight:</strong> @Model.Weight kg</p>
+                    <p><strong>Estimated Price:</strong> @Model.EstimatedPrice NOK</p>
+                </div>
+            </div>
+
+            <form asp-action="SetPrice" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="TripId" />
+
+                <div class="form-group mb-3">
+                    <label asp-for="AdminPrice" class="form-label">Final Price (NOK)</label>
+                    <input asp-for="AdminPrice" class="form-control" type="text" required />
+                    <span asp-validation-for="AdminPrice" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Set Price</button>
+                <a asp-action="TripDetails" asp-route-id="@Model.TripId" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+}

@@ -1,30 +1,20 @@
-﻿@model logirack.Models.ViewModel.OrderSuccessViewModel
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Truck Service Order Form</title>
-    <link rel="stylesheet" href="~/css/OrderSuccess.css" />
-</head>
+﻿@model logirack.Models.Trip
 
-<div class="order-success-container">
-    <h2>Order Submitted Successfully</h2>
+@{
+    ViewData["Title"] = "Order Success";
+}
 
-    <p>Thank you, @Model.CustomerName! We have received your order.</p>
-    
-    <p>Here are the details:</p>
+<h2>Thank You!</h2>
+<p>Your trip request has been submitted successfully.</p>
 
-    <ul>
-        <li><strong>Pickup Location:</strong> @Model.PickupLocation</li>
-        <li><strong>Drop-off Location:</strong> @Model.DropofLocation</li>
-        <li><strong>Type of Goods:</strong> @Model.GoodsType</li>
-        <li><strong>Weight:</strong> @Model.Weight kg</li>
-        <li><strong>Pickup Date:</strong> @Model.PickupDate.ToShortDateString()</li>
-        <li><strong>Pickup Time:</strong> @Model.PickupDate</li>
-        <li><strong>Distance:</strong> @Model.Distance km</li>
-        <li><strong>Additional Services:</strong> @Model.AdditionalService</li>
-    </ul>
+<h3>Trip Details:</h3>
+<ul>
+    <li><strong>From:</strong> @Model.FromAddress, @Model.FromCity, @Model.FromZipCode</li>
+    <li><strong>To:</strong> @Model.ToAddress, @Model.ToCity, @Model.ToZipCode</li>
+    <li><strong>Pickup Date:</strong> @Model.PickupTime.ToString("MM/dd/yyyy")</li>
+    <li><strong>Goods Type:</strong> @Model.GoodsType</li>
+    <li><strong>Weight:</strong> @Model.Weight kg</li>
+    <li><strong>Estimated Price:</strong> @Model.EstimatedPrice.ToString("C")</li>
+</ul>
 
-    <p><strong>Estimated Price:</strong> <strong>$@Model.PriceEstimate</strong></p>
-
-    <a href="/" class="btn">Continue to Homepage</a>
-</div>
+<a asp-action="Dashboard" class="btn btn-primary">Back to Dashboard</a>

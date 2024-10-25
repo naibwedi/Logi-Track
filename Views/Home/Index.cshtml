@@ -99,8 +99,8 @@
 <!-- Call to Action Section -->
 <section class="cta">
     <h2>Ready to Optimize Your Fleet with us!</h2>
-    <button class="btn btn-primary cta-button" onclick="window.location.href='/Customer/CustomerForm'">Book Us Today</button>
-    @if (!User.Identity.IsAuthenticated)
+    <button class="btn learn-more" onclick="window.location.href='@Url.Action("Features", "Home")'">Learn More</button>
+    <button class="btn get-started" onclick="window.location.href='@Url.Action("CreateTrip", "Customer")'">Get Started</button>    @if (!User.Identity.IsAuthenticated)
     {
 
 

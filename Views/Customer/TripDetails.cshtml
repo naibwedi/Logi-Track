@@ -1,0 +1,42 @@
+﻿@model logirack.Models.Trip
+
+@{
+    ViewData["Title"] = "Trip Details";
+}
+
+<h2>Trip Details for Trip ID @Model.Id</h2>
+
+<p><strong>From:</strong> @Model.FromAddress, @Model.FromCity, @Model.FromZipCode</p>
+<p><strong>To:</strong> @Model.ToAddress, @Model.ToCity, @Model.ToZipCode</p>
+<p><strong>Pickup Date:</strong> @Model.PickupTime.ToString("MM/dd/yyyy")</p>
+<p><strong>Goods Type:</strong> @Model.GoodsType</p>
+<p><strong>Weight:</strong> @Model.Weight kg</p>
+<p><strong>Volume:</strong> @Model.Volume m³</p>
+<p><strong>Distance:</strong> @Model.Distance km</p>
+<p><strong>Estimated Price:</strong> @Model.EstimatedPrice.ToString("C")</p>
+<p><strong>Admin Price:</strong> @(Model.AdminPrice > 0 ? Model.AdminPrice.ToString("C") : "Pending")</p>
+<p><strong>Status:</strong> @Model.Status.ToString()</p>
+<p><strong>Notes:</strong> @Model.Notes</p>
+
+@if (Model.Status == TripStatus.PriceSet)
+{
+    <form asp-action="RespondToPrice" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="mt-4">
+            <button type="submit" name="approved" value="true" class="btn btn-success">Accept Price</button>
+            <button type="submit" name="approved" value="false" class="btn btn-danger">Reject Price</button>
+        </div>
+    </form>
+}
+
+else if (Model.Status == TripStatus.CancelledByAdmin || Model.Status == TripStatus.CanceledByCustomer)
+{
+    <p>This trip has been cancelled.</p>
+}
+else if (Model.Status == TripStatus.ApprovedByCustomer || Model.Status == TripStatus.Assigned || Model.Status == TripStatus.InProgress || Model.Status == TripStatus.Completed)
+{
+    <p>No further actions are required at this time.</p>
+}
+
+<a href="@Url.Action("MyTrips")" class="btn btn-secondary mt-3">Back to My Trips</a>

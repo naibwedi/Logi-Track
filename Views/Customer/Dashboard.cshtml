@@ -1,0 +1,12 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1>Dashboard</h1>
+
+<p>Welcome, @User.Identity.Name!</p>
+
+<div>
+    <a asp-action="CreateTrip" class="btn btn-primary">Create New Trip</a>
+    <a asp-action="MyTrips" class="btn btn-secondary">View My Trips</a>
+</div>
