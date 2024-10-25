@@ -1,0 +1,83 @@
+﻿@model logirack.Models.ViewModel.AssignTripViewModel
+
+<h2>Assign Trip</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Trip Details</h5>
+        <p>From: @Model.FromCity</p>
+        <p>To: @Model.ToCity</p>
+        <p>Weight: @Model.Weight kg</p>
+        <p>Distance: @Model.Distance km</p>
+    </div>
+</div>
+
+<form asp-controller="Admin" asp-action="AssignTrip" method="post">    <input type="hidden" asp-for="TripId" />
+    <input type="hidden" asp-for="FromCity" />
+    <input type="hidden" asp-for="ToCity" />
+    <input type="hidden" asp-for="Weight" />
+    <input type="hidden" asp-for="Distance" />
+    
+    <div class="form-group">
+        <label asp-for="DriverId">Select Driver</label>
+        <select asp-for="DriverId" class="form-control" id="driverSelect">
+            <option value="">Choose a driver...</option>
+            @foreach (var driver in Model.AvailableDrivers)
+            {
+                <option value="@driver.Id" 
+                        data-price-per-km="@driver.PricePerKm" 
+                        data-name="@driver.FirstName @driver.LastName">
+                    @driver.FirstName @driver.LastName (@driver.Email) - @driver.PricePerKm.ToString("C")/km
+                </option>
+            }
+        </select>
+        <span asp-validation-for="DriverId" class="text-danger"></span>
+    </div>
+
+    <div id="paymentInfo" style="display:none;" class="alert alert-info mt-3">
+        <p>Estimated Payment: <span id="estimatedPayment"></span></p>
+        <p>Based on:</p>
+        <ul>
+            <li>Driver's Rate: <span id="driverRate"></span>/km</li>
+            <li>Trip Distance: @Model.Distance km</li>
+        </ul>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Assign Trip</button>
+    <a asp-action="TripDetails" asp-route-id="@Model.TripId" class="btn btn-secondary">Back to Details</a>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            console.log('Script loaded');
+            
+            $('#driverSelect').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                var pricePerKm = selectedOption.data('price-per-km');
+                var distance = @Model.Distance;
+                
+                if(pricePerKm) {
+                    var totalPayment = pricePerKm * distance;
+                    $('#driverRate').text(pricePerKm.toFixed(2) + ' NOK');
+                    $('#estimatedPayment').text(totalPayment.toFixed(2) + ' NOK');
+                    $('#paymentInfo').show();
+                } else {
+                    $('#paymentInfo').hide();
+                }
+            });
+
+            // Add form submission handler
+            $('form').on('submit', function(e) {
+                console.log('Form submitting...');
+                if (!$('#driverSelect').val()) {
+                    e.preventDefault();
+                    alert('Please select a driver');
+                    return false;
+                }
+            });
+        });
+    </script>
+}

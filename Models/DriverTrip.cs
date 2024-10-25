@@ -13,12 +13,12 @@ public class DriverTrip
     public string DriverId { get; set; }
     public Driver Driver { get; set; }
     [Required]
-    public string AssignedByAdminId { get; set; }
+    public string? AssignedByAdminId { get; set; }
     public Admin Admin { get; set; }
     public double  DriverPayment { get; set; }
     public int? PaymentPeriodId { get; set; }
     public PaymentPeriod? PaymentPeriod { get; set; }
-    public bool IsCompleted { get; set; }
+    public TripStatus Status { get; set; }
     public DateTime? CompletionDate { get; set; }
     public DateTime AssignmentDate { get; set; }
     public DateTime UpdateAt { get; set; }

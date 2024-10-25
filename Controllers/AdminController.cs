@@ -1,4 +1,5 @@
-﻿using logirack.Data;
+﻿using System.Security.Claims;
+using logirack.Data;
 using logirack.Models;
 using logirack.Models.ViewModel;
 using Microsoft.AspNetCore.Authorization;
@@ -45,6 +46,7 @@ public class AdminController : Controller
 /// <param name="searchString"></param>
 /// <param name="searchCriteria"></param>
 /// <returns></returns>
+[HttpGet]
 public IActionResult SearchDrivers(string searchString, string searchCriteria)
 {
     var drivers = from d in _db.Drivers // Changed _context to _db
@@ -504,6 +506,99 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         }
 
         return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> AssignTrip(int id)
+    {
+        _logger.LogInformation($"AssignTrip GET called with id: {id}");
+        var trip = await _db.Trips.Include(t=>t.Customer).FirstOrDefaultAsync(t=>t.Id==id);
+        if (trip==null)
+        {
+            _logger.LogWarning($"Trip not found with id: {id}");
+            return NotFound();
+        }
+        var availableDrivers = await _userManager.GetUsersInRoleAsync("Driver");
+        var drivers = availableDrivers.OfType<Driver>().Where(d=>d.IsAvailable).ToList();
+        _logger.LogInformation($"Found {drivers.Count} available drivers");
+
+        var viewM = new AssignTripViewModel
+        {
+            TripId = trip.Id,
+            FromCity = trip.FromCity,
+            ToCity = trip.ToCity,
+            Weight = trip.Weight,
+            Distance = trip.Distance,
+            AvailableDrivers = drivers,
+        };
+        return View(viewM);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AssignTrip(AssignTripViewModel model)
+    {
+        _logger.LogInformation($"AssignTrip POST called with TripId: {model.TripId}, DriverId: {model.DriverId}");
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("ModelState is invalid");
+            foreach (var modelState in ModelState.Values)
+            {
+                foreach (var error in modelState.Errors)
+                {
+                    _logger.LogWarning($"Validation error: {error.ErrorMessage}");
+                }
+            }
+        }
+
+        try
+        {
+
+            var trip = await _db.Trips.FindAsync(model.TripId);
+            var driver = await _userManager.FindByIdAsync(model.DriverId) as Driver;
+
+            if (trip == null || driver == null)
+            {
+                _logger.LogError($"Trip or Driver not found. TripId: {model.TripId}, DriverId: {model.DriverId}");
+                return NotFound();
+            }
+
+            if (!driver.IsAvailable)
+            {
+                ModelState.AddModelError("DriverId", "this driver is not available");
+                return View(model);
+            }
+
+            _logger.LogInformation($"Creating DriverTrip for Trip: {trip.Id}, Driver: {driver.Email}");
+
+            var driverTrip = new DriverTrip
+            {
+                TripId = model.TripId,
+                Trip = trip,
+                DriverId = driver.Id,
+                Driver = driver,
+                AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                DriverPayment = driver.PricePerKm * trip.Distance,
+                Status = TripStatus.Assigned,
+                AssignmentDate = DateTime.Now,
+                UpdateAt = DateTime.Now
+            };
+            driver.IsAvailable = false;
+            await _userManager.UpdateAsync(driver);
+            _db.DriverTrips.Add(driverTrip);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation($"Successfully created DriverTrip with ID: {driverTrip.Id}");
+            TempData["Success"] = $"Trip Assigned To User {driver.UserName}";
+            return RedirectToAction(nameof(TripRequests));
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError($"Error assigning trip: {ex.Message}");
+            var availableDrivers = await _userManager.GetUsersInRoleAsync("Driver");
+            model.AvailableDrivers=availableDrivers.OfType<Driver>().Where(d => d.IsAvailable).ToList();
+            return View(model);
+        }
+        
     }
     
 
