@@ -378,7 +378,7 @@ public class AdminController : Controller
     /// <returns>Redirects to the TripRequests view after processing.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ReviwTrip(int tId, bool isApproved)
+    public async Task<IActionResult> ReviewTrip(int tId, bool isApproved)
     {
         var trip = await _db.Trips.FindAsync(tId);
         if (trip == null)
@@ -388,7 +388,7 @@ public class AdminController : Controller
         var admin = await _userManager.GetUserAsync(User) as Admin;
         if (admin == null)
             return Forbid();
-        trip.Status = isApproved ? TripStatus.isApproved : TripStatus.Requested;
+        trip.Status = isApproved ? TripStatus.ApprovedByAdmin : TripStatus.Requested;
         trip.AdminId=admin.Id;
         trip.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
@@ -401,6 +401,7 @@ public class AdminController : Controller
     [HttpGet]
     public async Task<IActionResult> SetPrice(int id)
     {
+        
         var trip = await _db.Trips
             .Include(t => t.Customer)
             .FirstOrDefaultAsync(t => t.Id == id);
@@ -421,28 +422,56 @@ public class AdminController : Controller
         };
         return View(viewModel);
     }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetPrice(SetPriceViewModel model)
     {
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
+            foreach (var state in ModelState.Values)
+            {
+                foreach (var error in state.Errors)
+                {
+                    _logger.LogError(error.ErrorMessage);
+                }
+            }
+            
+            var trip = await _db.Trips.Include(t => t.Customer).FirstOrDefaultAsync(t => t.Id == model.TripId);
+
+            if (trip == null)
+            {
+                model.CustomerName = $"{trip.Customer.FirstName} {trip.Customer.LastName}";
+                model.FromCity = trip.FromCity;
+                model.ToCity = trip.ToCity;
+                model.Distance = trip.Distance;
+                model.Weight = trip.Weight;
+                model.EstimatedPrice = trip.EstimatedPrice;
+            } 
             return View(model);
         }
 
-        var trip = await _db.Trips.FindAsync(model.TripId);
-        var admin = await _userManager.GetUserAsync(User) as Admin;
-        if (admin == null)
+        var tripToUpdate = await _db.Trips.FindAsync(model.TripId);
+        if (tripToUpdate == null)
         {
-            return Forbid();
+            return NotFound();
         }
 
-        trip.AdminPrice = model.AdminPrice;
-        trip.Status = TripStatus.PriceSet;
-        trip.UpdatedAt = DateTime.Now;
-        trip.Notes = $"Price Justification :{model.PriceJustification}";
-        await _db.SaveChangesAsync();
-        return RedirectToAction(nameof(TripDetails),new{id = model.TripId});
+        tripToUpdate.AdminPrice = model.AdminPrice;
+        tripToUpdate.Status = TripStatus.PriceSet;
+        tripToUpdate.UpdatedAt = DateTime.Now;
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("", "An error occurred while saving changes.");
+            return View(model);
+        }
+
+        return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
     }
+    
+
 }
