@@ -32,12 +32,12 @@ public class SubmitTripViewModel
     public string ToAddress { get; set; }=string.Empty;
     
     [Required]
-    [StringLength(100 ,MinimumLength = 5 , ErrorMessage ="You must provide at least 5 characters long")]
+    [StringLength(10 ,MinimumLength = 4 , ErrorMessage ="You must provide at least 4 characters long")]
     [Display(Name = "From Zip Code")]
     public string FromZipCode { get; set; }=string.Empty;
 
     [Required]
-    [StringLength(100 ,MinimumLength = 5 , ErrorMessage ="You must provide at least 5 characters long")]
+    [StringLength(10 ,MinimumLength = 4 , ErrorMessage ="You must provide at least 4 characters long")]
     [Display(Name = "To Zip Code")]
     public string ToZipCode { get; set; }=string.Empty;
     [Required]
