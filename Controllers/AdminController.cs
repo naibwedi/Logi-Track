@@ -600,6 +600,107 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         }
         
     }
-    
+
+    [HttpGet]
+    public async Task<IActionResult> AddNewTripByAdmin(int id)
+    {
+        _logger.LogInformation($"CreateTrip GET called with id: {id}");
+        var customer = await _db.Users.OfType<Customer>().ToListAsync();
+        var availableDrivers = await _db.Users.OfType<Driver>().Where(d=>d.IsAvailable).ToListAsync();
+        var model = new CreateTripByAdminViewModel
+        {
+            PickUpTime = DateTime.Now.AddHours(1),
+            Customers = customer,
+            Drivers = availableDrivers,
+        };
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddNewTripByAdmin(CreateTripByAdminViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("ModelState is invalid");
+            model.Customers = await _db.Users
+                .OfType<Customer>()
+                .ToListAsync();
+            
+            model.Drivers = await _db.Users
+                .OfType<Driver>()
+                .Where(d => d.IsAvailable)
+                .ToListAsync();
+
+            return View(model);
+        }
+
+        try
+        {
+            //C trip
+            var trip = new Trip
+            {
+                CustomerId = model.CustomerId,
+                FromCity = model.FromCity,
+                ToCity = model.ToCity,
+                FromAddress = model.FromAddress,
+                FromZipCode = model.FromZipCode,
+                ToAddress = model.ToAddress,
+                ToZipCode = model.ToZipCode,
+                GoodsType = model.GoodsType,
+                Distance = model.Distance,
+                Weight = model.weight,
+                PickupTime = model.PickUpTime,
+                Status = TripStatus.PriceSet,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                AdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            };
+            _db.Trips.Add(trip);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation($"Successfully created Trip with ID: {trip.Id}");
+            //C dt
+            var driver = await _db.Users.OfType<Driver>().FirstOrDefaultAsync(d => d.Id == model.DriverId);
+            if (driver == null)
+            {
+                throw new Exception($"Trip with ID {model.DriverId} not found");
+            }
+
+            var driverTrip = new DriverTrip
+            {
+                TripId = trip.Id,
+                Trip = trip,
+                DriverId = model.DriverId,
+                AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                DriverPayment = driver.PricePerKm * model.Distance,
+                Status = TripStatus.Assigned,
+                AssignmentDate = DateTime.Now,
+                UpdateAt = DateTime.Now
+            };
+            _db.DriverTrips.Add(driverTrip);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation($"Successfully created DriverTrip with ID: {driverTrip.Id}");
+            
+            driver.IsAvailable = false;
+            _db.Users.Update(driver);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation($"Successfully change  Drive status of driver : {driverTrip.Id}");
+            
+            return RedirectToAction(nameof(Dashboard));
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("", "An error occurred while saving changes.");
+            model.Customers = await _db.Users
+                .OfType<Customer>()
+                .ToListAsync();
+            
+            model.Drivers = await _db.Users
+                .OfType<Driver>()
+                .Where(d => d.IsAvailable)
+                .ToListAsync();
+            return View(model);
+        }
+    }
 
 }
