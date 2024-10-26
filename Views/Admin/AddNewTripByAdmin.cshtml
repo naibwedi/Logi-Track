@@ -1,0 +1,153 @@
+﻿@model logirack.Models.ViewModel.CreateTripByAdminViewModel
+
+<div class="container">
+    <h2>Create New Trip</h2>
+
+    <form asp-controller="Admin" asp-action="AddNewTripByAdmin" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label asp-for="CustomerId" class="control-label">Customer</label>
+                    <select asp-for="CustomerId" class="form-control">
+                        <option value="">Select a customer...</option>
+                        @foreach (var customer in Model.Customers)
+                        {
+                        <option value="@customer.Id">
+                            @customer.FirstName @customer.LastName (@customer.Email)
+                        </option>
+                        }
+                    </select>
+                    <span asp-validation-for="CustomerId" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="DriverId" class="control-label">Driver</label>
+                    <select asp-for="DriverId" class="form-control">
+                        <option value="">Select a driver...</option>
+                        @foreach (var driver in Model.Drivers)
+                        {
+                        <option value="@driver.Id" data-price-per-km="@driver.PricePerKm">
+                            @driver.FirstName @driver.LastName (@driver.Email) - @driver.PricePerKm.ToString("C")/km
+                        </option>
+                        }
+                    </select>
+                    <span asp-validation-for="DriverId" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label asp-for="Distance" class="control-label">Distance (km)</label>
+                    <input asp-for="Distance" class="form-control" type="number" step="0.1" />
+                    <span asp-validation-for="Distance" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="weight" class="control-label">Weight (kg)</label>
+                    <input asp-for="weight" class="form-control" type="number" step="0.1" />
+                    <span asp-validation-for="weight" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <!-- From Location Details -->
+                <h4>Pickup Location</h4>
+                <div class="form-group mb-3">
+                    <label asp-for="FromCity" class="control-label">From City</label>
+                    <input asp-for="FromCity" class="form-control" />
+                    <span asp-validation-for="FromCity" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="FromAddress" class="control-label">From Address</label>
+                    <input asp-for="FromAddress" class="form-control" />
+                    <span asp-validation-for="FromAddress" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="FromZipCode" class="control-label">From Zip Code</label>
+                    <input asp-for="FromZipCode" class="form-control" />
+                    <span asp-validation-for="FromZipCode" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <!-- To Location Details -->
+                <h4>Delivery Location</h4>
+                <div class="form-group mb-3">
+                    <label asp-for="ToCity" class="control-label">To City</label>
+                    <input asp-for="ToCity" class="form-control" />
+                    <span asp-validation-for="ToCity" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="ToAddress" class="control-label">To Address</label>
+                    <input asp-for="ToAddress" class="form-control" />
+                    <span asp-validation-for="ToAddress" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="ToZipCode" class="control-label">To Zip Code</label>
+                    <input asp-for="ToZipCode" class="form-control" />
+                    <span asp-validation-for="ToZipCode" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label asp-for="GoodsType" class="control-label">Goods Type</label>
+                    <input asp-for="GoodsType" class="form-control" />
+                    <span asp-validation-for="GoodsType" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label asp-for="PickUpTime" class="control-label">Pickup Time</label>
+                    <input asp-for="PickUpTime" class="form-control" type="datetime-local" />
+                    <span asp-validation-for="PickUpTime" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="alert alert-info payment-info" style="display: none;">
+            <p>Estimated Driver Payment: <span class="estimated-payment"></span></p>
+        </div>
+
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Create Trip</button>
+            <a asp-action="TripRequests" class="btn btn-secondary">Back to Trips</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+<script>
+    $(document).ready(function() {
+        function updatePaymentEstimate() {
+            var selectedDriver = $('#DriverId option:selected');
+            var pricePerKm = selectedDriver.data('price-per-km');
+            var distance = $('#Distance').val();
+
+            if (pricePerKm && distance) {
+                var totalPayment = pricePerKm * distance;
+                $('.estimated-payment').text(totalPayment.toFixed(2) + ' NOK');
+                $('.payment-info').show();
+            } else {
+                $('.payment-info').hide();
+            }
+        }
+
+        $('#DriverId, #Distance').change(updatePaymentEstimate);
+    });
+</script>
+}
