@@ -158,6 +158,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         }
         return View(model);
     }
+    
 
     /// <summary>
     /// Displays a list of all Driver users.

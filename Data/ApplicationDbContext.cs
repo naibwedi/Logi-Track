@@ -80,10 +80,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithOne(dt => dt.Driver)
             .HasForeignKey(dt => dt.DriverId);
         
-        mbuilder.Entity<Driver>()
-            .HasMany(driver => driver.PaymentPeriods)
-            .WithOne(paymentP => paymentP.Driver)
-            .HasForeignKey(paymentP => paymentP.DriverID);
+        // mbuilder.Entity<Driver>()
+        //     .HasMany(driver => driver.PaymentPeriods)
+        //     .WithOne(paymentP => paymentP.Driver)
+        //     .HasForeignKey(paymentP => paymentP.DriverID);
         
         mbuilder.Entity<Driver>()
             .HasOne(d => d.PermanentAddress)
@@ -143,9 +143,28 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         
         //Payment Period
         mbuilder.Entity<PaymentPeriod>()
-            .HasOne(pp=>pp.Payment)
+            .HasMany(pp => pp.Payments)
             .WithOne(p=>p.PaymentPeriod)
-            .HasForeignKey<Payment>(p=>p.PaymentPeriodId);
+            .HasForeignKey(p=>p.PaymentPeriodId);
+ 
+
+        //----------------------------------||
+        // Payment to Driver                ||
+        //----------------------------------||
+
+        mbuilder.Entity<Payment>()
+            .HasOne(p => p.Driver)
+            .WithMany(d => d.Payments)
+            .HasForeignKey(p => p.DriverId);
+
+        //----------------------------------||
+        // Payment to Admin (ProcByAdmin)    ||
+        //----------------------------------||
+
+        mbuilder.Entity<Payment>()
+            .HasOne(p => p.ProcByAdmin)
+            .WithMany(a => a.ProcessedPayments)
+            .HasForeignKey(p => p.ProcByAdminID);
         
     }
 }

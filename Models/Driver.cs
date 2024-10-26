@@ -21,5 +21,5 @@ public class Driver : ApplicationUser
     public List<PaymentPeriod> PaymentPeriods { get; set; }
     public Address PermanentAddress { get; set; } 
     public Location CurrentLocation { get; set; }
-    
+    public IEnumerable<Payment>? Payments { get; set; }
 }

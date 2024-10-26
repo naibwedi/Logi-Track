@@ -13,7 +13,7 @@ public class AssignTripViewModel
     
     [Required(ErrorMessage = "please select a driver")]
     public string DriverId { get; set; }
-    
-    public List<Driver> AvailableDrivers { get; set; }
-    
+
+    public List<Driver> AvailableDrivers { get; set; } = new List<Driver>();
+
 }
