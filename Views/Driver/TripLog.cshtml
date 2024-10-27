@@ -1,0 +1,43 @@
+﻿@model IEnumerable<logirack.Models.ViewModel.TripDetailsViewModel>
+
+<h2>Driver Trip Log</h2>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>From City</th>
+        <th>To City</th>
+        <th>Distance (km)</th>
+        <th>Weight (kg)</th>
+        <th>Pickup Date</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var trip in Model)
+    {
+        <tr>
+            <td>@trip.FromCity</td>
+            <td>@trip.ToCity</td>
+            <td>@trip.Distance</td>
+            <td>@trip.Weight</td>
+            <td>@trip.PickupDate.ToString("g")</td>
+            <td>@trip.Status</td>
+            <td>
+                <form asp-action="EndTrip" method="post">
+                    <input type="hidden" name="tripId" value="@trip.TripId"/>
+                    <button type="submit" class="btn btn-primary">End Trip</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
