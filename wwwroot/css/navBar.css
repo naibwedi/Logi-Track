@@ -1,34 +1,48 @@
-﻿.body {
+﻿/* General Body Styling */
+body {
     width: 100%;
     background-color: #000;
+    color: #fff; /* Added for contrast against dark background */
+    margin: 0; /* Removes default margin for a cleaner look */
 }
 
+/* Navbar Styling */
 .navbar-nav {
-    
-    
-    
     display: flex;
     align-items: center;
     gap: 20px;
 }
 
-/* Styling for Admin navbar */
+/* Admin Dashboard Styling */
 .admin-dashboard a {
     font-style: italic;
-    font-size: 2rem; 
+    font-size: 1.5rem; /* Adjusted for better responsiveness */
     font-weight: bold;
-    padding: 5px 15px;
-    line-height: 1; 
-    margin-right: 50px;
+    padding: 10px 20px; /* Increased padding for easier click targets */
+    line-height: 1.2; /* Slightly adjusted for better text spacing */
+    margin-right: 20px; /* Reduced margin for balanced spacing */
+    color: #ffc107; /* Custom color for differentiation */
+    text-decoration: none; /* Removes underline for cleaner look */
+    border-radius: 5px; /* Soft corners */
 }
 
-/* Styling for Driver navbar */
+/* Driver Dashboard Styling */
 .driver-dashboard a {
     font-style: italic;
-    font-size: 2rem; 
+    font-size: 1.5rem;
     font-weight: bold;
-    padding: 5px 15px;
-    line-height: 1; 
-    margin-right: 50px;
+    padding: 10px 20px;
+    line-height: 1.2;
+    margin-right: 20px;
+    color: #17a2b8; /* Custom color for differentiation */
+    text-decoration: none;
+    border-radius: 5px;
 }
-    
+
+/* Hover Effects */
+.admin-dashboard a:hover,
+.driver-dashboard a:hover {
+    background-color: rgba(255, 255, 255, 0.1); /* Subtle hover background */
+    color: #fff; /* White text on hover for contrast */
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+}
