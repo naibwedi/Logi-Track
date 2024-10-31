@@ -12,49 +12,47 @@
 <header>
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
         <div class="container-fluid">
-            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Logirack</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    @if (User.IsInRole("Admin"))
-                    {
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-controller="Admin" asp-action="Dashboard">Admin Dashboard</a>
-                    </li>
+            <!-- Left-aligned Admin Dashboard -->
+            <div class="d-flex">
+                @if (User.IsInRole("Admin"))
+                {
+                <a class="nav-link text-dark" asp-controller="Admin" asp-action="Dashboard">Admin Dashboard</a>
+                }
+            </div>
 
-                    <!-- Driver Management Dropdown -->
+            <!-- Center-aligned Navbar Items -->
+            <div class="collapse navbar-collapse justify-content-center">
+                <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="driverManagementDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Driver Management
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="driverManagementDropdown">
-                            <li><a class="dropdown-item" asp-controller="Admin" asp-action="DriverList">Driver List</a></li>
+                            <li><a class="dropdown-item" asp-controller="Admin" asp-action="DriverManagment">Driver List</a></li>
                             <li><a class="dropdown-item" asp-controller="Admin" asp-action="CreateDriver">Create Driver</a></li>
                         </ul>
                     </li>
-
-                    <!-- Add New Trip Dropdown -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="addNewTripDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Add New Trip
+                            Trip Managment
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="addNewTripDropdown">
+                            <li><a class="dropdown-item" asp-controller="Admin" asp-action="AddNewTripByAdmin">Add new Trip</a></li>
                             <li><a class="dropdown-item" asp-controller="Admin" asp-action="TripDetails">Trip Details</a></li>
                             <li><a class="dropdown-item" asp-controller="Admin" asp-action="TripRequests">Trip Requests</a></li>
                         </ul>
                     </li>
-
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="" asp-action="">Invoice Generation</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="" asp-action="">Payment Management</a>
                     </li>
-                    }
                 </ul>
+            </div>
+
+            <!-- Right-aligned Logout -->
+            <div class="d-flex">
                 <partial name="_LoginPartial" />
             </div>
         </div>
