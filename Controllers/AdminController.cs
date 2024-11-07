@@ -655,6 +655,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 Status = TripStatus.PriceSet,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
+                AdminPrice = model.Price,
                 AdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)
             };
             _db.Trips.Add(trip);
