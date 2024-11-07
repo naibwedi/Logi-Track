@@ -115,11 +115,13 @@
                 </div>
             </div>
         </div>
-        
 
-        <div class="alert alert-info payment-info" style="display: none;">
-            <p>Estimated Driver Payment: <span class="estimated-payment"></span></p>
-        </div>
+
+        <div class="form-group">
+            <label asp-for="Price" class="control-label">Admin Price</label>
+            <input asp-for="Price" class="form-control" />
+            <span asp-validation-for="Price" class="text-danger"></span>
+            </div>
 
         <div class="form-group">
             <button type="submit" class="btn btn-primary">Create Trip</button>
@@ -128,26 +130,3 @@
     </form>
 </div>
 
-@section Scripts {
-@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-
-<script>
-    $(document).ready(function() {
-        function updatePaymentEstimate() {
-            var selectedDriver = $('#DriverId option:selected');
-            var pricePerKm = selectedDriver.data('price-per-km');
-            var distance = $('#Distance').val();
-
-            if (pricePerKm && distance) {
-                var totalPayment = pricePerKm * distance;
-                $('.estimated-payment').text(totalPayment.toFixed(2) + ' NOK');
-                $('.payment-info').show();
-            } else {
-                $('.payment-info').hide();
-            }
-        }
-
-        $('#DriverId, #Distance').change(updatePaymentEstimate);
-    });
-</script>
-}
