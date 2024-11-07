@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 using logirack.Data;
 using logirack.Models;
 using logirack.Models.ViewModel;
-namespace logirack.Services;
+using logirack.Services;
+namespace logirack.Controllers;
 
 
 [Authorize(Roles = "Driver")]
@@ -20,7 +21,8 @@ public class DriverController : Controller
     private readonly ILogger<DriverController> _logger;
 
     // Constructor to inject PasswordService
-    public DriverController(ApplicationDbContext db, UserManager<ApplicationUser> userManager, PasswordService passwordService, ILogger<DriverController> logger)
+    public DriverController(ApplicationDbContext db, UserManager<ApplicationUser> userManager,
+        PasswordService passwordService, ILogger<DriverController> logger)
     {
         _db = db;
         _passwordService = passwordService;
@@ -32,8 +34,8 @@ public class DriverController : Controller
     {
         return View();
     }
-    
-    
+
+
     // Action to show the driver their assigned trips
     [HttpGet]
     public async Task<IActionResult> TripLog()
@@ -42,7 +44,7 @@ public class DriverController : Controller
 
         var trips = await _db.DriverTrips
             .Include(dt => dt.Trip)
-            .Where(dt => dt.DriverId == driverId && dt.Status == TripStatus.Assigned)
+            .Where(dt => dt.DriverId == driverId)
             .Select(dt => new TripDetailsViewModel
             {
                 TripId = dt.Trip.Id,
@@ -51,12 +53,38 @@ public class DriverController : Controller
                 Distance = dt.Trip.Distance,
                 Weight = dt.Trip.Weight,
                 PickupDate = dt.Trip.PickupTime,
-                Status = dt.Trip.Status
+                Status = dt.Trip.Status,
+                AdminPrice = dt.Trip.AdminPrice
             })
             .ToListAsync();
 
         return View(trips);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> CurrentTrips()
+    {
+        var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var currentTrips = await _db.DriverTrips
+            .Include(dt => dt.Trip)
+            .Where(dt => dt.DriverId == driverId && dt.Status == TripStatus.Assigned) // Show only assigned trips
+            .Select(dt => new TripDetailsViewModel
+            {
+                TripId = dt.Trip.Id,
+                FromCity = dt.Trip.FromCity,
+                ToCity = dt.Trip.ToCity,
+                Distance = dt.Trip.Distance,
+                Weight = dt.Trip.Weight,
+                PickupDate = dt.Trip.PickupTime,
+                Status = dt.Trip.Status,
+                AdminPrice = dt.Trip.AdminPrice
+            })
+            .ToListAsync();
+
+        return View(currentTrips);
+    }
+
 
     // Action to allow the driver to mark a trip as completed
     [HttpPost]
@@ -75,23 +103,12 @@ public class DriverController : Controller
         }
 
         driverTrip.Status = TripStatus.Completed;
+        driverTrip.Trip.Status = TripStatus.Completed; // Set trip status to completed as well
         driverTrip.UpdateAt = DateTime.Now;
-        driverTrip.Driver.IsAvailable = true;
+        driverTrip.Driver.IsAvailable = true; // Mark driver as available
 
         await _db.SaveChangesAsync();
         TempData["Success"] = "Trip has been marked as completed.";
-        return RedirectToAction(nameof(TripLog));
-    }
-    
-
-    // Example action to demonstrate usage of PasswordService
-    public IActionResult GenerateDriverPassword()
-    {
-        // Use PasswordService to generate a password
-        string generatedPassword = _passwordService.GeneratePassword();
-        _logger.LogInformation("Generated password for driver: {Password}", generatedPassword);
-
-        ViewBag.GeneratedPassword = generatedPassword; // Pass the generated password to the view
-        return View();
+        return RedirectToAction(nameof(CurrentTrips));
     }
 }

@@ -1,6 +1,6 @@
 ﻿@model IEnumerable<logirack.Models.ViewModel.TripDetailsViewModel>
 
-<h2>Your Trip Log</h2>
+<h2>Current Trips</h2>
 
 <table class="table">
     <thead>
@@ -12,7 +12,7 @@
         <th>Weight (kg)</th>
         <th>Pickup Date</th>
         <th>Status</th>
-        <th>Payment (Admin Price)</th>
+        <th>Actions</th>
     </tr>
     </thead>
     <tbody>
@@ -26,8 +26,20 @@
             <td>@trip.Weight</td>
             <td>@trip.PickupDate.ToString("dd MMM yyyy")</td>
             <td>@trip.Status</td>
-            <td>@trip.AdminPrice.ToString("C")</td>
+            <td>
+                <form asp-action="EndTrip" method="post">
+                    <input type="hidden" name="tripId" value="@trip.TripId" />
+                    <button type="submit" class="btn btn-primary">
+                        End Trip <!-- This adds the text inside the button -->
+                    </button>
+                </form>
+            </td>
         </tr>
     }
     </tbody>
 </table>
+
+@if (!Model.Any())
+{
+    <p>You currently have no assigned trips.</p>
+}
