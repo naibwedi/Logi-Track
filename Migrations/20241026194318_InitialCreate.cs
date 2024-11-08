@@ -251,22 +251,21 @@ namespace logirack.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    DriverID = table.Column<string>(type: "TEXT", nullable: false),
                     StartDate = table.Column<DateTime>(type: "TEXT", nullable: false),
                     EndDate = table.Column<DateTime>(type: "TEXT", nullable: false),
                     PaymentFreq = table.Column<int>(type: "INTEGER", nullable: false),
                     Total = table.Column<double>(type: "REAL", nullable: false),
-                    Status = table.Column<int>(type: "INTEGER", nullable: false)
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    DriverId = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PaymentPeriods", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PaymentPeriods_AspNetUsers_DriverID",
-                        column: x => x.DriverID,
+                        name: "FK_PaymentPeriods_AspNetUsers_DriverId",
+                        column: x => x.DriverId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -276,7 +275,7 @@ namespace logirack.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     CustomerId = table.Column<string>(type: "TEXT", nullable: false),
-                    AdminId = table.Column<string>(type: "TEXT", nullable: false),
+                    AdminId = table.Column<string>(type: "TEXT", nullable: true),
                     FromCity = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     ToCity = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     FromAddress = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
@@ -291,8 +290,6 @@ namespace logirack.Migrations
                     PickupTime = table.Column<DateTime>(type: "TEXT", nullable: false),
                     EstimatedPrice = table.Column<double>(type: "REAL", nullable: false),
                     AdminPrice = table.Column<double>(type: "REAL", nullable: false),
-                    IsPrAcceptedBeyCustomer = table.Column<bool>(type: "INTEGER", nullable: false),
-                    IsAcceptedBeyAdmin = table.Column<bool>(type: "INTEGER", nullable: false),
                     Status = table.Column<int>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
@@ -304,8 +301,7 @@ namespace logirack.Migrations
                         name: "FK_Trips_AspNetUsers_AdminId",
                         column: x => x.AdminId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Trips_AspNetUsers_CustomerId",
                         column: x => x.CustomerId,
@@ -321,6 +317,7 @@ namespace logirack.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     PaymentPeriodId = table.Column<int>(type: "INTEGER", nullable: false),
+                    DriverId = table.Column<string>(type: "TEXT", nullable: false),
                     Amount = table.Column<double>(type: "REAL", nullable: false),
                     PaymentDate = table.Column<DateTime>(type: "TEXT", nullable: false),
                     Status = table.Column<int>(type: "INTEGER", nullable: false),
@@ -329,6 +326,12 @@ namespace logirack.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Payments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Payments_AspNetUsers_DriverId",
+                        column: x => x.DriverId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Payments_AspNetUsers_ProcByAdminID",
                         column: x => x.ProcByAdminID,
@@ -354,7 +357,7 @@ namespace logirack.Migrations
                     AssignedByAdminId = table.Column<string>(type: "TEXT", nullable: false),
                     DriverPayment = table.Column<double>(type: "REAL", nullable: false),
                     PaymentPeriodId = table.Column<int>(type: "INTEGER", nullable: true),
-                    IsCompleted = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
                     CompletionDate = table.Column<DateTime>(type: "TEXT", nullable: true),
                     AssignmentDate = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdateAt = table.Column<DateTime>(type: "TEXT", nullable: false)
@@ -468,15 +471,19 @@ namespace logirack.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaymentPeriods_DriverID",
+                name: "IX_PaymentPeriods_DriverId",
                 table: "PaymentPeriods",
-                column: "DriverID");
+                column: "DriverId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_DriverId",
+                table: "Payments",
+                column: "DriverId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_PaymentPeriodId",
                 table: "Payments",
-                column: "PaymentPeriodId",
-                unique: true);
+                column: "PaymentPeriodId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_ProcByAdminID",

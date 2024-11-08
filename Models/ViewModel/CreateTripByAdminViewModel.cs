@@ -28,4 +28,7 @@ public class CreateTripByAdminViewModel
     public string ToAddress { get; set; }
     public string ToZipCode { get; set; }
     public string GoodsType { get; set; }
+    [Required]  
+    [Range(100, double.MaxValue, ErrorMessage = "Price must be greater than 100nok")]
+    public double Price { get; set; }
 }

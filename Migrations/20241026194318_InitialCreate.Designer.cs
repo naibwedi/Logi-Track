@@ -11,7 +11,7 @@ using logirack.Data;
 namespace logirack.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241022135846_InitialCreate")]
+    [Migration("20241026194318_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -346,10 +346,10 @@ namespace logirack.Migrations
                     b.Property<double>("DriverPayment")
                         .HasColumnType("REAL");
 
-                    b.Property<bool>("IsCompleted")
+                    b.Property<int?>("PaymentPeriodId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("PaymentPeriodId")
+                    b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("TripId")
@@ -420,6 +420,10 @@ namespace logirack.Migrations
                     b.Property<double>("Amount")
                         .HasColumnType("REAL");
 
+                    b.Property<string>("DriverId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("TEXT");
 
@@ -435,8 +439,9 @@ namespace logirack.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PaymentPeriodId")
-                        .IsUnique();
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("PaymentPeriodId");
 
                     b.HasIndex("ProcByAdminID");
 
@@ -449,8 +454,7 @@ namespace logirack.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("DriverID")
-                        .IsRequired()
+                    b.Property<string>("DriverId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("EndDate")
@@ -470,7 +474,7 @@ namespace logirack.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DriverID");
+                    b.HasIndex("DriverId");
 
                     b.ToTable("PaymentPeriods");
                 });
@@ -482,7 +486,6 @@ namespace logirack.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AdminId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<double>("AdminPrice")
@@ -518,12 +521,6 @@ namespace logirack.Migrations
                     b.Property<string>("GoodsType")
                         .IsRequired()
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsAcceptedBeyAdmin")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsPrAcceptedBeyCustomer")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Notes")
                         .IsRequired()
@@ -731,9 +728,15 @@ namespace logirack.Migrations
 
             modelBuilder.Entity("logirack.Models.Payment", b =>
                 {
+                    b.HasOne("logirack.Models.Driver", "Driver")
+                        .WithMany("Payments")
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("logirack.Models.PaymentPeriod", "PaymentPeriod")
-                        .WithOne("Payment")
-                        .HasForeignKey("logirack.Models.Payment", "PaymentPeriodId")
+                        .WithMany("Payments")
+                        .HasForeignKey("PaymentPeriodId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -743,6 +746,8 @@ namespace logirack.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Driver");
+
                     b.Navigation("PaymentPeriod");
 
                     b.Navigation("ProcByAdmin");
@@ -750,22 +755,16 @@ namespace logirack.Migrations
 
             modelBuilder.Entity("logirack.Models.PaymentPeriod", b =>
                 {
-                    b.HasOne("logirack.Models.Driver", "Driver")
+                    b.HasOne("logirack.Models.Driver", null)
                         .WithMany("PaymentPeriods")
-                        .HasForeignKey("DriverID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Driver");
+                        .HasForeignKey("DriverId");
                 });
 
             modelBuilder.Entity("logirack.Models.Trip", b =>
                 {
                     b.HasOne("logirack.Models.Admin", "Admin")
                         .WithMany("ManagedTrips")
-                        .HasForeignKey("AdminId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("AdminId");
 
                     b.HasOne("logirack.Models.Customer", "Customer")
                         .WithMany("Trips")
@@ -782,8 +781,7 @@ namespace logirack.Migrations
                 {
                     b.Navigation("DriverTrips");
 
-                    b.Navigation("Payment")
-                        .IsRequired();
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("logirack.Models.Trip", b =>
@@ -816,6 +814,8 @@ namespace logirack.Migrations
                     b.Navigation("DriverTrips");
 
                     b.Navigation("PaymentPeriods");
+
+                    b.Navigation("Payments");
 
                     b.Navigation("PermanentAddress")
                         .IsRequired();

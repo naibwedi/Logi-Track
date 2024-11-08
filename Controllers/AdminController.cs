@@ -5,6 +5,7 @@ using logirack.Models.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace logirack.Services;
@@ -40,13 +41,17 @@ public class AdminController : Controller
         _emailSender = emailSender;
         _passwordService = passwordService;
     }
-/// <summary>
-/// creating functionality for searching drivers based on filters
-/// </summary>
-/// <param name="searchString"></param>
-/// <param name="searchCriteria"></param>
-/// <returns></returns>
-[HttpGet]
+    /// <summary>
+    /// Search for drivers based on specified criteria
+    /// </summary>
+    /// <param name="searchString">The search term to filter drivers</param>
+    /// <param name="searchCriteria">The field to search by (FirstName, LastName, Email, PhoneNumber)</param>
+    /// <returns>A list of matching drivers</returns>
+    /// <response code="200">Returns the list of matching drivers</response>
+    /// <response code="400">If the search criteria is invalid</response>
+    [HttpGet("drivers/search")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
 public IActionResult SearchDrivers(string searchString, string searchCriteria)
 {
     var drivers = from d in _db.Drivers // Changed _context to _db
@@ -75,17 +80,22 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 }
 
     
-    [HttpGet]
+    /// <summary>
+    /// Creates a new driver account
+    /// </summary>
+    /// <returns>View for creating a new driver</returns>
+    [HttpGet("create-driver")]
     public IActionResult CreateDriver()
     {
         return View();
     }
 
     /// <summary>
-    /// Processes  the creation of a new Driver.
+    /// Processes the creation of a new Driver
     /// </summary>
-    /// <param name="model">The data submitted from the form.</param>
-    [HttpPost]
+    /// <param name="model">Driver creation data</param>
+    /// <returns>Redirect to driver management on success, or view with errors</returns>
+    [HttpPost("create-driver")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateDriver(CreateDriverViewModel model)
     {
@@ -161,26 +171,30 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     
 
     /// <summary>
-    /// Displays a list of all Driver users.
+    /// Displays a list of all Driver users
     /// </summary>
-    [HttpGet]
+    /// <returns>View with list of all drivers</returns>
+    [HttpGet("drivers")]
     public async Task<IActionResult> DriverManagment()
     {
         var allDrivers = await _userManager.GetUsersInRoleAsync("Driver");
         var drivers = allDrivers.OfType<Driver>().ToList();
         return View(drivers);
     }
-
+    /// <summary>
+    /// Displays the admin dashboard
+    /// </summary>
+    [HttpGet("dashboard")]
     public IActionResult Dashboard()
     {
         return View();
     }
 
     /// <summary>
-    /// Edits a Driver user.
+    /// Gets driver details for editing
     /// </summary>
-    /// <param name="id">The ID of the Driver to edit.</param>
-    [HttpGet]
+    /// <param name="id">Driver ID to edit</param>
+    [HttpGet("edit-driver/{id}")]
     public async Task<IActionResult> EditDriver(string id)
     {
         if (string.IsNullOrEmpty(id))
@@ -208,7 +222,11 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return View(model);
     }
 
-    [HttpPost]
+    /// <summary>
+    /// Updates driver information
+    /// </summary>
+    /// <param name="model">Updated driver information</param>
+    [HttpPost("edit-driver")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditDriver(EditDriverViewModel model)
     {
@@ -267,10 +285,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     }
 
     /// <summary>
-    /// Deletes a Driver user.
+    /// Deletes a driver account
     /// </summary>
-    /// <param name="id">The ID of the Driver to delete.</param>
-    [HttpPost]
+    /// <param name="id">ID of driver to delete</param>
+    [HttpPost("delete-driver")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteDriver(string id)
     {
@@ -295,7 +313,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return RedirectToAction(nameof(DriverManagment));
     }
     
-    [HttpGet]
+    /// <summary>
+    /// Gets list of users pending approval
+    /// </summary>
+    [HttpGet("pending-approvals")]
     public async Task<IActionResult> PendingApprovals()
     {
         var pendingUsers=await _userManager.Users.Where(x => x.IsApproved == false ).ToListAsync();
@@ -303,7 +324,12 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     }
     
     
-    [HttpPost]
+    /// <summary>
+    /// Approves or rejects a user registration
+    /// </summary>
+    /// <param name="userId">User ID to approve/reject</param>
+    /// <param name="approve">True to approve, false to reject</param>
+    [HttpPost("approve-user")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ApproveUser(string userId, bool approve)
     {
@@ -322,8 +348,28 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         if (approve)
         {
             user.IsApproved = true;
-            TempData["Success"] = "User has been approved.";
-            _logger.LogInformation("User {Email} approved by admin.", user.Email);
+            var result = await _userManager.UpdateAsync(user);
+            if (result.Succeeded)
+            {
+                try
+                {
+                    await _emailSender.SendEmailAsync(
+                        user.Email,
+                        "Your Account Has Been Approved",
+                        $"Dear {user.FirstName} {user.LastName},\n\n" +
+                        $"Your account has been approved. You can now log in and access all features.\n\n" +
+                        $"Best regards,\n" +
+                        $"Logirack Team"
+                    );
+                    _logger.LogInformation("Approval email sent to user");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send approval email");
+                }
+
+                TempData["Success"] = "User has been approved.";
+            }
         }
         else
         {
@@ -332,8 +378,6 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             TempData["Success"] = "User has been rejected and deleted.";
             _logger.LogInformation("User {Email} rejected by admin and deleted.", user.Email);
         }
-
-        await _db.SaveChangesAsync();
         return RedirectToAction(nameof(PendingApprovals));
     }
 
@@ -343,7 +387,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     /// </summary>
     /// <param name="sFilter">The status to filter trips by. Defaults to "Requested".</param>
     /// <returns>The TripRequests view with a list of filtered trips.</returns>
-    [HttpGet]
+    [HttpGet("trip-requests")]
     public async Task<IActionResult> TripRequests(string sFilter = "Requested")
     {
         if (Enum.TryParse<TripStatus>(sFilter, out var status))
@@ -375,7 +419,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     /// </summary>
     /// <param name="id">The ID of the trip to display details for.</param>
     /// <returns>The TripDetails view with the trip's detailed information.</returns>
-    [HttpGet]
+    [HttpGet("trip-details/{id}")]
     public async Task<IActionResult> TripDetails(int id)
     {
         var trip = await _db.Trips.Include(t => t.Customer).FirstOrDefaultAsync(t=>t.Id == id);
@@ -409,10 +453,9 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     /// <summary>
     /// Processes the approval or rejection of a trip request.
     /// </summary>
-    /// <param name="tId">The ID of the trip to review.</param>
-    /// <param name="isApproved">Indicates whether the trip is approved (true) or rejected (false).</param>
-    /// <returns>Redirects to the TripRequests view after processing.</returns>
-    [HttpPost]
+    /// <param name="tId">Trip ID</param>
+    /// <param name="isApproved">Approval status</param>
+    [HttpPost("review-trip")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReviewTrip(int tId, bool isApproved)
     {
@@ -434,7 +477,11 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
     }
 
-    [HttpGet]
+    /// <summary>
+    /// Gets trip price setting page
+    /// </summary>
+    /// <param name="id">Trip ID</param>
+    [HttpGet("set-price/{id}")]
     public async Task<IActionResult> SetPrice(int id)
     {
         
@@ -458,7 +505,11 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         };
         return View(viewModel);
     }
-    [HttpPost]
+    /// <summary>
+    /// Sets the price for a trip
+    /// </summary>
+    /// <param name="model">Price setting data</param>
+    [HttpPost("set-price")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetPrice(SetPriceViewModel model)
     {
@@ -499,17 +550,47 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         try
         {
             await _db.SaveChangesAsync();
+            try
+            {
+                await _emailSender.SendEmailAsync(
+                    tripToUpdate.Customer.Email,
+                    "Trip Price Set - Action Required",
+                    $"Dear {tripToUpdate.Customer.FirstName} {tripToUpdate.Customer.LastName},\n\n" +
+                    $"The price for your trip has been set and requires your approval.\n\n" +
+                    $"Trip Details:\n" +
+                    $"Trip ID: {tripToUpdate.Id}\n" +
+                    $"From: {tripToUpdate.FromCity}\n" +
+                    $"To: {tripToUpdate.ToCity}\n" +
+                    $"Set Price: {tripToUpdate.AdminPrice:C}\n" +
+                    $"Original Estimate: {tripToUpdate.EstimatedPrice:C}\n\n" +
+                    $"Please log in to your account to approve or reject this price.\n\n" +
+                    $"Best regards,\n" +
+                    $"Logirack Team"
+                );
+                _logger.LogInformation("Price set notification email sent to customer {Email}", 
+                    tripToUpdate.Customer.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send price set notification email to customer {Email}", 
+                    tripToUpdate.Customer.Email);
+            }
+
+            TempData["Success"] = "Price set successfully and customer has been notified.";
+            return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error setting price for trip {TripId}", model.TripId);
             ModelState.AddModelError("", "An error occurred while saving changes.");
             return View(model);
         }
-
-        return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
     }
-
-    [HttpGet]
+    /// <summary>
+    /// Gets driver assignment page for a trip
+    /// </summary>
+    /// <param name="id">Trip ID</param>
+    [HttpGet("assign-trip/{id}")]
     public async Task<IActionResult> AssignTrip(int id)
     {
         _logger.LogInformation($"AssignTrip GET called with id: {id}");
@@ -535,7 +616,11 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return View(viewM);
     }
 
-    [HttpPost]
+    /// <summary>
+    /// Assigns a driver to a trip
+    /// </summary>
+    /// <param name="model">Trip assignment data</param>
+    [HttpPost("assign-trip")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AssignTrip(AssignTripViewModel model)
     {
@@ -588,6 +673,33 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             await _userManager.UpdateAsync(driver);
             _db.DriverTrips.Add(driverTrip);
             await _db.SaveChangesAsync();
+            
+            try
+            {
+                await _emailSender.SendEmailAsync(
+                    driver.Email,
+                    "New Trip Assignment",
+                    $"Dear {driver.FirstName} {driver.LastName},\n\n" +
+                    $"You have been assigned a new trip.\n\n" +
+                    $"Trip Details:\n" +
+                    $"Trip ID: {trip.Id}\n" +
+                    $"From: {trip.FromCity}\n" +
+                    $"To: {trip.ToCity}\n" +
+                    $"Customer: {trip.Customer.FirstName} {trip.Customer.LastName}\n" +
+                    $"Pickup Time: {trip.PickupTime}\n" +
+                    $"Distance: {trip.Distance}km\n" +
+                    $"Weight: {trip.Weight}kg\n" +
+                    $"Payment: {driverTrip.DriverPayment:C}\n\n" +
+                    $"Please check your dashboard for more details.\n\n" +
+                    $"Best regards,\n" +
+                    $"Logirack Team"
+                );
+                _logger.LogInformation("Trip assignment email sent to driver ");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send trip assignment email ");
+            }
             _logger.LogInformation($"Successfully created DriverTrip with ID: {driverTrip.Id}");
             TempData["Success"] = $"Trip Assigned To User {driver.UserName}";
             return RedirectToAction(nameof(TripRequests));
@@ -602,7 +714,11 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         
     }
 
-    [HttpGet]
+    /// <summary>
+    /// Gets page for creating a new trip by admin
+    /// </summary>
+    /// <param name="id">Reference ID</param>
+    [HttpGet("add-trip")]
     public async Task<IActionResult> AddNewTripByAdmin(int id)
     {
         _logger.LogInformation($"CreateTrip GET called with id: {id}");
@@ -617,7 +733,11 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return View(model);
     }
 
-    [HttpPost]
+    /// <summary>
+    /// Creates a new trip
+    /// </summary>
+    /// <param name="model">Trip creation data</param>
+    [HttpPost("add-trip")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddNewTripByAdmin(CreateTripByAdminViewModel model)
     {
@@ -655,6 +775,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 Status = TripStatus.PriceSet,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
+                AdminPrice = model.Price,
                 AdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)
             };
             _db.Trips.Add(trip);
@@ -685,8 +806,32 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             driver.IsAvailable = false;
             _db.Users.Update(driver);
             await _db.SaveChangesAsync();
-            _logger.LogInformation($"Successfully change  Drive status of driver : {driverTrip.Id}");
-            
+            try
+            {
+                await _emailSender.SendEmailAsync(
+                    driver.Email,
+                    "New Trip Assignment",
+                    $"Dear {driver.FirstName} {driver.LastName},\n\n" +
+                    $"You have been assigned a new trip.\n\n" +
+                    $"Trip Details:\n" +
+                    $"Trip ID: {trip.Id}\n" +
+                    $"From: {trip.FromCity}\n" +
+                    $"To: {trip.ToCity}\n" +
+                    $"Pickup Time: {trip.PickupTime}\n" +
+                    $"Distance: {trip.Distance}km\n" +
+                    $"Weight: {trip.Weight}kg\n" +
+                    $"Your Payment: {driverTrip.DriverPayment:C}\n\n" +
+                    $"Please check your dashboard for more details.\n\n" +
+                    $"Best regards,\n" +
+                    $"Logirack Team"
+                );
+                _logger.LogInformation("Trip assignment email sent to driver {Email}", driver.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send trip assignment email to driver {Email}", driver.Email);
+            }
+
             return RedirectToAction(nameof(Dashboard));
         }
         catch (Exception ex)
@@ -703,5 +848,101 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             return View(model);
         }
     }
+    
+    /// <summary>
+    /// Gets trip history log
+    /// </summary>
+    [HttpGet("trip-log")]
+    public async Task<IActionResult> TripLog()
+    {
+        var trips = await _db.DriverTrips
+            .Include(dt => dt.Trip)
+            .Include(dt => dt.Driver)
+            .Select(dt => new TripDetailsViewModel
+            {
+                TripId = dt.Trip.Id,
+                CustomerName = $"{dt.Trip.Customer.FirstName} {dt.Trip.Customer.LastName}", // Assuming Trip has a Customer relationship
+                CustomerEmail = dt.Trip.Customer.Email,
+                CustomerPhone = dt.Trip.Customer.PhoneNumber,
+                FromCity = dt.Trip.FromCity,
+                ToCity = dt.Trip.ToCity,
+                FromAddress = dt.Trip.FromAddress,
+                ToAddress = dt.Trip.ToAddress,
+                FromZipCode = dt.Trip.FromZipCode,
+                ToZipCode = dt.Trip.ToZipCode,
+                Weight = dt.Trip.Weight,
+                Volume = dt.Trip.Volume,
+                Distance = dt.Trip.Distance,
+                GoodTypes = dt.Trip.GoodsType,
+                Notes = dt.Trip.Notes,
+                AdminPrice = dt.Trip.AdminPrice,
+                EstimatedPrice = dt.Trip.EstimatedPrice,
+                Status = dt.Trip.Status,
+                CreatedOn = dt.Trip.CreatedAt,
+                PickupDate = dt.Trip.PickupTime
+            })
+            .ToListAsync();
+
+        return View(trips);
+    }
+
+
+
+//<-------- Invoice generation ------> 
+
+    public IActionResult InvoiceGeneration()
+    {
+        // Example logic for populating driver list
+        var drivers = _db.Drivers.ToList().Select(d => new SelectListItem
+        {
+            Value = d.Id,
+            Text = $"{d.Id} ({d.DriverEmail})"
+        }).ToList();
+
+        var model = new InvoiceGenerationViewModel
+        {
+            DriverList = drivers
+        };
+
+        return View(model);
+    }
+
+    [HttpPost]
+    public IActionResult GeneratePayStub(InvoiceGenerationViewModel model)
+    {
+        if (string.IsNullOrEmpty(model.SelectedDriverId))
+        {
+            ModelState.AddModelError("SelectedDriverId", "Please select a driver.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            // If there are validation errors, return the view with the existing model
+            return View("InvoiceGeneration", model);
+        }
+
+        // Fetch trips for the selected driver within the date range
+        var trips = _db.DriverTrips
+            .Where(dt => dt.DriverId == model.SelectedDriverId)
+            .Where(dt => dt.AssignmentDate >= model.StartDate && dt.AssignmentDate <= model.EndDate)
+            .Select(dt => new InvoiceGenerationViewModel.TripDetail
+            {
+                Date = dt.AssignmentDate,
+                TripInfo = $"From {dt.Trip.FromCity} to {dt.Trip.ToCity}",
+                Amount = (decimal)dt.DriverPayment
+            }).ToList();
+
+        model.TripDetails = trips;
+
+        // Calculate totals
+        model.TotalAmount = trips.Sum(t => t.Amount);
+        model.TotalDeductions = model.Deductions.Sum(d => d.Amount);
+        model.FinalAmount = model.TotalAmount - model.TotalDeductions;
+
+        // Return view with updated data
+        return View("InvoiceGeneration", model);
+    }
+
+
 
 }

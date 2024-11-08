@@ -1,18 +1,20 @@
 ﻿@model IEnumerable<logirack.Models.ViewModel.TripDetailsViewModel>
 
-<h2>Your Trip Log</h2>
+<h2>Admin Trip Log</h2>
 
 <table class="table">
     <thead>
     <tr>
         <th>Trip ID</th>
+        <th>Customer Name</th>
         <th>From</th>
         <th>To</th>
         <th>Distance (km)</th>
         <th>Weight (kg)</th>
         <th>Pickup Date</th>
         <th>Status</th>
-        <th>Payment (Admin Price)</th>
+        <th>Admin Price</th>
+        <th>Estimated Price</th>
     </tr>
     </thead>
     <tbody>
@@ -20,6 +22,7 @@
     {
         <tr>
             <td>@trip.TripId</td>
+            <td>@trip.CustomerName</td>
             <td>@trip.FromCity</td>
             <td>@trip.ToCity</td>
             <td>@trip.Distance</td>
@@ -27,7 +30,13 @@
             <td>@trip.PickupDate.ToString("dd MMM yyyy")</td>
             <td>@trip.Status</td>
             <td>@trip.AdminPrice.ToString("C")</td>
+            <td>@trip.EstimatedPrice.ToString("C")</td>
         </tr>
     }
     </tbody>
 </table>
+
+@if (!Model.Any())
+{
+    <p>No trips available.</p>
+}
