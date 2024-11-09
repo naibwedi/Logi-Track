@@ -704,5 +704,41 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             return View(model);
         }
     }
+    
+    [HttpGet]
+    public async Task<IActionResult> TripLog()
+    {
+        var trips = await _db.DriverTrips
+            .Include(dt => dt.Trip)
+            .Include(dt => dt.Driver)
+            .Select(dt => new TripDetailsViewModel
+            {
+                TripId = dt.Trip.Id,
+                CustomerName = $"{dt.Trip.Customer.FirstName} {dt.Trip.Customer.LastName}", // Assuming Trip has a Customer relationship
+                CustomerEmail = dt.Trip.Customer.Email,
+                CustomerPhone = dt.Trip.Customer.PhoneNumber,
+                FromCity = dt.Trip.FromCity,
+                ToCity = dt.Trip.ToCity,
+                FromAddress = dt.Trip.FromAddress,
+                ToAddress = dt.Trip.ToAddress,
+                FromZipCode = dt.Trip.FromZipCode,
+                ToZipCode = dt.Trip.ToZipCode,
+                Weight = dt.Trip.Weight,
+                Volume = dt.Trip.Volume,
+                Distance = dt.Trip.Distance,
+                GoodTypes = dt.Trip.GoodsType,
+                Notes = dt.Trip.Notes,
+                AdminPrice = dt.Trip.AdminPrice,
+                EstimatedPrice = dt.Trip.EstimatedPrice,
+                Status = dt.Trip.Status,
+                CreatedOn = dt.Trip.CreatedAt,
+                PickupDate = dt.Trip.PickupTime
+            })
+            .ToListAsync();
+
+        return View(trips);
+    }
+
+
 
 }

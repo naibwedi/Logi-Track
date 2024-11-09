@@ -35,22 +35,13 @@
                             <a class="nav-link" asp-controller="Admin" asp-action="AddNewTripByAdmin">Add New Trip</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="" asp-action="">Invoice Generation</a>
+                            <a class="nav-link" asp-controller="Admin" asp-action="TripLog">Trip Log</a>
                         </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="" asp-action="">Payment Management</a>
-                            </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="PendingApprovals">Pending Approval</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Admin" asp-action="TripDetails">Trips Details</a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="TripRequests">Trips Request</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Admin" asp-action="DriverList"> Driver list</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="CreateDriver"> create a driver</a>
@@ -68,7 +59,7 @@
                             <a class="nav-link" asp-controller="Driver" asp-action="TripLog">Trip Log</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="" asp-action="">View Invoices</a>
+                            <a class="nav-link" asp-controller="Driver" asp-action="CurrentTrips">Current Trips</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="" asp-action="">Payment Tracking</a>
