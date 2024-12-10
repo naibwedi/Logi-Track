@@ -347,8 +347,28 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         if (approve)
         {
             user.IsApproved = true;
-            TempData["Success"] = "User has been approved.";
-            _logger.LogInformation("User {Email} approved by admin.", user.Email);
+            var result = await _userManager.UpdateAsync(user);
+            if (result.Succeeded)
+            {
+                try
+                {
+                    await _emailSender.SendEmailAsync(
+                        user.Email,
+                        "Your Account Has Been Approved",
+                        $"Dear {user.FirstName} {user.LastName},\n\n" +
+                        $"Your account has been approved. You can now log in and access all features.\n\n" +
+                        $"Best regards,\n" +
+                        $"Logirack Team"
+                    );
+                    _logger.LogInformation("Approval email sent to user");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send approval email");
+                }
+
+                TempData["Success"] = "User has been approved.";
+            }
         }
         else
         {
@@ -357,8 +377,6 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             TempData["Success"] = "User has been rejected and deleted.";
             _logger.LogInformation("User {Email} rejected by admin and deleted.", user.Email);
         }
-
-        await _db.SaveChangesAsync();
         return RedirectToAction(nameof(PendingApprovals));
     }
 
@@ -628,6 +646,33 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             await _userManager.UpdateAsync(driver);
             _db.DriverTrips.Add(driverTrip);
             await _db.SaveChangesAsync();
+            
+            try
+            {
+                await _emailSender.SendEmailAsync(
+                    driver.Email,
+                    "New Trip Assignment",
+                    $"Dear {driver.FirstName} {driver.LastName},\n\n" +
+                    $"You have been assigned a new trip.\n\n" +
+                    $"Trip Details:\n" +
+                    $"Trip ID: {trip.Id}\n" +
+                    $"From: {trip.FromCity}\n" +
+                    $"To: {trip.ToCity}\n" +
+                    $"Customer: {trip.Customer.FirstName} {trip.Customer.LastName}\n" +
+                    $"Pickup Time: {trip.PickupTime}\n" +
+                    $"Distance: {trip.Distance}km\n" +
+                    $"Weight: {trip.Weight}kg\n" +
+                    $"Payment: {driverTrip.DriverPayment:C}\n\n" +
+                    $"Please check your dashboard for more details.\n\n" +
+                    $"Best regards,\n" +
+                    $"Logirack Team"
+                );
+                _logger.LogInformation("Trip assignment email sent to driver ");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send trip assignment email ");
+            }
             _logger.LogInformation($"Successfully created DriverTrip with ID: {driverTrip.Id}");
             TempData["Success"] = $"Trip Assigned To User {driver.UserName}";
             return RedirectToAction(nameof(TripRequests));
@@ -734,8 +779,32 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             driver.IsAvailable = false;
             _db.Users.Update(driver);
             await _db.SaveChangesAsync();
-            _logger.LogInformation($"Successfully change  Drive status of driver : {driverTrip.Id}");
-            
+            try
+            {
+                await _emailSender.SendEmailAsync(
+                    driver.Email,
+                    "New Trip Assignment",
+                    $"Dear {driver.FirstName} {driver.LastName},\n\n" +
+                    $"You have been assigned a new trip.\n\n" +
+                    $"Trip Details:\n" +
+                    $"Trip ID: {trip.Id}\n" +
+                    $"From: {trip.FromCity}\n" +
+                    $"To: {trip.ToCity}\n" +
+                    $"Pickup Time: {trip.PickupTime}\n" +
+                    $"Distance: {trip.Distance}km\n" +
+                    $"Weight: {trip.Weight}kg\n" +
+                    $"Your Payment: {driverTrip.DriverPayment:C}\n\n" +
+                    $"Please check your dashboard for more details.\n\n" +
+                    $"Best regards,\n" +
+                    $"Logirack Team"
+                );
+                _logger.LogInformation("Trip assignment email sent to driver {Email}", driver.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send trip assignment email to driver {Email}", driver.Email);
+            }
+
             return RedirectToAction(nameof(Dashboard));
         }
         catch (Exception ex)
