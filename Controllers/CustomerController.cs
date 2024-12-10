@@ -21,17 +21,15 @@ namespace logirack.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<CustomerController> _logger;
-        private readonly IEmailSender _emailSender; //for admin to get email when there's new request from a customer 
+        private readonly IEmailSender _emailSender; 
 
-        public CustomerController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
+        public CustomerController(UserManager<ApplicationUser> userManager, 
             ILogger<CustomerController> logger, IEmailSender emailSender, ApplicationDbContext db)
         {
             _db = db;
             _emailSender = emailSender;
             _userManager = userManager;
-            _roleManager = roleManager;
             _logger = logger;
         }
 
