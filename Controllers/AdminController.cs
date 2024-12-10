@@ -573,7 +573,6 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             {
                 _logger.LogError(ex, "Failed to send price set notification email to customer {Email}", 
                     tripToUpdate.Customer.Email);
-                // Continue execution even if email fails
             }
 
             TempData["Success"] = "Price set successfully and customer has been notified.";
