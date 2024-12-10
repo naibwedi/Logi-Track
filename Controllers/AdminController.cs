@@ -549,16 +549,43 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         try
         {
             await _db.SaveChangesAsync();
+            try
+            {
+                await _emailSender.SendEmailAsync(
+                    tripToUpdate.Customer.Email,
+                    "Trip Price Set - Action Required",
+                    $"Dear {tripToUpdate.Customer.FirstName} {tripToUpdate.Customer.LastName},\n\n" +
+                    $"The price for your trip has been set and requires your approval.\n\n" +
+                    $"Trip Details:\n" +
+                    $"Trip ID: {tripToUpdate.Id}\n" +
+                    $"From: {tripToUpdate.FromCity}\n" +
+                    $"To: {tripToUpdate.ToCity}\n" +
+                    $"Set Price: {tripToUpdate.AdminPrice:C}\n" +
+                    $"Original Estimate: {tripToUpdate.EstimatedPrice:C}\n\n" +
+                    $"Please log in to your account to approve or reject this price.\n\n" +
+                    $"Best regards,\n" +
+                    $"Logirack Team"
+                );
+                _logger.LogInformation("Price set notification email sent to customer {Email}", 
+                    tripToUpdate.Customer.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send price set notification email to customer {Email}", 
+                    tripToUpdate.Customer.Email);
+                // Continue execution even if email fails
+            }
+
+            TempData["Success"] = "Price set successfully and customer has been notified.";
+            return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error setting price for trip {TripId}", model.TripId);
             ModelState.AddModelError("", "An error occurred while saving changes.");
             return View(model);
         }
-
-        return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
     }
-
     /// <summary>
     /// Gets driver assignment page for a trip
     /// </summary>
