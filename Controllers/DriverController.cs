@@ -1,14 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using logirack.Data;
 using logirack.Models;
 using logirack.Models.ViewModel;
-using logirack.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace logirack.Controllers;
