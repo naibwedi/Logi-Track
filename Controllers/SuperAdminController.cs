@@ -12,6 +12,9 @@ namespace logirack.Controllers;
 /// Controller for SuperAdmin actions, including creating and managing Admin users.
 /// </summary>
 [Authorize(Roles = "SuperAdmin")]
+[ApiController]
+[Route("api/[controller]")]
+[Produces("application/json")]
 public class SuperAdminController : Controller
 {
     private readonly ApplicationDbContext _db;
@@ -33,20 +36,28 @@ public class SuperAdminController : Controller
     }
 
     /// <summary>
-    /// Displays the form to create a new Admin.
+    /// Gets the form to create a new Admin
     /// </summary>
-    [HttpGet]
+    /// <returns>The create admin view</returns>
+    /// <response code="200">Returns the create form view</response>
+    [HttpGet("admins/create")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult CreateAdmin()
     {
         return View();
     }
 
     /// <summary>
-    /// Processes the creation of a new Admin.
+    /// Creates a new Admin user
     /// </summary>
-    /// <param name="model">The data submitted from the form.</param>
-    [HttpPost]
+    /// <param name="model">The admin creation data</param>
+    /// <returns>Redirects to admin list on success</returns>
+    /// <response code="200">If admin is created successfully</response>
+    /// <response code="400">If the model is invalid or email/phone exists</response>
+    [HttpPost("admins/create")]
     [ValidateAntiForgeryToken]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateAdmin(CreateAdminViewModel model)
     {
         if (ModelState.IsValid)
@@ -104,9 +115,17 @@ public class SuperAdminController : Controller
     }
 
     /// <summary>
-    /// Displays the form to edit an existing Admin.
+    /// Gets an admin's details for editing
     /// </summary>
-    [HttpGet]
+    /// <param name="id">The ID of the admin to edit</param>
+    /// <returns>The edit admin view</returns>
+    /// <response code="200">Returns the edit form view</response>
+    /// <response code="404">If admin is not found</response>
+    /// <response code="400">If id is null or empty</response>
+    [HttpGet("admins/{id}/edit")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> EditAdmin(string id)
     {
         if (string.IsNullOrEmpty(id))
@@ -134,11 +153,18 @@ public class SuperAdminController : Controller
     }
 
     /// <summary>
-    /// Processes the editing of an existing Admin.
+    /// Updates an existing admin's information
     /// </summary>
-    /// <param name="model">The data submitted from the form.</param>
-    [HttpPost]
+    /// <param name="model">The updated admin data</param>
+    /// <returns>Redirects to admin list on success</returns>
+    /// <response code="200">If admin is updated successfully</response>
+    /// <response code="404">If admin is not found</response>
+    /// <response code="400">If the model is invalid</response>
+    [HttpPost("admins/{id}/edit")]
     [ValidateAntiForgeryToken]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> EditAdmin(EditAdminViewModel model)
     {
         if (ModelState.IsValid)
@@ -175,9 +201,12 @@ public class SuperAdminController : Controller
     }
 
     /// <summary>
-    /// Displays a list of all Admin users.
+    /// Gets a list of all admin users
     /// </summary>
-    [HttpGet]
+    /// <returns>View with list of all admins</returns>
+    /// <response code="200">Returns the list of admins</response>
+    [HttpGet("admins")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> AdminList()
     {
         var allUsersInAdminRole = await _userManager.GetUsersInRoleAsync("Admin");
@@ -185,8 +214,19 @@ public class SuperAdminController : Controller
         return View(admins);
     }
 
-    [HttpPost]
+    /// <summary>
+    /// Deletes an admin user
+    /// </summary>
+    /// <param name="id">The ID of the admin to delete</param>
+    /// <returns>Redirects to admin list</returns>
+    /// <response code="200">If admin is deleted successfully</response>
+    /// <response code="404">If admin is not found</response>
+    /// <response code="400">If id is null or empty</response>
+    [HttpPost("admins/{id}/delete")]
     [ValidateAntiForgeryToken]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeleteAdmin(string id)
     {
         if (string.IsNullOrEmpty(id))

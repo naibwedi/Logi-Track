@@ -12,7 +12,13 @@ using logirack.Services;
 namespace logirack.Controllers;
 
 
+// <summary>
+/// Controller for managing driver operations and trip handling
+/// </summary>
 [Authorize(Roles = "Driver")]
+[ApiController]
+[Route("api/[controller]")]
+[Produces("application/json")]
 public class DriverController : Controller
 {
     private readonly ApplicationDbContext _db;
@@ -29,15 +35,25 @@ public class DriverController : Controller
         _logger = logger;
         _userManager = userManager;
     }
-
+    /// <summary>
+    /// Displays the driver dashboard
+    /// </summary>
+    /// <returns>The dashboard view</returns>
+    [HttpGet("dashboard")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Dashboard()
     {
         return View();
     }
 
 
-    // Action to show the driver their assigned trips
-    [HttpGet]
+    /// <summary>
+    /// Retrieves the complete trip history for the current driver
+    /// </summary>
+    /// <returns>List of all trips assigned to the driver</returns>
+    /// <response code="200">Returns the list of trips</response>
+    [HttpGet("trips/log")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> TripLog()
     {
         var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -61,7 +77,13 @@ public class DriverController : Controller
         return View(trips);
     }
 
-    [HttpGet]
+    /// <summary>
+    /// Retrieves current active trips for the driver
+    /// </summary>
+    /// <returns>List of currently assigned trips</returns>
+    /// <response code="200">Returns the list of current trips</response>
+    [HttpGet("trips/current")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> CurrentTrips()
     {
         var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -86,9 +108,17 @@ public class DriverController : Controller
     }
 
 
-    // Action to allow the driver to mark a trip as completed
-    [HttpPost]
+    /// <summary>
+    /// Marks a trip as completed
+    /// </summary>
+    /// <param name="tripId">ID of the trip to complete</param>
+    /// <returns>Redirects to current trips view</returns>
+    /// <response code="200">If trip is successfully marked as completed</response>
+    /// <response code="404">If trip is not found or not in correct state</response>
+    [HttpPost("trips/{tripId}/complete")]
     [ValidateAntiForgeryToken]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> EndTrip(int tripId)
     {
         var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier);
