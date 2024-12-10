@@ -23,10 +23,10 @@ namespace logirack.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<CustomerController> _logger;
-        private readonly IEmailSender _emailSender;//for admin to get email when there's new request from a customer 
+        private readonly IEmailSender _emailSender; //for admin to get email when there's new request from a customer 
 
-        public CustomerController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, 
-            ILogger<CustomerController> logger  , IEmailSender emailSender,ApplicationDbContext db)
+        public CustomerController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
+            ILogger<CustomerController> logger, IEmailSender emailSender, ApplicationDbContext db)
         {
             _db = db;
             _emailSender = emailSender;
@@ -34,6 +34,7 @@ namespace logirack.Controllers
             _roleManager = roleManager;
             _logger = logger;
         }
+
         // Home page for the customer
         /// <summary>
         /// Displays the landing page
@@ -46,6 +47,7 @@ namespace logirack.Controllers
         {
             return View();
         }
+
         // This action shows the pending approval message
         /// <summary>
         /// Shows pending approval message for unapproved customers
@@ -56,6 +58,7 @@ namespace logirack.Controllers
         {
             return View();
         }
+
         /// <summary>
         /// Displays the customer dashboard
         /// </summary>
@@ -92,7 +95,7 @@ namespace logirack.Controllers
             _logger.LogInformation("User {Email} accessed the dashboard.", user.Email);
             return View();
         }
-        
+
         /// <summary>
         /// Displays the trip creation form
         /// </summary>
@@ -102,6 +105,7 @@ namespace logirack.Controllers
         {
             return View();
         }
+
         /// <summary>
         /// Processes a new trip request
         /// </summary>
@@ -119,10 +123,12 @@ namespace logirack.Controllers
             {
                 return View(model);
             }
+
             var user = await _userManager.GetUserAsync(User);
             //Calculate estimated price 
             double estimatedPrice = CalculateTripPriceEstimate(model);
-            _logger.LogInformation("Order submitted successfully by user {Email} with estimated price {Price}.", user.Email, estimatedPrice);
+            _logger.LogInformation("Order submitted successfully by user {Email} with estimated price {Price}.",
+                user.Email, estimatedPrice);
             //you forgot to create a new trip entity based on the request for that uu Didn't see any trip on the table  see any 
             var trip = new Trip
             {
@@ -149,6 +155,33 @@ namespace logirack.Controllers
             //Save on db 
             _db.Trips.Add(trip);
             await _db.SaveChangesAsync();
+            try
+            {
+                var admins = await _userManager.GetUsersInRoleAsync("Admin");
+                foreach (var admin in admins)
+                {
+                    await _emailSender.SendEmailAsync(
+                        admin.Email,
+                        "New Trip Request",
+                        $"A new trip request has been submitted.\n\n" +
+                        $"Trip Details:\n" +
+                        $"Trip ID: {trip.Id}\n" +
+                        $"Customer: {user.FirstName} {user.LastName}\n" +
+                        $"From: {trip.FromCity}\n" +
+                        $"To: {trip.ToCity}\n" +
+                        $"Weight: {trip.Weight}kg\n" +
+                        $"Distance: {trip.Distance}km\n" +
+                        $"Pickup Time: {trip.PickupTime}\n" +
+                        $"Estimated Price: {trip.EstimatedPrice:C}\n" +
+                        $"\nPlease review this request in the admin dashboard."
+                    );
+                }
+                _logger.LogInformation("New trip notification sent for trip {TripId}", trip.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send new trip notification emails ");
+            }
             return RedirectToAction("OrderSuccess", new { id = trip.Id });
         }
 
@@ -165,13 +198,15 @@ namespace logirack.Controllers
         public async Task<IActionResult> OrderSuccess(int id)
         {
             var user = await _userManager.GetUserAsync(User);
-            var trip = await _db.Trips.FirstOrDefaultAsync(t=>t.Id ==id&&t.CustomerId == user.Id);
+            var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == id && t.CustomerId == user.Id);
             if (trip == null)
             {
                 return RedirectToAction("Dashboard");
             }
+
             return View(trip);
         }
+
         /// <summary>
         /// Retrieves all trips for the current customer
         /// </summary>
@@ -185,6 +220,7 @@ namespace logirack.Controllers
             var trips = await _db.Trips.Where(t => t.CustomerId == user.Id).ToListAsync();
             return View(trips);
         }
+
         /// <summary>
         /// Gets detailed information about a specific trip
         /// </summary>
@@ -203,8 +239,10 @@ namespace logirack.Controllers
             {
                 return NotFound();
             }
+
             return View(trip);
         }
+
         //Handels Customer's response to admin's price 
         /// <summary>
         /// Handles customer's response to admin's price setting
@@ -223,12 +261,15 @@ namespace logirack.Controllers
         public async Task<IActionResult> RespondToPrice(int id, bool approved)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user==null)
+            if (user == null)
             {
                 _logger.LogWarning("User not found.");
                 return RedirectToAction("Login", "Account");
             }
-            var trip= await _db.Trips.FirstOrDefaultAsync(t => t.Id == id && t.CustomerId == user.Id);
+
+            var trip = await _db.Trips
+                .Include(t => t.Admin)
+                .FirstOrDefaultAsync(t => t.Id == id && t.CustomerId == user.Id);
             if (trip == null)
             {
                 _logger.LogWarning("Trip not found.");
@@ -244,28 +285,67 @@ namespace logirack.Controllers
             if (approved)
             {
                 trip.Status = TripStatus.ApprovedByCustomer;
+                if (trip.Admin != null)
+                {
+                    try 
+                    {
+                        await _emailSender.SendEmailAsync(
+                            trip.Admin.Email,
+                            "Trip Price Approved",
+                            $"Customer {user.FirstName} {user.LastName} has approved the price for trip ID: {trip.Id}.\n\n" +
+                            $"Trip Details:\n" +
+                            $"From: {trip.FromCity}\n" +
+                            $"To: {trip.ToCity}\n" +
+                            $"Price: {trip.AdminPrice}\n" +
+                            $"Status: Approved by Customer"
+                        );
+                        _logger.LogInformation("Price approval email sent for trip {TripId}", trip.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send approval email for trip {TripId}", trip.Id);
+                    }
+                }
             }
             else
             {
                 trip.Status = TripStatus.CanceledByCustomer;
+                if (trip.Admin != null)
+                {
+                    try 
+                    {
+                        await _emailSender.SendEmailAsync(
+                            trip.Admin.Email,
+                            "Trip Price Rejected",
+                            $"Customer {user.FirstName} {user.LastName} has rejected the price for trip ID: {trip.Id}.\n\n" +
+                            $"Trip Details:\n" +
+                            $"From: {trip.FromCity}\n" +
+                            $"To: {trip.ToCity}\n" +
+                            $"Price: {trip.AdminPrice}\n" +
+                            $"Status: Rejected by Customer"
+                        );
+                        _logger.LogInformation("Price rejection email sent for trip {TripId}", trip.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "faild to send rejection email for trip {TripId}", trip.Id);
+                    }
+                }
             }
+
             trip.UpdatedAt = DateTime.Now;
             await _db.SaveChangesAsync();
             return RedirectToAction("MyTrips");
         }
-        
+
         private double CalculateTripPriceEstimate(SubmitTripViewModel model)
         {
             double baseRate = 50;
             double distanceRate = model.Distance * 15; // Example: 15 nok per km
             double weightRate = model.Weight * 20; // Example: 20 Nok per kg
-            double serviceCharge = 100;//
+            double serviceCharge = 100; //
 
             return baseRate + distanceRate + weightRate + serviceCharge;
         }
-        /// <summary>
-        /// Displays the order success page with order details
-        /// </summary>
-     
     }
 }
