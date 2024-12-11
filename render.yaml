@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: Logi-Track
+    env: dotnet
+    buildCommand: dotnet publish -c Release
+    startCommand: dotnet LogiTrack.dll
+    plan: free
