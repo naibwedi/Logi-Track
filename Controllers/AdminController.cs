@@ -890,22 +890,24 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
 //<-------- Invoice generation ------> 
 
-    public IActionResult InvoiceGeneration()
+ public IActionResult InvoiceGeneration()
+{
+    // Example logic for populating driver list
+    var drivers = _db.Drivers
+        .Select(d => new SelectListItem
+        {
+            Value = d.Id.ToString(), // Convert ID to string
+            Text = $"{d.FirstName} {d.LastName} ({d.DriverEmail})" // Use Name + Username
+        })
+        .ToList();
+
+    var model = new InvoiceGenerationViewModel
     {
-        // Example logic for populating driver list
-        var drivers = _db.Drivers.ToList().Select(d => new SelectListItem
-        {
-            Value = d.Id,
-            Text = $"{d.Id} ({d.DriverEmail})"
-        }).ToList();
+        DriverList = drivers
+    };
 
-        var model = new InvoiceGenerationViewModel
-        {
-            DriverList = drivers
-        };
-
-        return View(model);
-    }
+    return View(model);
+}
 
     [HttpPost]
     public IActionResult GeneratePayStub(InvoiceGenerationViewModel model)
