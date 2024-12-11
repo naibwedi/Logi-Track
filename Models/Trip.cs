@@ -47,7 +47,7 @@ public class Trip
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
     public DriverTrip DriverTrip { get; set; }
-    
+    public IEnumerable<RecentActivity>? RecentActivities { get; set; }
 }
 /// <summary>
 /// Represents the status of a trip.

@@ -1,153 +1,184 @@
-﻿<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Freight Management System Dashboard</title>
-    <!-- Correct link to CSS -->
-    <link rel="stylesheet" href="~/css/adminDashboard.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
-</head>
+﻿@model logirack.Models.DashboardStats
 
-<body>
+@{
+ViewData["Title"] = "Admin Dashboard";
+}
 
-<!-- Manage Drivers -->
-<section class="manage-drivers">
-    <h2>Manage Drivers</h2>
-    <div class="drivers">
-        <div class="driver-card">
-            <img src="~/images/profile-user.png" alt="Driver A"/>
-            <h3>Driver A</h3>
-            <p>Active</p>
+<h1 class="mb-4">Admin Dashboard</h1>
+
+<!-- Trip Status Overview -->
+<section class="trip-status-overview">
+    <h2>Trip Status Overview</h2>
+    <div class="status-cards">
+        <div class="status-card">
+            <h3>Active Trips</h3>
+            <p id="active-trips">@Model.ActiveTrips</p>
+            <div class="trend positive">↑ Active</div>
         </div>
-        
-        <div class="driver-card">
-            <img src="~/images/profile-user.png" alt="Driver B">
-            <h3>Driver B</h3>
-            <p>Active</p>
+        <div class="status-card">
+            <h3>Assigned Trips</h3>
+            <p id="assigned-trips">@(Model.RecentActivities.Count(a => a.ActivityType == "Assigned"))</p>
+            <div class="trend neutral">→ In Progress</div>
         </div>
-        
-        <div class="driver-card">
-            <img src="~/images/profile-user.png" alt="Driver C">
-            <h3>Driver C</h3>
-            <p>Dead</p>
+        <div class="status-card">
+            <h3>Completed Trips</h3>
+            <p id="completed-trips">@Model.CompletedTrips</p>
+            <div class="trend positive">↑ Complete</div>
         </div>
+        <div class="status-card">
+            <h3>Available Drivers</h3>
+            <p id="available-drivers">@Model.AvailableDrivers</p>
+            <div class="trend @(Model.AvailableDrivers > 0 ? "positive" : "negative")">
+                @(Model.AvailableDrivers > 0 ? "↑" : "↓") Available
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Activities -->
+<section class="recent-activities">
+    <h2>Recent Trip Activities</h2>
+    <div id="recent-activities" class="activities-list">
+        @foreach (var activity in Model.RecentActivities.OrderByDescending(a => a.Timestamp))
+        {
+        <div class="activity-item">
+            <span class="activity-time">@activity.Timestamp.ToLocalTime().ToShortTimeString()</span>
+            <span class="activity-badge @activity.ActivityType.ToLower()">@activity.ActivityType</span>
+            <span class="activity-text">@activity.Description</span>
+        </div>
+        }
     </div>
 </section>
 
 <!-- Add New Trip Section -->
 <section class="add-new-trip">
-    <h2>Add New Trip</h2>
-    <form action="#">
+    <h2>Create New Trip</h2>
+    <form asp-action="AddNewTripByAdmin" asp-controller="Admin" method="post">
         <div class="form-row">
             <div class="form-group">
-                <label for="date">Date</label>
-                <input id="date" type="date" placeholder="Select Date">
+                <label for="CustomerId">Select Customer</label>
+                <select id="CustomerId" name="CustomerId" class="form-select" required>
+                    @foreach (var customer in Model.Customers)
+                    {
+                    <option value="@customer.Id">@($"{customer.FirstName} {customer.LastName}")</option>
+                    }
+                </select>
             </div>
             <div class="form-group">
-                <label for="load-number">Load Number</label>
-                <input id="load-number" type="text" placeholder="Enter load number">
-            </div>
-            <div class="form-group">
-                <label for="origin">Origin</label>
-                <input id="origin" type="text" placeholder="Enter starting location">
-            </div>
-            <div class="form-group">
-                <label for="destination">Destination</label>
-                <input id="destination" type="text" placeholder="Enter destination">
-            </div>
-            <div class="form-group">
-                <label for="rate">Freight Rate</label>
-                <input id="rate" type="text" placeholder="Enter rate per km">
+                <label for="DriverId">Assign Driver</label>
+                <select id="DriverId" name="DriverId" class="form-select" required>
+                    @foreach (var driver in Model.AvailableDriversList)
+                    {
+                    <option value="@driver.Id">@($"{driver.FirstName} {driver.LastName}")</option>
+                    }
+                </select>
             </div>
         </div>
-        <button type="submit">Submit</button>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="FromCity">From City</label>
+                <input type="text" id="FromCity" name="FromCity" required />
+            </div>
+            <div class="form-group">
+                <label for="ToCity">To City</label>
+                <input type="text" id="ToCity" name="ToCity" required />
+            </div>
+            <div class="form-group">
+                <label for="Distance">Distance (km)</label>
+                <input type="number" id="Distance" name="Distance" step="0.1" required />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="Weight">Weight (kg)</label>
+                <input type="number" id="Weight" name="Weight" step="0.1" required />
+            </div>
+            <div class="form-group">
+                <label for="Price">Price</label>
+                <input type="number" id="Price" name="Price" step="0.01" required />
+            </div>
+            <div class="form-group">
+                <label for="PickUpTime">Pickup Time</label>
+                <input type="datetime-local" id="PickUpTime" name="PickUpTime" required />
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary">Create Trip</button>
     </form>
 </section>
 
+<!-- Manage Drivers Section -->
+<section class="manage-drivers">
+    <h2>Active Drivers</h2>
+    <div class="drivers-grid">
+        @foreach (var driver in Model.RecentActivities.Where(a => a.ActivityType == "Driver").Take(4))
+        {
+        <div class="driver-card">
+            <img src="~/images/profile-user.png" alt="Driver" />
+            <h3>@driver.Description</h3>
+            <div class="driver-status @(driver.ActivityType == "Active" ? "active" : "inactive")">
+                @driver.ActivityType
+            </div>
+        </div>
+        }
+    </div>
+</section>
 
-
-
-<!-- Financial Overview Section -->
+<!-- Financial Overview -->
 <section class="financial-overview">
-    <h2>Financial Overview</h2>
+    <h2>Trip Revenue Overview</h2>
     <div class="financial-stats">
         <div class="revenue-comparison">
-            <h3>Revenue Comparison</h3>
-            <canvas id="revenueChart" width="400px" height="150px"></canvas>
-            <div class="bar-chart">
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-            </div>
+            <canvas id="tripRevenueChart"></canvas>
         </div>
         <div class="financial-details">
             <div class="detail">
                 <h3>Total Revenue</h3>
-                <p>$10,000</p>
-                <p class="positive">+15%</p>
+                <p id="total-revenue">@Model.TotalRevenue.ToString("C")</p>
             </div>
             <div class="detail">
                 <h3>Pending Payments</h3>
-                <p>$2,500</p>
-                <p class="negative">-10%</p>
+                <p id="pending-approvals">@Model.PendingApprovals.ToString("C")</p>
             </div>
             <div class="detail">
-                <h3>Paid Payments</h3>
-                <p>$7,500</p>
-                <p class="positive">+25%</p>
+                <h3>Completed Trips Revenue</h3>
+                <p id="completed-revenue">@((Model.TotalRevenue - Model.PendingApprovals).ToString("C"))</p>
             </div>
         </div>
     </div>
 </section>
 
+<!-- Toast Container for Notifications -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
-
-
-
-<!-- JavaScript for Chart.js -->
+@section Scripts {
+<script src="~/js/signalR.js"></script>
 <script>
-    var ctx = document.getElementById('revenueChart').getContext('2d');
-    var revenueChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'], // Months
-            datasets: [{
-                label: 'Amount',
-                data: [5000, 3000, 4000, 2000, 3500, 6000, 4500], // Varying heights of the bars
-                backgroundColor: '#007bff',
-                borderColor: '#007bff',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Amount' // Y-axis label
-                    },
-                    grid: {
-                        display: true // Grid lines on Y-axis
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Months' // X-axis label
-                    },
-                    grid: {
-                        display: false // No grid lines on X-axis
+    // Initialize Charts
+    const tripRevenueChart = new Chart(
+        document.getElementById('tripRevenueChart').getContext('2d'),
+        {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Trip Revenue',
+                    data: [@Model.TotalRevenue],
+                    borderColor: '#007bff',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
                     }
                 }
             }
         }
-    });
+    );
 </script>
-
-</body>
+}

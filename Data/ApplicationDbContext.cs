@@ -32,6 +32,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     
     //admin
     public DbSet<AdminActionLog> AdminActionLogs { get; set; }
+    public DbSet<RecentActivity> RecentActivities { get; set; }
+
 
     /// <summary>
     /// Configures the model relationships and properties using Fluent API.
@@ -74,6 +76,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         /// driver 1-1 location
         /// driver 1-1 address
         /// </summary>
+        mbuilder.Entity<RecentActivity>()
+            .HasOne(ra => ra.Trip)
+            .WithMany(t => t.RecentActivities) // Ensure Trip has a collection of RecentActivities
+            .HasForeignKey(ra => ra.TripId);
         
         mbuilder.Entity<Driver>()
             .HasMany(d=>d.DriverTrips)

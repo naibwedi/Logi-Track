@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using logirack.Data;
+using logirack.Hubs;
 using logirack.Models;
 using SendGrid;
 using logirack.Services;
@@ -83,9 +84,9 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 // Add controllers and Razor pages
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
-
 // Register custom services
 builder.Services.AddScoped<PasswordService>();
+
 
 // Manually configure SendGrid client
 var sendGridApiKey = builder.Configuration["SendGrid:ApiKey"];
@@ -93,6 +94,7 @@ builder.Services.AddSingleton<ISendGridClient>(new SendGridClient(sendGridApiKey
 
 // Register EmailSender as the implementation of IEmailSender
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -126,7 +128,9 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
+//  SignalR
 
+app.MapHub<TripHub>("/tripHub");
 // Set up roles and SuperAdmin user before the application starts
 using (var scope = app.Services.CreateScope())
 {

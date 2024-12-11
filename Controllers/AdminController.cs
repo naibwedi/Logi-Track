@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using logirack.Hubs;
+using Microsoft.AspNetCore.SignalR;
+
 namespace logirack.Services;
 
 
@@ -22,6 +25,7 @@ public class AdminController : Controller
     private readonly ILogger<AdminController> _logger;
     private readonly IEmailSender _emailSender;
     private readonly PasswordService _passwordService;
+    private readonly IHubContext<TripHub> _hubContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AdminController"/> class.
@@ -30,13 +34,14 @@ public class AdminController : Controller
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
         ILogger<AdminController> logger,
-        IEmailSender emailSender,
+        IEmailSender emailSender,IHubContext<TripHub> hubContext,
         PasswordService passwordService)
     {
         _db = db;
         _userManager = userManager;
         _roleManager = roleManager;
         _logger = logger;
+        _hubContext = hubContext;
         _emailSender = emailSender;
         _passwordService = passwordService;
     }
@@ -179,14 +184,43 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         var allDrivers = await _userManager.GetUsersInRoleAsync("Driver");
         var drivers = allDrivers.OfType<Driver>().ToList();
         return View(drivers);
-    }
+    } 
     /// <summary>
     /// Displays the admin dashboard
     /// </summary>
     [HttpGet("dashboard")]
-    public IActionResult Dashboard()
+    public async Task<IActionResult> Dashboard()
     {
-        return View();
+        // Fetch necessary data from the database
+        var activeTrips = await _db.Trips.CountAsync(t => t.Status == TripStatus.InProgress || t.Status == TripStatus.Assigned);
+        var availableDrivers = await _userManager.GetUsersInRoleAsync("Driver");
+        var availableDriverCount = availableDrivers.OfType<Driver>().Count(d => d.IsAvailable);
+        var pendingApprovals = await _userManager.Users.CountAsync(u => !u.IsApproved);
+        var totalRevenue = await _db.Trips.SumAsync(t => t.EstimatedPrice);
+        var completedTrips = await _db.Trips.CountAsync(t => t.Status == TripStatus.Completed);
+        
+        var recentActivities = await _db.RecentActivities
+            .OrderByDescending(a => a.Timestamp)
+            .Take(10)
+            .ToListAsync();
+
+        // Get available drivers and customers
+        var availableDriversList = availableDrivers.OfType<Driver>().Where(d => d.IsAvailable).ToList();
+        var customers = await _userManager.GetUsersInRoleAsync("Customer");
+        
+        var dashboardStats = new DashboardStats
+        {
+            ActiveTrips = activeTrips,
+            AvailableDrivers = availableDriverCount,
+            PendingApprovals = pendingApprovals,
+            TotalRevenue = totalRevenue,
+            CompletedTrips = completedTrips,
+            RecentActivities = recentActivities,
+            AvailableDriversList = availableDriversList,
+            Customers = customers.OfType<Customer>().ToList()
+        };
+        
+        return View(dashboardStats);
     }
 
     /// <summary>
@@ -462,7 +496,6 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         if (trip == null)
             return NotFound();
         
-        //for getting curent admin like assignment 4 
         var admin = await _userManager.GetUserAsync(User) as Admin;
         if (admin == null)
             return Forbid();
@@ -470,7 +503,14 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         trip.AdminId=admin.Id;
         trip.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
-        //notification to customer about trip status 
+        var tripReviewInfo = new
+        {
+            TripId = trip.Id,
+            TripStatus = trip.Status.ToString(),
+            ReviewedBy = $"{admin.FirstName} {admin.LastName}",
+            ReviewDate = trip.UpdatedAt
+        };
+        await _hubContext.Clients.Group("Admins").SendAsync("TripReviewed", tripReviewInfo);
         TempData["Success"] =isApproved ? "Trip Approved" : "Trip Rejected";
         return RedirectToAction(nameof(TripRequests));
 
@@ -571,9 +611,17 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send price set notification email to customer {Email}", 
-                    tripToUpdate.Customer.Email);
+                _logger.LogError(ex, "Failed to send price set notification to cutomer");
             }
+            var priceSetInfo = new
+            {
+                TripId = tripToUpdate.Id,
+                AdminPrice = tripToUpdate.AdminPrice,
+                Status = tripToUpdate.Status.ToString(),
+                UpdatedAt = tripToUpdate.UpdatedAt
+            };
+
+            await _hubContext.Clients.Group("Admins").SendAsync("TripPriceSet", priceSetInfo);
 
             TempData["Success"] = "Price set successfully and customer has been notified.";
             return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
@@ -700,6 +748,17 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 _logger.LogError(ex, "Failed to send trip assignment email ");
             }
             _logger.LogInformation($"Successfully created DriverTrip with ID: {driverTrip.Id}");
+            var tripAssignmentInfo = new
+            {
+                TripId = trip.Id,
+                TripStatus = trip.Status.ToString(),
+                DriverId = driver.Id,
+                DriverName = $"{driver.FirstName} {driver.LastName}",
+                AssignedBy = User.Identity.Name,
+                AssignmentDate = driverTrip.AssignmentDate
+            };
+
+            await _hubContext.Clients.Group("Admins").SendAsync("TripAssigned", tripAssignmentInfo);
             TempData["Success"] = $"Trip Assigned To User {driver.UserName}";
             return RedirectToAction(nameof(TripRequests));
         }
@@ -830,7 +889,18 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             {
                 _logger.LogError(ex, "Failed to send trip assignment email to driver {Email}", driver.Email);
             }
+            var tripCreationInfo = new
+            {
+                TripId = trip.Id,
+                TripStatus = trip.Status.ToString(),
+                DriverId = driver.Id,
+                DriverName = $"{driver.FirstName} {driver.LastName}",
+                CreatedBy = User.Identity.Name,
+                CreationDate = trip.CreatedAt
+            };
 
+            await _hubContext.Clients.Group("Admins").SendAsync("TripCreated", tripCreationInfo);
+            
             return RedirectToAction(nameof(Dashboard));
         }
         catch (Exception ex)
@@ -885,6 +955,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return View(trips);
     }
 
+   
 
 
 }

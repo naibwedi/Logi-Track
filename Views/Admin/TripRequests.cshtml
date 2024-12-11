@@ -1,10 +1,8 @@
-﻿<!-- Views/Admin/TripRequests.cshtml -->
-@model IEnumerable<logirack.Models.ViewModel.TripRequestViewModel>
+﻿@model IEnumerable<logirack.Models.ViewModel.TripRequestViewModel>
 
 <div class="container mx-auto p-6">
     <h1 class="text-2xl font-bold mb-6">Trip Requests</h1>
 
-    <!-- Status Filter -->
     <div class="mb-4">
         <label for="statusFilter" class="block text-sm font-medium mb-2">Filter by Status:</label>
         <select id="statusFilter" class="form-select" onchange="updateFilter(this.value)">
@@ -18,7 +16,6 @@
         </select>
     </div>
 
-    <!-- Trips Table -->
     <div class="overflow-x-auto">
         <table class="min-w-full bg-white border rounded-lg">
             <thead class="bg-gray-50">
