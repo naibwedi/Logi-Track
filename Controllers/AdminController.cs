@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using logirack.Hubs;
+using Microsoft.AspNetCore.SignalR;
+
 namespace logirack.Services;
 
 
@@ -22,6 +25,7 @@ public class AdminController : Controller
     private readonly ILogger<AdminController> _logger;
     private readonly IEmailSender _emailSender;
     private readonly PasswordService _passwordService;
+    private readonly IHubContext<TripHub> _hubContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AdminController"/> class.
@@ -30,23 +34,26 @@ public class AdminController : Controller
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
         ILogger<AdminController> logger,
-        IEmailSender emailSender,
+        IEmailSender emailSender,IHubContext<TripHub> hubContext,
         PasswordService passwordService)
     {
         _db = db;
         _userManager = userManager;
         _roleManager = roleManager;
         _logger = logger;
+        _hubContext = hubContext;
         _emailSender = emailSender;
         _passwordService = passwordService;
     }
-/// <summary>
-/// creating functionality for searching drivers based on filters
-/// </summary>
-/// <param name="searchString"></param>
-/// <param name="searchCriteria"></param>
-/// <returns></returns>
-[HttpGet]
+    /// <summary>
+    /// Search for drivers based on specified criteria
+    /// </summary>
+    /// <param name="searchString">The search term to filter drivers</param>
+    /// <param name="searchCriteria">The field to search by (FirstName, LastName, Email, PhoneNumber)</param>
+    /// <returns>A list of matching drivers</returns>
+    /// <response code="200">Returns the list of matching drivers</response>
+    /// <response code="400">If the search criteria is invalid</response>
+    [HttpGet]
 public IActionResult SearchDrivers(string searchString, string searchCriteria)
 {
     var drivers = from d in _db.Drivers // Changed _context to _db
@@ -75,6 +82,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 }
 
     
+    /// <summary>
+    /// Creates a new driver account
+    /// </summary>
+    /// <returns>View for creating a new driver</returns>
     [HttpGet]
     public IActionResult CreateDriver()
     {
@@ -82,9 +93,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     }
 
     /// <summary>
-    /// Processes  the creation of a new Driver.
+    /// Processes the creation of a new Driver
     /// </summary>
-    /// <param name="model">The data submitted from the form.</param>
+    /// <param name="model">Driver creation data</param>
+    /// <returns>Redirect to driver management on success, or view with errors</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateDriver(CreateDriverViewModel model)
@@ -161,25 +173,93 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     
 
     /// <summary>
-    /// Displays a list of all Driver users.
+    /// Displays a list of all Driver users
     /// </summary>
+    /// <returns>View with list of all drivers</returns>
     [HttpGet]
     public async Task<IActionResult> DriverManagment()
     {
         var allDrivers = await _userManager.GetUsersInRoleAsync("Driver");
         var drivers = allDrivers.OfType<Driver>().ToList();
         return View(drivers);
-    }
-
-    public IActionResult Dashboard()
-    {
-        return View();
-    }
-
+    } 
     /// <summary>
-    /// Edits a Driver user.
+    /// Displays the admin dashboard
     /// </summary>
-    /// <param name="id">The ID of the Driver to edit.</param>
+    [HttpGet]
+    public async Task<IActionResult> Dashboard()
+    {
+        try
+        {
+           
+            var activeTrips = await _db.Trips.CountAsync(t => 
+                t.Status == TripStatus.Requested ||
+                t.Status == TripStatus.ApprovedByAdmin ||
+                t.Status == TripStatus.PriceSet ||
+                t.Status == TripStatus.ApprovedByCustomer);
+
+            
+            var assignedTrips = await _db.Trips.CountAsync(t => 
+                t.Status == TripStatus.Assigned || 
+                t.Status == TripStatus.InProgress);
+
+            var completedTrips = await _db.Trips.CountAsync(t => 
+                t.Status == TripStatus.Completed);
+
+            var availableDriverCount = await _db.Users
+                .OfType<Driver>()
+                .CountAsync(d => d.IsAvailable);
+
+            var availableDriversList = await _db.Users
+                .OfType<Driver>()
+                .Where(d => d.IsAvailable)
+                .ToListAsync();
+
+            var customers = await _db.Users
+                .OfType<Customer>()
+                .ToListAsync();
+
+            var totalRevenue = await _db.Trips
+                .Where(t => t.Status != TripStatus.CancelledByAdmin && 
+                           t.Status != TripStatus.CanceledByCustomer)
+                .SumAsync(t => t.AdminPrice);
+
+            var recentActivities = await _db.RecentActivities
+                .OrderByDescending(a => a.Timestamp)
+                .Take(10)
+                .ToListAsync();
+
+            var pendingApprovals = await _db.Users.CountAsync(u => !u.IsApproved);
+
+            var dashboardStats = new DashboardStats
+            {
+                ActiveTrips = activeTrips,
+                AssignedTrips = assignedTrips,
+                CompletedTrips = completedTrips,
+                AvailableDrivers = availableDriverCount,
+                PendingApprovals = pendingApprovals,
+                TotalRevenue = totalRevenue,
+                RecentActivities = recentActivities,
+                AvailableDriversList = availableDriversList,
+                Customers = customers
+            };
+
+            return View(dashboardStats);
+        }
+        catch (Exception ex)
+        {
+            return View(new DashboardStats
+            {
+                RecentActivities = new List<RecentActivity>(),
+                AvailableDriversList = new List<Driver>(),
+                Customers = new List<Customer>()
+            });
+        }
+    }
+    /// <summary>
+    /// Gets driver details for editing
+    /// </summary>
+    /// <param name="id">Driver ID to edit</param>
     [HttpGet]
     public async Task<IActionResult> EditDriver(string id)
     {
@@ -208,6 +288,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return View(model);
     }
 
+    /// <summary>
+    /// Updates driver information
+    /// </summary>
+    /// <param name="model">Updated driver information</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditDriver(EditDriverViewModel model)
@@ -267,9 +351,9 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     }
 
     /// <summary>
-    /// Deletes a Driver user.
+    /// Deletes a driver account
     /// </summary>
-    /// <param name="id">The ID of the Driver to delete.</param>
+    /// <param name="id">ID of driver to delete</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteDriver(string id)
@@ -295,6 +379,9 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return RedirectToAction(nameof(DriverManagment));
     }
     
+    /// <summary>
+    /// Gets list of users pending approval
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> PendingApprovals()
     {
@@ -303,6 +390,11 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     }
     
     
+    /// <summary>
+    /// Approves or rejects a user registration
+    /// </summary>
+    /// <param name="userId">User ID to approve/reject</param>
+    /// <param name="approve">True to approve, false to reject</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ApproveUser(string userId, bool approve)
@@ -322,8 +414,28 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         if (approve)
         {
             user.IsApproved = true;
-            TempData["Success"] = "User has been approved.";
-            _logger.LogInformation("User {Email} approved by admin.", user.Email);
+            var result = await _userManager.UpdateAsync(user);
+            if (result.Succeeded)
+            {
+                try
+                {
+                    await _emailSender.SendEmailAsync(
+                        user.Email,
+                        "Your Account Has Been Approved",
+                        $"Dear {user.FirstName} {user.LastName},\n\n" +
+                        $"Your account has been approved. You can now log in and access all features.\n\n" +
+                        $"Best regards,\n" +
+                        $"Logirack Team"
+                    );
+                    _logger.LogInformation("Approval email sent to user");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send approval email");
+                }
+
+                TempData["Success"] = "User has been approved.";
+            }
         }
         else
         {
@@ -332,8 +444,6 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             TempData["Success"] = "User has been rejected and deleted.";
             _logger.LogInformation("User {Email} rejected by admin and deleted.", user.Email);
         }
-
-        await _db.SaveChangesAsync();
         return RedirectToAction(nameof(PendingApprovals));
     }
 
@@ -409,9 +519,8 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     /// <summary>
     /// Processes the approval or rejection of a trip request.
     /// </summary>
-    /// <param name="tId">The ID of the trip to review.</param>
-    /// <param name="isApproved">Indicates whether the trip is approved (true) or rejected (false).</param>
-    /// <returns>Redirects to the TripRequests view after processing.</returns>
+    /// <param name="tId">Trip ID</param>
+    /// <param name="isApproved">Approval status</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReviewTrip(int tId, bool isApproved)
@@ -420,7 +529,6 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         if (trip == null)
             return NotFound();
         
-        //for getting curent admin like assignment 4 
         var admin = await _userManager.GetUserAsync(User) as Admin;
         if (admin == null)
             return Forbid();
@@ -428,12 +536,23 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         trip.AdminId=admin.Id;
         trip.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
-        //notification to customer about trip status 
+        var tripReviewInfo = new
+        {
+            TripId = trip.Id,
+            TripStatus = trip.Status.ToString(),
+            ReviewedBy = $"{admin.FirstName} {admin.LastName}",
+            ReviewDate = trip.UpdatedAt
+        };
+        await _hubContext.Clients.Group("Admins").SendAsync("TripReviewed", tripReviewInfo);
         TempData["Success"] =isApproved ? "Trip Approved" : "Trip Rejected";
         return RedirectToAction(nameof(TripRequests));
 
     }
 
+    /// <summary>
+    /// Gets trip price setting page
+    /// </summary>
+    /// <param name="id">Trip ID</param>
     [HttpGet]
     public async Task<IActionResult> SetPrice(int id)
     {
@@ -458,6 +577,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         };
         return View(viewModel);
     }
+    /// <summary>
+    /// Sets the price for a trip
+    /// </summary>
+    /// <param name="model">Price setting data</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetPrice(SetPriceViewModel model)
@@ -499,16 +622,54 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         try
         {
             await _db.SaveChangesAsync();
+            try
+            {
+                await _emailSender.SendEmailAsync(
+                    tripToUpdate.Customer.Email,
+                    "Trip Price Set - Action Required",
+                    $"Dear {tripToUpdate.Customer.FirstName} {tripToUpdate.Customer.LastName},\n\n" +
+                    $"The price for your trip has been set and requires your approval.\n\n" +
+                    $"Trip Details:\n" +
+                    $"Trip ID: {tripToUpdate.Id}\n" +
+                    $"From: {tripToUpdate.FromCity}\n" +
+                    $"To: {tripToUpdate.ToCity}\n" +
+                    $"Set Price: {tripToUpdate.AdminPrice:C}\n" +
+                    $"Original Estimate: {tripToUpdate.EstimatedPrice:C}\n\n" +
+                    $"Please log in to your account to approve or reject this price.\n\n" +
+                    $"Best regards,\n" +
+                    $"Logirack Team"
+                );
+                _logger.LogInformation("Price set notification email sent to customer {Email}", 
+                    tripToUpdate.Customer.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send price set notification to cutomer");
+            }
+            var priceSetInfo = new
+            {
+                TripId = tripToUpdate.Id,
+                AdminPrice = tripToUpdate.AdminPrice,
+                Status = tripToUpdate.Status.ToString(),
+                UpdatedAt = tripToUpdate.UpdatedAt
+            };
+
+            await _hubContext.Clients.Group("Admins").SendAsync("TripPriceSet", priceSetInfo);
+
+            TempData["Success"] = "Price set successfully and customer has been notified.";
+            return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error setting price for trip {TripId}", model.TripId);
             ModelState.AddModelError("", "An error occurred while saving changes.");
             return View(model);
         }
-
-        return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
     }
-
+    /// <summary>
+    /// Gets driver assignment page for a trip
+    /// </summary>
+    /// <param name="id">Trip ID</param>
     [HttpGet]
     public async Task<IActionResult> AssignTrip(int id)
     {
@@ -535,73 +696,111 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return View(viewM);
     }
 
+    /// <summary>
+    /// Assigns a driver to a trip
+    /// </summary>
+    /// <param name="model">Trip assignment data</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AssignTrip(AssignTripViewModel model)
     {
-        _logger.LogInformation($"AssignTrip POST called with TripId: {model.TripId}, DriverId: {model.DriverId}");
         if (!ModelState.IsValid)
         {
-            _logger.LogWarning("ModelState is invalid");
-            foreach (var modelState in ModelState.Values)
-            {
-                foreach (var error in modelState.Errors)
-                {
-                    _logger.LogWarning($"Validation error: {error.ErrorMessage}");
-                }
-            }
+            await LoadAvailableDrivers(model);
+            return View(model);
         }
 
         try
         {
+            var trip = await _db.Trips
+                .Include("DriverTrip")    
+                .Include("Customer")      
+                .FirstOrDefaultAsync(t => t.Id == model.TripId);
 
-            var trip = await _db.Trips.FindAsync(model.TripId);
-            var driver = await _userManager.FindByIdAsync(model.DriverId) as Driver;
-
-            if (trip == null || driver == null)
+            if (trip == null)
             {
-                _logger.LogError($"Trip or Driver not found. TripId: {model.TripId}, DriverId: {model.DriverId}");
-                return NotFound();
+                _logger.LogError($"Trip not found. TripId: {model.TripId}");
+                return NotFound("Trip not found");
+            }
+
+            if (trip.DriverTrip != null)
+            {
+                ModelState.AddModelError("", "This trip is already assigned to a driver");
+                await LoadAvailableDrivers(model);
+                return View(model);
+            }
+
+            var driver = await _userManager.FindByIdAsync(model.DriverId) as Driver;
+            if (driver == null)
+            {
+                ModelState.AddModelError("DriverId", "Selected driver not found");
+                await LoadAvailableDrivers(model);
+                return View(model);
             }
 
             if (!driver.IsAvailable)
             {
-                ModelState.AddModelError("DriverId", "this driver is not available");
+                ModelState.AddModelError("DriverId", "Selected driver is not available");
+                await LoadAvailableDrivers(model);
                 return View(model);
             }
 
-            _logger.LogInformation($"Creating DriverTrip for Trip: {trip.Id}, Driver: {driver.Email}");
-
-            var driverTrip = new DriverTrip
+            using var transaction = await _db.Database.BeginTransactionAsync();
+            try
             {
-                TripId = model.TripId,
-                Trip = trip,
-                DriverId = driver.Id,
-                Driver = driver,
-                AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-                DriverPayment = driver.PricePerKm * trip.Distance,
-                Status = TripStatus.Assigned,
-                AssignmentDate = DateTime.Now,
-                UpdateAt = DateTime.Now
-            };
-            driver.IsAvailable = false;
-            await _userManager.UpdateAsync(driver);
-            _db.DriverTrips.Add(driverTrip);
-            await _db.SaveChangesAsync();
-            _logger.LogInformation($"Successfully created DriverTrip with ID: {driverTrip.Id}");
-            TempData["Success"] = $"Trip Assigned To User {driver.UserName}";
-            return RedirectToAction(nameof(TripRequests));
+                var driverTrip = new DriverTrip
+                {
+                    TripId = trip.Id,
+                    DriverId = driver.Id,
+                    AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    DriverPayment = driver.PricePerKm * trip.Distance,
+                    Status = TripStatus.Assigned,
+                    AssignmentDate = DateTime.Now,
+                    UpdateAt = DateTime.Now
+                };
+
+                trip.Status = TripStatus.Assigned;
+                driver.IsAvailable = false;
+
+                _db.DriverTrips.Add(driverTrip);
+                await _db.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                TempData["Success"] = $"Trip successfully assigned to {driver.UserName}";
+                return RedirectToAction(nameof(TripRequests));
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            _logger.LogError($"Error assigning trip: {ex.Message}");
-            var availableDrivers = await _userManager.GetUsersInRoleAsync("Driver");
-            model.AvailableDrivers=availableDrivers.OfType<Driver>().Where(d => d.IsAvailable).ToList();
+            _logger.LogError(ex, "Error assigning trip");
+            ModelState.AddModelError("", "An error occurred while assigning the trip");
+            await LoadAvailableDrivers(model);
             return View(model);
         }
-        
     }
-
+    private async Task LoadAvailableDrivers(AssignTripViewModel model)
+    {
+        var allDrivers = await _userManager.GetUsersInRoleAsync("Driver");
+    
+        var availableDrivers = new List<Driver>();
+        foreach (var user in allDrivers)
+        {
+            if (user is Driver driver && driver.IsAvailable)
+            {
+                availableDrivers.Add(driver);
+            }
+        }
+        model.AvailableDrivers = availableDrivers;
+    }
+    /// <summary>
+    /// Gets page for creating a new trip by admin
+    /// </summary>
+    /// <param name="id">Reference ID</param>
     [HttpGet]
     public async Task<IActionResult> AddNewTripByAdmin(int id)
     {
@@ -617,6 +816,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return View(model);
     }
 
+    /// <summary>
+    /// Creates a new trip
+    /// </summary>
+    /// <param name="model">Trip creation data</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddNewTripByAdmin(CreateTripByAdminViewModel model)
@@ -638,11 +841,37 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
         try
         {
+            var customer = await _db.Users
+                .OfType<Customer>()
+                .FirstOrDefaultAsync(c => c.Id == model.CustomerId);
+            
+            if (customer == null)
+            {
+                ModelState.AddModelError("CustomerId", "Invalid customer selected.");
+                return View(model);
+            }
+
+            var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.IsNullOrEmpty(adminId))
+            {
+                var admin = await _db.Users
+                    .OfType<Admin>()
+                    .FirstOrDefaultAsync(a => a.Id == adminId);
+                
+                if (admin == null)
+                {
+                    _logger.LogWarning($"Admin with ID {adminId} not found in database");
+                    ModelState.AddModelError("", "Current admin user not found in database.");
+                    return View(model);
+                }
+            }
+
             //C trip
             var trip = new Trip
             {
                 CustomerId = model.CustomerId,
                 FromCity = model.FromCity,
+                Status = TripStatus.Assigned,
                 ToCity = model.ToCity,
                 FromAddress = model.FromAddress,
                 FromZipCode = model.FromZipCode,
@@ -652,9 +881,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 Distance = model.Distance,
                 Weight = model.weight,
                 PickupTime = model.PickUpTime,
-                Status = TripStatus.PriceSet,
                 CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
                 AdminPrice = model.Price,
                 AdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)
             };
@@ -686,7 +913,42 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             driver.IsAvailable = false;
             _db.Users.Update(driver);
             await _db.SaveChangesAsync();
-            _logger.LogInformation($"Successfully change  Drive status of driver : {driverTrip.Id}");
+            try
+            {
+                await _emailSender.SendEmailAsync(
+                    driver.Email,
+                    "New Trip Assignment",
+                    $"Dear {driver.FirstName} {driver.LastName},\n\n" +
+                    $"You have been assigned a new trip.\n\n" +
+                    $"Trip Details:\n" +
+                    $"Trip ID: {trip.Id}\n" +
+                    $"From: {trip.FromCity}\n" +
+                    $"To: {trip.ToCity}\n" +
+                    $"Pickup Time: {trip.PickupTime}\n" +
+                    $"Distance: {trip.Distance}km\n" +
+                    $"Weight: {trip.Weight}kg\n" +
+                    $"Your Payment: {driverTrip.DriverPayment:C}\n\n" +
+                    $"Please check your dashboard for more details.\n\n" +
+                    $"Best regards,\n" +
+                    $"Logirack Team"
+                );
+                _logger.LogInformation("Trip assignment email sent to driver {Email}", driver.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send trip assignment email to driver {Email}", driver.Email);
+            }
+            var tripCreationInfo = new
+            {
+                TripId = trip.Id,
+                TripStatus = trip.Status.ToString(),
+                DriverId = driver.Id,
+                DriverName = $"{driver.FirstName} {driver.LastName}",
+                CreatedBy = User.Identity.Name,
+                CreationDate = trip.CreatedAt
+            };
+
+            await _hubContext.Clients.Group("Admins").SendAsync("TripCreated", tripCreationInfo);
             
             return RedirectToAction(nameof(Dashboard));
         }
@@ -705,6 +967,9 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         }
     }
     
+    /// <summary>
+    /// Gets trip history log
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> TripLog()
     {
@@ -739,6 +1004,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return View(trips);
     }
 
+   
 
 
 }

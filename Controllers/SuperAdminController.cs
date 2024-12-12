@@ -1,8 +1,8 @@
-﻿using logirack.Data;
-using logirack.Models;
+﻿using logirack.Models;
 using logirack.Models.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,29 +12,29 @@ namespace logirack.Controllers;
 /// Controller for SuperAdmin actions, including creating and managing Admin users.
 /// </summary>
 [Authorize(Roles = "SuperAdmin")]
+
 public class SuperAdminController : Controller
 {
-    private readonly ApplicationDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ILogger<SuperAdminController> _logger;
+    private readonly IEmailSender _emailSender; 
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SuperAdminController"/> class.
     /// </summary>
-    public SuperAdminController(
-        ApplicationDbContext db, UserManager<ApplicationUser> userManager,
-        RoleManager<IdentityRole> roleManager, ILogger<SuperAdminController> logger)
+    public SuperAdminController( UserManager<ApplicationUser> userManager, ILogger<SuperAdminController> logger, IEmailSender emailSender)
     {
-        _db = db;
+        _emailSender = emailSender;
         _userManager = userManager;
-        _roleManager = roleManager;
         _logger = logger;
     }
 
     /// <summary>
-    /// Displays the form to create a new Admin.
+    /// Gets the form to create a new Admin
     /// </summary>
+    /// <returns>The create admin view</returns>
+    /// <response code="200">Returns the create form view</response>
     [HttpGet]
     public IActionResult CreateAdmin()
     {
@@ -42,11 +42,14 @@ public class SuperAdminController : Controller
     }
 
     /// <summary>
-    /// Processes the creation of a new Admin.
+    /// Creates a new Admin user
     /// </summary>
-    /// <param name="model">The data submitted from the form.</param>
+    /// <param name="model">The admin creation data</param>
+    /// <returns>Redirects to admin list on success</returns>
+    /// <response code="200">If admin is created successfully</response>
+    /// <response code="400">If the model is invalid or email/phone exists</response>
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    
     public async Task<IActionResult> CreateAdmin(CreateAdminViewModel model)
     {
         if (ModelState.IsValid)
@@ -87,6 +90,33 @@ public class SuperAdminController : Controller
             {
                 await _userManager.AddToRoleAsync(newadmin, "Admin");
                 _logger.LogInformation("User created a new account {Email}.", model.AdminEmail);
+                try
+                {
+                    await _emailSender.SendEmailAsync(
+                        model.AdminEmail,
+                        "Welcome to Logirack Admin Team",
+                        $"Dear {model.FirstName} {model.LastName},\n\n" +
+                        $"Welcome to the Logirack admin team! Your admin account has been created successfully.\n\n" +
+                        $"Your login credentials:\n" +
+                        $"Email: {model.AdminEmail}\n" +
+                        $"Password: {model.AdminPassword}\n\n" +
+                        $"Please login at: [Your Login URL]\n\n" +
+                        $"For security reasons, we recommend changing your password after your first login.\n\n" +
+                        $"Account Details:\n" +
+                        $"Role: Admin\n" +
+                        $"Phone: {model.PhoneNumber}\n" +
+                        $"Created on: {DateTime.Now}\n\n" +
+                        $"If you have any questions or need assistance, please contact the SuperAdmin.\n\n" +
+                        $"Best regards,\n" +
+                        $"Logirack Team"
+                    );
+                    _logger.LogInformation("Welcome email sent to new admin {Email}", model.AdminEmail);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send welcome email to new admin {Email}", model.AdminEmail);
+                    // Continue execution even if email fails
+                }
 
                 TempData["Success"] = "Admin created successfully";
                 return RedirectToAction(nameof(AdminList));
@@ -104,9 +134,15 @@ public class SuperAdminController : Controller
     }
 
     /// <summary>
-    /// Displays the form to edit an existing Admin.
+    /// Gets an admin's details for editing
     /// </summary>
+    /// <param name="id">The ID of the admin to edit</param>
+    /// <returns>The edit admin view</returns>
+    /// <response code="200">Returns the edit form view</response>
+    /// <response code="404">If admin is not found</response>
+    /// <response code="400">If id is null or empty</response>
     [HttpGet]
+   
     public async Task<IActionResult> EditAdmin(string id)
     {
         if (string.IsNullOrEmpty(id))
@@ -134,9 +170,13 @@ public class SuperAdminController : Controller
     }
 
     /// <summary>
-    /// Processes the editing of an existing Admin.
+    /// Updates an existing admin's information
     /// </summary>
-    /// <param name="model">The data submitted from the form.</param>
+    /// <param name="model">The updated admin data</param>
+    /// <returns>Redirects to admin list on success</returns>
+    /// <response code="200">If admin is updated successfully</response>
+    /// <response code="404">If admin is not found</response>
+    /// <response code="400">If the model is invalid</response>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditAdmin(EditAdminViewModel model)
@@ -175,8 +215,10 @@ public class SuperAdminController : Controller
     }
 
     /// <summary>
-    /// Displays a list of all Admin users.
+    /// Gets a list of all admin users
     /// </summary>
+    /// <returns>View with list of all admins</returns>
+    /// <response code="200">Returns the list of admins</response>
     [HttpGet]
     public async Task<IActionResult> AdminList()
     {
@@ -185,6 +227,14 @@ public class SuperAdminController : Controller
         return View(admins);
     }
 
+    /// <summary>
+    /// Deletes an admin user
+    /// </summary>
+    /// <param name="id">The ID of the admin to delete</param>
+    /// <returns>Redirects to admin list</returns>
+    /// <response code="200">If admin is deleted successfully</response>
+    /// <response code="404">If admin is not found</response>
+    /// <response code="400">If id is null or empty</response>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteAdmin(string id)

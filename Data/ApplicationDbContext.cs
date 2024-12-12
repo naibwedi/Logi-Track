@@ -32,6 +32,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     
     //admin
     public DbSet<AdminActionLog> AdminActionLogs { get; set; }
+    public DbSet<RecentActivity> RecentActivities { get; set; }
+
 
     /// <summary>
     /// Configures the model relationships and properties using Fluent API.
@@ -58,7 +60,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         //IMPORTANT: see the diagram on discord or jira LOGIRACK-26 https://tools.uia.no/jira/browse/LOGIRACK-26
         //TODO i need to handle deletion restriction in app logic not here bcs
         //todo bcs sqlite not fully support of func OnDelete() and i need to ask the teacher about it 
-        
+        mbuilder.Entity<RecentActivity>()
+            .HasOne(ra => ra.Trip)
+            .WithMany(t => t.RecentActivities) // Ensure Trip has a collection of RecentActivities
+            .HasForeignKey(ra => ra.TripId);
         //Customer : 
         //Customer 1-M  Trip                     
         mbuilder.Entity<Customer>()
@@ -74,6 +79,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         /// driver 1-1 location
         /// driver 1-1 address
         /// </summary>
+        mbuilder.Entity<RecentActivity>()
+            .HasOne(ra => ra.Trip)
+            .WithMany(t => t.RecentActivities) // Ensure Trip has a collection of RecentActivities
+            .HasForeignKey(ra => ra.TripId);
         
         mbuilder.Entity<Driver>()
             .HasMany(d=>d.DriverTrips)

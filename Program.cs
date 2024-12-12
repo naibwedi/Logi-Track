@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using logirack.Data;
+using logirack.Hubs;
 using logirack.Models;
 using SendGrid;
 using logirack.Services;
+using Microsoft.OpenApi.Models;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +19,48 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+// ----------------swager---------------------------------------------------
+// Add Swagger services
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Logirack API",
+        Version = "v1",
+        Description = "API documentation for Logirack application",
+        Contact = new OpenApiContact
+        {
+            Name = "Your Name",
+            Email = "your.email@example.com"
+        }
+    });
 
+    // Add JWT Authentication support in Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 // Configure Identity
 // builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
 //     .AddRoles<IdentityRole>()
@@ -41,9 +84,9 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 // Add controllers and Razor pages
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
-
 // Register custom services
 builder.Services.AddScoped<PasswordService>();
+
 
 // Manually configure SendGrid client
 var sendGridApiKey = builder.Configuration["SendGrid:ApiKey"];
@@ -51,6 +94,7 @@ builder.Services.AddSingleton<ISendGridClient>(new SendGridClient(sendGridApiKey
 
 // Register EmailSender as the implementation of IEmailSender
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -58,6 +102,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
+    // Add these two lines
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Logirack API V1");
+    });
 }
 else
 {
@@ -78,7 +128,9 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
+//  SignalR
 
+app.MapHub<TripHub>("/tripHub");
 // Set up roles and SuperAdmin user before the application starts
 using (var scope = app.Services.CreateScope())
 {
