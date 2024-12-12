@@ -1,5 +1,5 @@
 ﻿@{
-ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Dashboard";
 }
 
 <div class="dashboard-fullscreen">
@@ -8,6 +8,10 @@ ViewData["Title"] = "Dashboard";
     <div class="button-group">
         <a asp-action="CreateTrip" class="btn btn-primary">Create New Trip</a>
         <a asp-action="MyTrips" class="btn btn-secondary">View My Trips</a>
+        <form asp-action="CustomerDelete" method="post" onsubmit="return confirmDelete()" style="display: inline;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-secondary">Delete Account</button>
+        </form>
     </div>
 </div>
 

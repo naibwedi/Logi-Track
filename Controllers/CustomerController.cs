@@ -19,15 +19,17 @@ namespace logirack.Controllers
         private readonly ApplicationDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<CustomerController> _logger;
-        private readonly IEmailSender _emailSender; 
+        private readonly IEmailSender _emailSender;
+        private SignInManager<ApplicationUser> _signInManager;
 
         public CustomerController(UserManager<ApplicationUser> userManager, 
-            ILogger<CustomerController> logger, IEmailSender emailSender, ApplicationDbContext db)
+            ILogger<CustomerController> logger, IEmailSender emailSender, ApplicationDbContext db, SignInManager<ApplicationUser> signInManager)
         {
             _db = db;
             _emailSender = emailSender;
             _userManager = userManager;
             _logger = logger;
+            _signInManager = signInManager;
         }
 
         // Home page for the customer
@@ -205,6 +207,7 @@ namespace logirack.Controllers
             var trips = await _db.Trips.Where(t => t.CustomerId == user.Id).ToListAsync();
             return View(trips);
         }
+        
 
         /// <summary>
         /// Gets detailed information about a specific trip
@@ -317,7 +320,46 @@ namespace logirack.Controllers
             await _db.SaveChangesAsync();
             return RedirectToAction("MyTrips");
         }
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CustomerDelete()
+        {
+            Customer? customer = await _userManager.GetUserAsync(User) as Customer;
+            if (customer == null)
+            {
+                return NotFound();
+            }
 
+            try
+            {
+                await using var transaction = await _db.Database.BeginTransactionAsync();
+                customer.isDeleted = true;
+                customer.DeletedOn = DateTime.UtcNow;
+                customer.DisplayName = $"DeletedUser_{DateTime.UtcNow.Ticks}";
+                customer.FirstName = "[Deleted]";
+                customer.LastName = "[Deleted]";
+                customer.CompanyName = "[Deleted]";
+                customer.Email = $"deleted_{customer.Id}@deleted.invalid";
+                customer.NormalizedEmail = customer.Email.ToUpper();
+                customer.UserName = customer.Email;
+                customer.NormalizedUserName = customer.Email.ToUpper();
+                customer.PhoneNumber = null;
+                customer.ModifiedOn = DateTime.UtcNow;
+        
+                await _userManager.UpdateAsync(customer);
+                await _signInManager.SignOutAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation($"Customer account {customer.Id} deleted successfully");
+                return RedirectToAction("Index", "Home");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete customer account");
+                return RedirectToAction("Dashboard");
+            }
+        }   
         private double CalculateTripPriceEstimate(SubmitTripViewModel model)
         {
             double baseRate = 50;
