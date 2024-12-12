@@ -12,22 +12,26 @@ namespace logirack.Controllers;
 /// Controller for SuperAdmin actions, including creating and managing Admin users.
 /// </summary>
 [Authorize(Roles = "SuperAdmin")]
-
 public class SuperAdminController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<SuperAdminController> _logger;
     private readonly IEmailSender _emailSender; 
 
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SuperAdminController"/> class.
     /// </summary>
-    public SuperAdminController( UserManager<ApplicationUser> userManager, ILogger<SuperAdminController> logger, IEmailSender emailSender)
+    public SuperAdminController(UserManager<ApplicationUser> userManager, ILogger<SuperAdminController> logger, IEmailSender emailSender)
     {
         _emailSender = emailSender;
         _userManager = userManager;
         _logger = logger;
+    }
+
+    [HttpGet]
+    public IActionResult Dashboard()
+    {
+        return View("Dashboard");
     }
 
     /// <summary>
@@ -49,7 +53,6 @@ public class SuperAdminController : Controller
     /// <response code="200">If admin is created successfully</response>
     /// <response code="400">If the model is invalid or email/phone exists</response>
     [HttpPost]
-    
     public async Task<IActionResult> CreateAdmin(CreateAdminViewModel model)
     {
         if (ModelState.IsValid)
@@ -142,7 +145,6 @@ public class SuperAdminController : Controller
     /// <response code="404">If admin is not found</response>
     /// <response code="400">If id is null or empty</response>
     [HttpGet]
-   
     public async Task<IActionResult> EditAdmin(string id)
     {
         if (string.IsNullOrEmpty(id))
