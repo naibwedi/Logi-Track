@@ -1,0 +1,97 @@
+﻿html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Open Sans', sans-serif;
+    height: 100%;
+    width: 100%;
+    background: #000;
+    overflow: hidden;
+}
+
+.dashboard-fullscreen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(to bottom right, #000, #333);
+    padding: 60px; /* If you want some spacing around the card */
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    text-align: center;
+    animation: fadeIn 0.8s ease-in-out forwards;
+    opacity: 0;
+}
+
+/* Ensure the container isn't too wide */
+.dashboard-fullscreen {
+    max-width: 300px;
+    width: 100%;
+}
+
+/* Title */
+.dashboard-fullscreen h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    font-weight: 700;
+    color: #fff;
+}
+
+/* Welcome text */
+.dashboard-fullscreen p {
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+    font-weight: 400;
+    color: #fff;
+}
+
+/* Buttons */
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.btn {
+    display: inline-block;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 12px 24px;
+    border-radius: 5px;
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    text-align: center;
+}
+
+/* Primary Button - white on black */
+.btn-primary {
+    background: #fff;
+    color: #000;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Secondary Button - gray on white */
+.btn-secondary {
+    background: #ccc;
+    color: #000;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
