@@ -8,10 +8,36 @@
     <div class="button-group">
         <a asp-action="CreateTrip" class="btn btn-primary">Create New Trip</a>
         <a asp-action="MyTrips" class="btn btn-secondary">View My Trips</a>
-        <form asp-action="CustomerDelete" method="post" onsubmit="return confirmDelete()" style="display: inline;">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-secondary">Delete Account</button>
-        </form>
+        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
+            Delete Account
+        </button>
+    </div>
+</div>
+<!-- Modal for account deletion confirmation i forgte it using AI help  -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Account Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger">Warning: This action cannot be undone</p>
+                <p>Are you sure you want to delete your account? This will:</p>
+                <ul>
+                    <li>Remove your personal information</li>
+                    <li>Archive your trip history</li>
+                    <li>Permanently deactivate your account</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form asp-action="CustomerDelete" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Delete My Account</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
