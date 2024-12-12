@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
     <link rel="stylesheet" href="~/css/navBar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/adminDashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/driverDashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/homePage.css" asp-append-version="true" />
@@ -27,7 +28,23 @@
             </button>
             <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                 <ul class="navbar-nav flex-grow-1">
-                    @if (User.IsInRole("Admin"))
+
+                    @if (User.IsInRole("SuperAdmin"))
+                    {
+                    <li class="nav-item">
+                        <a class="nav-link text-dark">SuperAdmin</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="SuperAdmin" asp-action="Dashboard">SuperAdmin Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="SuperAdmin" asp-action="AdminList">Admin List</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="SuperAdmin" asp-action="CreateAdmin">Create Admin</a>
+                    </li>
+                    }
+                    else if (User.IsInRole("Admin"))
                     {
                     <li class="nav-item admin-dashboard">
                         <a class="nav-link text-dark">Admin</a>
@@ -77,12 +94,12 @@
                     }
                     else if (User.IsInRole("Customer"))
                     {
-                        <li class="nav-item ">
-                            <a class="nav-link" asp-controller="Customer" asp-action="Dashboard">Customer Dashboard</a>
-                        </li>
-                        <li class="nav-item ">
-                            <a class="nav-link" asp-controller="Customer" asp-action="MyTrips">My trips</a>
-                        </li>
+                    <li class="nav-item ">
+                        <a class="nav-link" asp-controller="Customer" asp-action="Dashboard">Customer Dashboard</a>
+                    </li>
+                    <li class="nav-item ">
+                        <a class="nav-link" asp-controller="Customer" asp-action="MyTrips">My trips</a>
+                    </li>
                     }
                     else
                     {

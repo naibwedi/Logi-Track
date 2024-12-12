@@ -104,6 +104,11 @@ public async Task<IActionResult> OnPostAsync(string returnUrl = null)
 
             // Omdiriger basert på rollen til brukeren
             var roles = await _userManager.GetRolesAsync(user);
+            if (roles.Contains("SuperAdmin"))
+            {
+                return RedirectToAction("Dashboard", "SuperAdmin");
+            }
+            else
             if (roles.Contains("Admin"))
             {
                 return RedirectToAction("Dashboard", "Admin");

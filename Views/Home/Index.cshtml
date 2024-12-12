@@ -32,7 +32,7 @@
         <p>Empower your business with real-time tracking and advanced fleet management solutions.</p>
         <div class="hero-buttons">
             <button class="btn learn-more" onclick="window.location.href='~/LearnMore'">Learn More</button>
-            <button class="btn get-started" onclick="window.location.href='~/GetStarted'">Get Started</button>
+            <button class="btn get-started" onclick="window.location.href='~/dashboard'">Get Started</button>
         </div>
     </div>
 </section>
@@ -100,7 +100,7 @@
 <section class="cta">
     <h2>Ready to Optimize Your Fleet with us!</h2>
     <button class="btn learn-more" onclick="window.location.href='@Url.Action("Features", "Home")'">Learn More</button>
-    <button class="btn get-started" onclick="window.location.href='@Url.Action("CreateTrip", "Customer")'">Get Started</button>    @if (!User.Identity.IsAuthenticated)
+    <button class="btn get-started" onclick="window.location.href='@Url.Action("Dashboard", "Customer")'">Get Started</button>    @if (!User.Identity.IsAuthenticated)
     {
 
 
