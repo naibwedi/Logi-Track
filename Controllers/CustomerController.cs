@@ -14,9 +14,6 @@ namespace logirack.Controllers
 {
     [Authorize(Roles = "Customer")]
     [ApprovedOnly]
-    [ApiController]
-    [Route("api/[controller]")]
-    [Produces("application/json")]
     public class CustomerController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -40,7 +37,6 @@ namespace logirack.Controllers
         /// <returns>The index view</returns>
         [AllowAnonymous]
         [HttpGet]
-        [Route("")]
         public IActionResult Index()
         {
             return View();
@@ -51,7 +47,7 @@ namespace logirack.Controllers
         /// Shows pending approval message for unapproved customers
         /// </summary>
         /// <returns>The approval pending view</returns>
-        [HttpGet("approval-pending")]
+        [HttpGet]
         public IActionResult ApprovalPending()
         {
             return View();
@@ -64,11 +60,7 @@ namespace logirack.Controllers
         /// <response code="200">Returns the dashboard view</response>
         /// <response code="302">Redirects to login if user not found</response>
         /// <response code="403">If user is not authorized</response>
-        [Authorize(Roles = "Customer")]
-        [HttpGet("dashboard")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -98,7 +90,7 @@ namespace logirack.Controllers
         /// Displays the trip creation form
         /// </summary>
         /// <returns>The trip creation view</returns>
-        [HttpGet("trips/create")]
+        [HttpGet]
         public IActionResult CreateTrip()
         {
             return View();
@@ -111,10 +103,8 @@ namespace logirack.Controllers
         /// <returns>Redirects to success page on completion</returns>
         /// <response code="200">Returns success view with created trip</response>
         /// <response code="400">If the model is invalid</response>
-        [HttpPost("trips/create")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateTrip(SubmitTripViewModel model)
         {
             if (!ModelState.IsValid)
@@ -190,9 +180,7 @@ namespace logirack.Controllers
         /// <returns>Success view with trip details</returns>
         /// <response code="200">Returns the success view</response>
         /// <response code="404">If trip is not found</response>
-        [HttpGet("trips/{id}/success")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [HttpGet]
         public async Task<IActionResult> OrderSuccess(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -210,8 +198,7 @@ namespace logirack.Controllers
         /// </summary>
         /// <returns>View with list of customer's trips</returns>
         /// <response code="200">Returns list of trips</response>
-        [HttpGet("trips")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [HttpGet]
         public async Task<IActionResult> MyTrips()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -226,9 +213,7 @@ namespace logirack.Controllers
         /// <returns>Detailed view of the trip</returns>
         /// <response code="200">Returns trip details</response>
         /// <response code="404">If trip is not found</response>
-        [HttpGet("trips/{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [HttpGet]
         public async Task<IActionResult> TripDetails(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -251,11 +236,8 @@ namespace logirack.Controllers
         /// <response code="200">If response is processed successfully</response>
         /// <response code="400">If trip is not in correct state</response>
         /// <response code="404">If trip is not found</response>
-        [HttpPost("trips/{id}/respond-price")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RespondToPrice(int id, bool approved)
         {
             var user = await _userManager.GetUserAsync(User);

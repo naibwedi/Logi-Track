@@ -60,7 +60,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         //IMPORTANT: see the diagram on discord or jira LOGIRACK-26 https://tools.uia.no/jira/browse/LOGIRACK-26
         //TODO i need to handle deletion restriction in app logic not here bcs
         //todo bcs sqlite not fully support of func OnDelete() and i need to ask the teacher about it 
-        
+        mbuilder.Entity<RecentActivity>()
+            .HasOne(ra => ra.Trip)
+            .WithMany(t => t.RecentActivities) // Ensure Trip has a collection of RecentActivities
+            .HasForeignKey(ra => ra.TripId);
         //Customer : 
         //Customer 1-M  Trip                     
         mbuilder.Entity<Customer>()

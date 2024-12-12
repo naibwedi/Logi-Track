@@ -6,15 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - logirack</title>
 
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
-    <!-- Custom CSS Files -->
     <link rel="stylesheet" href="~/css/navBar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/adminDashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/driverDashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/homePage.css" asp-append-version="true" />
-    <!-- Add other CSS files as needed -->
 </head>
 <body>
 
@@ -23,7 +20,6 @@
         <div class="container-fluid">
             <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
                 <img src="~/images/logo.png" alt="LogiTrack" width="30" height="30" class="d-inline-block align-text-top">
-                LogiTrack
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,6 +74,15 @@
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Driver" asp-action="DriverTripManagement">Driver Trip Management</a>
                     </li>
+                    }
+                    else if (User.IsInRole("Customer"))
+                    {
+                        <li class="nav-item ">
+                            <a class="nav-link" asp-controller="Customer" asp-action="Dashboard">Customer Dashboard</a>
+                        </li>
+                        <li class="nav-item ">
+                            <a class="nav-link" asp-controller="Customer" asp-action="MyTrips">My trips</a>
+                        </li>
                     }
                     else
                     {

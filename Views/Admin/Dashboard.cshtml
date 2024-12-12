@@ -6,7 +6,6 @@ ViewData["Title"] = "Admin Dashboard";
 
 <h1 class="mb-4">Admin Dashboard</h1>
 
-<!-- Trip Status Overview -->
 <section class="trip-status-overview">
     <h2>Trip Status Overview</h2>
     <div class="status-cards">
@@ -35,7 +34,6 @@ ViewData["Title"] = "Admin Dashboard";
     </div>
 </section>
 
-<!-- Recent Activities -->
 <section class="recent-activities">
     <h2>Recent Trip Activities</h2>
     <div id="recent-activities" class="activities-list">
@@ -50,7 +48,6 @@ ViewData["Title"] = "Admin Dashboard";
     </div>
 </section>
 
-<!-- Add New Trip Section -->
 <section class="add-new-trip">
     <h2>Create New Trip</h2>
     <form asp-action="AddNewTripByAdmin" asp-controller="Admin" method="post">
@@ -109,7 +106,6 @@ ViewData["Title"] = "Admin Dashboard";
     </form>
 </section>
 
-<!-- Manage Drivers Section -->
 <section class="manage-drivers">
     <h2>Active Drivers</h2>
     <div class="drivers-grid">
@@ -126,7 +122,6 @@ ViewData["Title"] = "Admin Dashboard";
     </div>
 </section>
 
-<!-- Financial Overview -->
 <section class="financial-overview">
     <h2>Trip Revenue Overview</h2>
     <div class="financial-stats">
@@ -150,13 +145,11 @@ ViewData["Title"] = "Admin Dashboard";
     </div>
 </section>
 
-<!-- Toast Container for Notifications -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
 @section Scripts {
 <script src="~/js/signalR.js"></script>
 <script>
-    // Initialize Charts
     const tripRevenueChart = new Chart(
         document.getElementById('tripRevenueChart').getContext('2d'),
         {

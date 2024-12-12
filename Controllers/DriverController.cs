@@ -14,9 +14,6 @@ namespace logirack.Controllers;
 /// Controller for managing driver operations and trip handling
 /// </summary>
 [Authorize(Roles = "Driver")]
-[ApiController]
-[Route("api/[controller]")]
-[Produces("application/json")]
 public class DriverController : Controller
 {
     private readonly ApplicationDbContext _db;
@@ -33,8 +30,7 @@ public class DriverController : Controller
     /// Displays the driver dashboard
     /// </summary>
     /// <returns>The dashboard view</returns>
-    [HttpGet("dashboard")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [HttpGet]
     public IActionResult Dashboard()
     {
         return View();
@@ -46,8 +42,7 @@ public class DriverController : Controller
     /// </summary>
     /// <returns>List of all trips assigned to the driver</returns>
     /// <response code="200">Returns the list of trips</response>
-    [HttpGet("trips/log")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [HttpGet]
     public async Task<IActionResult> TripLog()
     {
         var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -76,8 +71,7 @@ public class DriverController : Controller
     /// </summary>
     /// <returns>List of currently assigned trips</returns>
     /// <response code="200">Returns the list of current trips</response>
-    [HttpGet("trips/current")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [HttpGet]
     public async Task<IActionResult> CurrentTrips()
     {
         var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -109,10 +103,8 @@ public class DriverController : Controller
     /// <returns>Redirects to current trips view</returns>
     /// <response code="200">If trip is successfully marked as completed</response>
     /// <response code="404">If trip is not found or not in correct state</response>
-    [HttpPost("trips/{tripId}/complete")]
+    [HttpPost]
     [ValidateAntiForgeryToken]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> EndTrip(int tripId)
     {
         var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier);

@@ -13,6 +13,8 @@ namespace logirack.Models
         public List<RecentActivity> RecentActivities { get; set; }
         public List<Driver> AvailableDriversList { get; set; }
         public List<Customer> Customers { get; set; }
+        public int AssignedTrips { get; set; }  
+
     }
     
     public class RecentActivity
