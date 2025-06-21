@@ -59,9 +59,6 @@ namespace logirack.Controllers
         /// Displays the customer dashboard
         /// </summary>
         /// <returns>The dashboard view or redirects based on user status</returns>
-        /// <response code="200">Returns the dashboard view</response>
-        /// <response code="302">Redirects to login if user not found</response>
-        /// <response code="403">If user is not authorized</response>
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
@@ -103,8 +100,6 @@ namespace logirack.Controllers
         /// </summary>
         /// <param name="model">The trip request details</param>
         /// <returns>Redirects to success page on completion</returns>
-        /// <response code="200">Returns success view with created trip</response>
-        /// <response code="400">If the model is invalid</response>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateTrip(SubmitTripViewModel model)
@@ -258,7 +253,6 @@ namespace logirack.Controllers
                 _logger.LogWarning("Trip not found.");
                 return NotFound();
             }
-
             if (trip.Status != TripStatus.PriceSet)
             {
                 _logger.LogWarning("Trip price is not set.");
@@ -330,7 +324,6 @@ namespace logirack.Controllers
             {
                 return NotFound();
             }
-
             try
             {
                 await using var transaction = await _db.Database.BeginTransactionAsync();
