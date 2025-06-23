@@ -14,8 +14,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        options.UseSqlite(connectionString);
+    }
+    else
+    {
+        var postgresConnection = builder.Configuration.GetConnectionString("PostgreSQLConnection");
+        options.UseNpgsql(postgresConnection);
+    }
+});
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 // ----------------swager---------------------------------------------------
 builder.Services.AddEndpointsApiExplorer();
