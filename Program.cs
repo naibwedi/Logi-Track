@@ -11,22 +11,22 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     if (builder.Environment.IsDevelopment())
     {
-        options.UseSqlite(connectionString);
+        var sqliteConnection = builder.Configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        options.UseSqlite(sqliteConnection);
     }
     else
     {
-        var postgresConnection = builder.Configuration.GetConnectionString("PostgreSQLConnection");
+        var postgresConnection = builder.Configuration.GetConnectionString("PostgreSQLConnection")
+            ?? throw new InvalidOperationException("Connection string 'PostgreSQLConnection' not found.");
         options.UseNpgsql(postgresConnection);
     }
 });
+
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 // ----------------swager---------------------------------------------------
