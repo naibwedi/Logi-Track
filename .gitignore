@@ -26,7 +26,6 @@ publish/
 *.csproj.user
 
 # Application secrets
-appsettings.json
 appsettings.Development.json
 
 # Logs
