@@ -1,0 +1,20 @@
+﻿@model logirack.Models.Trip
+
+@{
+    ViewData["Title"] = "Order Success";
+}
+
+<h2>Thank You!</h2>
+<p>Your trip request has been submitted successfully.</p>
+
+<h3>Trip Details:</h3>
+<ul>
+    <li><strong>From:</strong> @Model.FromAddress, @Model.FromCity, @Model.FromZipCode</li>
+    <li><strong>To:</strong> @Model.ToAddress, @Model.ToCity, @Model.ToZipCode</li>
+    <li><strong>Pickup Date:</strong> @Model.PickupTime.ToString("MM/dd/yyyy")</li>
+    <li><strong>Goods Type:</strong> @Model.GoodsType</li>
+    <li><strong>Weight:</strong> @Model.Weight kg</li>
+    <li><strong>Estimated Price:</strong> @Model.EstimatedPrice.ToString("C")</li>
+</ul>
+
+<a asp-action="Dashboard" class="btn btn-primary">Back to Dashboard</a>

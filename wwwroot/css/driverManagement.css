@@ -1,0 +1,86 @@
+﻿/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+}
+
+h2 {
+    color: #343a40;
+}
+
+/* Button Styles */
+.btnCreateDriver {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.btnCreateDriver:hover {
+    background-color: #0056b3;
+}
+
+/* Table Styles */
+.table {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+.table thead {
+    background-color: #343a40;
+    color: #ffffff;
+}
+
+.table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Search Form */
+.input-group {
+    display: flex;
+    align-items: center;
+}
+
+.custom-select {
+    width: 150px;
+    margin-right: 10px;
+}
+
+#searchString {
+    border-radius: 5px;
+    padding: 5px;
+}
+
+/* Status Styles */
+span[style*="color:green"] {
+    color: green !important;
+    font-weight: bold;
+}
+
+span[style*="color:red"] {
+    color: red !important;
+    font-weight: bold;
+}
+
+/* Alert Styles */
+.alert {
+    margin: 20px 0;
+    border-radius: 5px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}

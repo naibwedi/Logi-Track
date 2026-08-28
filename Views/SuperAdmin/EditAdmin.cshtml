@@ -1,0 +1,64 @@
+﻿@model logirack.Models.ViewModel.EditAdminViewModel
+
+@{
+ViewBag.Title = "Edit Admin";
+Layout = "_Layout";
+}
+
+<h2>Edit Admin</h2>
+
+@if (TempData["Success"] != null)
+{
+<div class="alert alert-success">
+    @TempData["Success"]
+</div>
+}
+
+@if (TempData["Error"] != null)
+{
+<div class="alert alert-danger">
+    @TempData["Error"]
+</div>
+}
+
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+<form asp-action="EditAdmin" method="post">
+    @Html.HiddenFor(model => model.Id) <!-- Hidden field for the admin ID -->
+
+    <div class="form-group">
+        <label asp-for="FirstName"></label>
+        <input asp-for="FirstName" class="form-control" />
+        <span asp-validation-for="FirstName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="LastName"></label>
+        <input asp-for="LastName" class="form-control" />
+        <span asp-validation-for="LastName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="AdminEmail"></label>
+        <input asp-for="AdminEmail" class="form-control" readonly="readonly" />
+        <span asp-validation-for="AdminEmail" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="PhoneNumber"></label>
+        <input asp-for="PhoneNumber" class="form-control" />
+        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="DateOfBirth"></label>
+        <input asp-for="DateOfBirth" class="form-control" type="date" />
+        <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
+
+@section Scripts {
+@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

@@ -1,0 +1,15 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<h1>Welcome to LogiTrack</h1>
+
+@if (User.Identity.IsAuthenticated)
+{
+    <p>Welcome back, @User.Identity.Name!</p>
+    <a asp-action="Dashboard" class="btn btn-primary">Go to Dashboard</a>
+}
+else
+{
+    <p>Please <a href="/Identity/Account/Login">Log In</a> or <a href="/Identity/Account/Register">Register</a>.</p>
+}

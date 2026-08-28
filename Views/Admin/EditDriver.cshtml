@@ -1,0 +1,59 @@
+﻿@model logirack.Models.ViewModel.EditDriverViewModel
+
+@{
+ViewBag.Title = "Edit Driver";
+Layout = "_Layout";
+}
+
+<h2>Edit Driver</h2>
+
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+<form asp-action="EditDriver" method="post" class="w-50">
+    @Html.HiddenFor(model => model.id)
+
+    <div class="form-group">
+        <label asp-for="FirstName"></label>
+        <input asp-for="FirstName" class="form-control" />
+        <span asp-validation-for="FirstName" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="LastName"></label>
+        <input asp-for="LastName" class="form-control" />
+        <span asp-validation-for="LastName" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Email"></label>
+        <input asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="PhoneNumber"></label>
+        <input asp-for="PhoneNumber" class="form-control" />
+        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="PricePerKm"></label>
+        <input asp-for="PricePerKm" class="form-control" />
+        <span asp-validation-for="PricePerKm" class="text-danger"></span>
+    </div>
+    <div class="form-group mb-2">
+        <label asp-for="PaymentFreq"></label>
+        <select asp-for="PaymentFreq" class="form-control" asp-items="Html.GetEnumSelectList<logirack.Models.PaymentFreq>()"></select>
+        <span asp-validation-for="PaymentFreq" class="text-danger"></span>
+    </div>
+
+    <!-- Checkbox for IsAvailable -->
+    <div class="form-check">
+        <input asp-for="IsAvailable" class="form-check-input" type="checkbox" />
+        <label asp-for="IsAvailable" class="form-check-label"></label>
+        <span asp-validation-for="IsAvailable" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">update Changes</button>
+    <a asp-action="DriverList" class="btn btn-secondary mt-3">Cancel</a>
+</form>
+
+@section Scripts {
+@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

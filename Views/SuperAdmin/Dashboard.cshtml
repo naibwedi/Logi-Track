@@ -1,0 +1,18 @@
+﻿@model logirack.Models.ViewModel.CreateAdminViewModel
+@{
+Layout = "_Layout";
+ViewData["Title"] = "SuperAdmin Dashboard";
+}
+<div class="dashboard-fullscreen">
+    <div class="dashboard-container">
+        <h1>SuperAdmin Dashboard</h1>
+        <div class="button-group">
+            <a asp-action="AdminList" class="btn btn-primary">View Admin List</a>
+            <a asp-action="CreateAdmin" class="btn btn-secondary">Create New Admin</a>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" href="~/css/Dashboard.css" />
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

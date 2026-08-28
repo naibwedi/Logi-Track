@@ -1,0 +1,45 @@
+﻿@model IEnumerable<logirack.Models.ViewModel.TripDetailsViewModel>
+
+<h2>Current Trips</h2>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Trip ID</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Distance (km)</th>
+        <th>Weight (kg)</th>
+        <th>Pickup Date</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var trip in Model)
+    {
+        <tr>
+            <td>@trip.TripId</td>
+            <td>@trip.FromCity</td>
+            <td>@trip.ToCity</td>
+            <td>@trip.Distance</td>
+            <td>@trip.Weight</td>
+            <td>@trip.PickupDate.ToString("dd MMM yyyy")</td>
+            <td>@trip.Status</td>
+            <td>
+                <form asp-action="EndTrip" method="post">
+                    <input type="hidden" name="tripId" value="@trip.TripId" />
+                    <button type="submit" class="btn btn-primary">
+                        End Trip <!-- This adds the text inside the button -->
+                    </button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@if (!Model.Any())
+{
+    <p>You currently have no assigned trips.</p>
+}
