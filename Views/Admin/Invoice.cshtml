@@ -1,0 +1,18 @@
+@model logirack.Models.Payment
+@{ ViewData["Title"] = $"Payment invoice #{Model.Id}"; }
+
+<article class="invoice mx-auto" style="max-width: 52rem">
+    <header class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
+        <div><h1>LogiTrack payment statement</h1><p class="text-muted">Invoice #@Model.Id</p></div>
+        <button type="button" class="btn btn-outline-primary d-print-none" onclick="window.print()">Print / save PDF</button>
+    </header>
+    <dl class="row">
+        <dt class="col-sm-4">Driver</dt><dd class="col-sm-8">@Model.Driver.FirstName @Model.Driver.LastName (@Model.Driver.Email)</dd>
+        <dt class="col-sm-4">Period</dt><dd class="col-sm-8">@Model.PaymentPeriod.StartDate.ToString("d") – @Model.PaymentPeriod.EndDate.ToString("d")</dd>
+        <dt class="col-sm-4">Status</dt><dd class="col-sm-8">@Model.Status</dd>
+        <dt class="col-sm-4">Updated</dt><dd class="col-sm-8">@Model.PaymentDate.ToString("g")</dd>
+        <dt class="col-sm-4">Amount</dt><dd class="col-sm-8"><strong>@Model.Amount.ToString("C")</strong></dd>
+    </dl>
+    <p class="text-muted">This statement records driver compensation prepared by LogiTrack. Tax and legal invoice requirements must be configured for the operating organisation.</p>
+    <a asp-action="PaymentManagement" class="btn btn-secondary d-print-none">Back to payments</a>
+</article>

@@ -9,6 +9,7 @@ using logirack.Models.ViewModel;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using logirack.Services;
 
 namespace logirack.Controllers
 {
@@ -63,12 +64,10 @@ namespace logirack.Controllers
         public async Task<IActionResult> Dashboard()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
+            if (user is null)
             {
-                _logger.LogWarning("User not found.");
-                return RedirectToAction("Login", "Account");
+                return Challenge();
             }
-
             if (!user.IsApproved)
             {
                 _logger.LogInformation("User {Email} is not approved.", user.Email);
@@ -110,6 +109,10 @@ namespace logirack.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
+            if (user is null)
+            {
+                return Challenge();
+            }
             //Calculate estimated price 
             double estimatedPrice = CalculateTripPriceEstimate(model);
             _logger.LogInformation("Order submitted successfully by user {Email} with estimated price {Price}.",
@@ -146,7 +149,7 @@ namespace logirack.Controllers
                 foreach (var admin in admins)
                 {
                     await _emailSender.SendEmailAsync(
-                        admin.Email,
+                        admin.Email!,
                         "New Trip Request",
                         $"A new trip request has been submitted.\n\n" +
                         $"Trip Details:\n" +
@@ -181,6 +184,7 @@ namespace logirack.Controllers
         public async Task<IActionResult> OrderSuccess(int id)
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user is null) return Challenge();
             var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == id && t.CustomerId == user.Id);
             if (trip == null)
             {
@@ -199,6 +203,7 @@ namespace logirack.Controllers
         public async Task<IActionResult> MyTrips()
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user is null) return Challenge();
             var trips = await _db.Trips.Where(t => t.CustomerId == user.Id).ToListAsync();
             return View(trips);
         }
@@ -215,6 +220,7 @@ namespace logirack.Controllers
         public async Task<IActionResult> TripDetails(int id)
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user is null) return Challenge();
             var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == id && t.CustomerId == user.Id);
             if (trip == null)
             {
@@ -267,7 +273,7 @@ namespace logirack.Controllers
                     try 
                     {
                         await _emailSender.SendEmailAsync(
-                            trip.Admin.Email,
+                            trip.Admin.Email!,
                             "Trip Price Approved",
                             $"Customer {user.FirstName} {user.LastName} has approved the price for trip ID: {trip.Id}.\n\n" +
                             $"Trip Details:\n" +
@@ -292,7 +298,7 @@ namespace logirack.Controllers
                     try 
                     {
                         await _emailSender.SendEmailAsync(
-                            trip.Admin.Email,
+                            trip.Admin.Email!,
                             "Trip Price Rejected",
                             $"Customer {user.FirstName} {user.LastName} has rejected the price for trip ID: {trip.Id}.\n\n" +
                             $"Trip Details:\n" +

@@ -8,9 +8,10 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using logirack.Hubs;
+using logirack.Services;
 using Microsoft.AspNetCore.SignalR;
 
-namespace logirack.Services;
+namespace logirack.Controllers;
 
 
 /// <summary>
@@ -70,10 +71,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 drivers = drivers.Where(d => d.LastName.Contains(searchString));
                 break;
             case "Email":
-                drivers = drivers.Where(d => d.Email.Contains(searchString));
+                drivers = drivers.Where(d => d.Email != null && d.Email.Contains(searchString));
                 break;
             case "PhoneNumber":
-                drivers = drivers.Where(d => d.PhoneNumber.Contains(searchString));
+                drivers = drivers.Where(d => d.PhoneNumber != null && d.PhoneNumber.Contains(searchString));
                 break;
         }
     }
@@ -118,9 +119,6 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 return View(model);
             }
 
-            // Generate a random password
-            var password = _passwordService.GeneratePassword();
-
             var newDriver = new Driver
             {
                 UserName = model.DriverEmail,
@@ -138,7 +136,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 IsAvailable = true,
                 DateOfBirth = model.DateOfBirth,
             };
-            var result = await _userManager.CreateAsync(newDriver, password);
+            var result = await _userManager.CreateAsync(newDriver, model.Password);
             if (result.Succeeded)
             {
                 _logger.LogInformation("User created a new driver");
@@ -148,7 +146,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 try
                 {
                     await _emailSender.SendEmailAsync(model.DriverEmail, "Driver Account Created",
-                        $"Your account has been created. Your password is: {password}");
+                        "Your driver account has been created. Use the initial password provided securely by your administrator and change it after signing in.");
                     _logger.LogInformation("Email successfully sent to {Email}", model.DriverEmail);
                 }
                 catch (Exception ex)
@@ -246,7 +244,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
             return View(dashboardStats);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return View(new DashboardStats
             {
@@ -279,8 +277,8 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             id = driver.Id,
             FirstName = driver.FirstName,
             LastName = driver.LastName,
-            Email = driver.Email,
-            PhoneNumber = driver.PhoneNumber,
+            Email = driver.Email ?? string.Empty,
+            PhoneNumber = driver.PhoneNumber ?? string.Empty,
             PricePerKm = driver.PricePerKm,
             PaymentFreq = driver.PaymentFreq,
             IsAvailable = driver.IsAvailable,
@@ -420,7 +418,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 try
                 {
                     await _emailSender.SendEmailAsync(
-                        user.Email,
+                        user.Email!,
                         "Your Account Has Been Approved",
                         $"Dear {user.FirstName} {user.LastName},\n\n" +
                         $"Your account has been approved. You can now log in and access all features.\n\n" +
@@ -495,8 +493,8 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         {
             TripId = trip.Id,
             CustomerName = $"{trip.Customer.FirstName} {trip.Customer.LastName}",
-            CustomerEmail = trip.Customer.Email,
-            CustomerPhone = trip.Customer.PhoneNumber,
+            CustomerEmail = trip.Customer.Email ?? string.Empty,
+            CustomerPhone = trip.Customer.PhoneNumber ?? string.Empty,
             FromCity = trip.FromCity,
             ToCity = trip.ToCity,
             FromAddress = trip.FromAddress,
@@ -528,6 +526,8 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         var trip = await _db.Trips.FindAsync(tId);
         if (trip == null)
             return NotFound();
+        if (trip.Status != TripStatus.Requested)
+            return BadRequest("Only requested trips can be reviewed.");
         
         var admin = await _userManager.GetUserAsync(User) as Admin;
         if (admin == null)
@@ -597,7 +597,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             
             var trip = await _db.Trips.Include(t => t.Customer).FirstOrDefaultAsync(t => t.Id == model.TripId);
 
-            if (trip == null)
+            if (trip != null)
             {
                 model.CustomerName = $"{trip.Customer.FirstName} {trip.Customer.LastName}";
                 model.FromCity = trip.FromCity;
@@ -609,10 +609,15 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             return View(model);
         }
 
-        var tripToUpdate = await _db.Trips.FindAsync(model.TripId);
+        var tripToUpdate = await _db.Trips.Include(t => t.Customer)
+            .FirstOrDefaultAsync(t => t.Id == model.TripId);
         if (tripToUpdate == null)
         {
             return NotFound();
+        }
+        if (tripToUpdate.Status != TripStatus.ApprovedByAdmin)
+        {
+            return BadRequest("Only admin-approved trips can be priced.");
         }
 
         tripToUpdate.AdminPrice = model.AdminPrice;
@@ -625,7 +630,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             try
             {
                 await _emailSender.SendEmailAsync(
-                    tripToUpdate.Customer.Email,
+                    tripToUpdate.Customer.Email!,
                     "Trip Price Set - Action Required",
                     $"Dear {tripToUpdate.Customer.FirstName} {tripToUpdate.Customer.LastName},\n\n" +
                     $"The price for your trip has been set and requires your approval.\n\n" +
@@ -723,6 +728,11 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 return NotFound("Trip not found");
             }
 
+            if (trip.Status != TripStatus.ApprovedByCustomer)
+            {
+                return BadRequest("Only customer-approved trips can be assigned.");
+            }
+
             if (trip.DriverTrip != null)
             {
                 ModelState.AddModelError("", "This trip is already assigned to a driver");
@@ -745,6 +755,13 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 return View(model);
             }
 
+            if (!driver.IsApproved)
+            {
+                ModelState.AddModelError("DriverId", "Selected driver is not approved");
+                await LoadAvailableDrivers(model);
+                return View(model);
+            }
+
             using var transaction = await _db.Database.BeginTransactionAsync();
             try
             {
@@ -752,7 +769,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 {
                     TripId = trip.Id,
                     DriverId = driver.Id,
-                    AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
                     DriverPayment = driver.PricePerKm * trip.Distance,
                     Status = TripStatus.Assigned,
                     AssignmentDate = DateTime.Now,
@@ -769,7 +786,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 TempData["Success"] = $"Trip successfully assigned to {driver.UserName}";
                 return RedirectToAction(nameof(TripRequests));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync();
                 throw;
@@ -841,6 +858,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
         try
         {
+            await using var transaction = await _db.Database.BeginTransactionAsync();
             var customer = await _db.Users
                 .OfType<Customer>()
                 .FirstOrDefaultAsync(c => c.Id == model.CustomerId);
@@ -848,6 +866,16 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             if (customer == null)
             {
                 ModelState.AddModelError("CustomerId", "Invalid customer selected.");
+                return View(model);
+            }
+
+            var driver = await _db.Users.OfType<Driver>()
+                .FirstOrDefaultAsync(d => d.Id == model.DriverId && d.IsApproved && d.IsAvailable);
+            if (driver == null)
+            {
+                ModelState.AddModelError("DriverId", "Select an approved, available driver.");
+                model.Customers = await _db.Users.OfType<Customer>().ToListAsync();
+                model.Drivers = await _db.Users.OfType<Driver>().Where(d => d.IsApproved && d.IsAvailable).ToListAsync();
                 return View(model);
             }
 
@@ -889,18 +917,12 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             await _db.SaveChangesAsync();
             _logger.LogInformation($"Successfully created Trip with ID: {trip.Id}");
             //C dt
-            var driver = await _db.Users.OfType<Driver>().FirstOrDefaultAsync(d => d.Id == model.DriverId);
-            if (driver == null)
-            {
-                throw new Exception($"Trip with ID {model.DriverId} not found");
-            }
-
             var driverTrip = new DriverTrip
             {
                 TripId = trip.Id,
                 Trip = trip,
                 DriverId = model.DriverId,
-                AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
                 DriverPayment = driver.PricePerKm * model.Distance,
                 Status = TripStatus.Assigned,
                 AssignmentDate = DateTime.Now,
@@ -913,10 +935,11 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             driver.IsAvailable = false;
             _db.Users.Update(driver);
             await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
             try
             {
                 await _emailSender.SendEmailAsync(
-                    driver.Email,
+                    driver.Email!,
                     "New Trip Assignment",
                     $"Dear {driver.FirstName} {driver.LastName},\n\n" +
                     $"You have been assigned a new trip.\n\n" +
@@ -944,7 +967,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 TripStatus = trip.Status.ToString(),
                 DriverId = driver.Id,
                 DriverName = $"{driver.FirstName} {driver.LastName}",
-                CreatedBy = User.Identity.Name,
+                CreatedBy = User.Identity?.Name ?? "Unknown admin",
                 CreationDate = trip.CreatedAt
             };
 
@@ -954,6 +977,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error creating and assigning an admin-created trip");
             ModelState.AddModelError("", "An error occurred while saving changes.");
             model.Customers = await _db.Users
                 .OfType<Customer>()
@@ -974,14 +998,14 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     public async Task<IActionResult> TripLog()
     {
         var trips = await _db.DriverTrips
-            .Include(dt => dt.Trip)
+            .Include(dt => dt.Trip).ThenInclude(trip => trip.Customer)
             .Include(dt => dt.Driver)
             .Select(dt => new TripDetailsViewModel
             {
                 TripId = dt.Trip.Id,
                 CustomerName = $"{dt.Trip.Customer.FirstName} {dt.Trip.Customer.LastName}", // Assuming Trip has a Customer relationship
-                CustomerEmail = dt.Trip.Customer.Email,
-                CustomerPhone = dt.Trip.Customer.PhoneNumber,
+                CustomerEmail = dt.Trip.Customer.Email ?? string.Empty,
+                CustomerPhone = dt.Trip.Customer.PhoneNumber ?? string.Empty,
                 FromCity = dt.Trip.FromCity,
                 ToCity = dt.Trip.ToCity,
                 FromAddress = dt.Trip.FromAddress,
@@ -1002,6 +1026,105 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             .ToListAsync();
 
         return View(trips);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> PaymentManagement()
+    {
+        var payments = await _db.Payments
+            .AsNoTracking()
+            .Include(payment => payment.Driver)
+            .Include(payment => payment.PaymentPeriod)
+            .OrderByDescending(payment => payment.PaymentDate)
+            .ToListAsync();
+        return View(payments);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PreparePayments()
+    {
+        var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(adminId)) return Challenge();
+
+        var completed = await _db.DriverTrips
+            .Include(item => item.Driver)
+            .Where(item => item.Status == TripStatus.Completed && item.PaymentPeriodId == null)
+            .ToListAsync();
+
+        if (completed.Count == 0)
+        {
+            TempData["PaymentMessage"] = "There are no new completed trips to prepare for payment.";
+            return RedirectToAction(nameof(PaymentManagement));
+        }
+
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        foreach (var group in completed.GroupBy(item => item.DriverId))
+        {
+            var period = new PaymentPeriod
+            {
+                StartDate = group.Min(item => item.CompletionDate ?? item.UpdateAt).Date,
+                EndDate = group.Max(item => item.CompletionDate ?? item.UpdateAt).Date,
+                PaymentFreq = group.First().Driver.PaymentFreq,
+                Total = group.Sum(item => item.DriverPayment),
+                Status = PaymentStatus.Pending
+            };
+            _db.PaymentPeriods.Add(period);
+            await _db.SaveChangesAsync();
+
+            foreach (var item in group) item.PaymentPeriodId = period.Id;
+            _db.Payments.Add(new Payment
+            {
+                PaymentPeriodId = period.Id,
+                DriverId = group.Key,
+                Amount = period.Total,
+                PaymentDate = DateTime.UtcNow,
+                Status = PaymentStatus.Pending,
+                ProcByAdminID = adminId
+            });
+        }
+
+        await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
+        TempData["PaymentMessage"] = $"Prepared {completed.Count} completed trip(s) for payment.";
+        return RedirectToAction(nameof(PaymentManagement));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkPaymentPaid(int id)
+    {
+        var payment = await _db.Payments.Include(item => item.PaymentPeriod).SingleOrDefaultAsync(item => item.Id == id);
+        if (payment == null) return NotFound();
+        payment.Status = PaymentStatus.Paid;
+        payment.PaymentDate = DateTime.UtcNow;
+        payment.PaymentPeriod.Status = PaymentStatus.Paid;
+        await _db.SaveChangesAsync();
+        TempData["PaymentMessage"] = $"Payment #{payment.Id} marked as paid.";
+        return RedirectToAction(nameof(PaymentManagement));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Invoice(int id)
+    {
+        var payment = await _db.Payments.AsNoTracking()
+            .Include(item => item.Driver)
+            .Include(item => item.PaymentPeriod)
+            .SingleOrDefaultAsync(item => item.Id == id);
+        return payment == null ? NotFound() : View(payment);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> InvoiceGeneration()
+    {
+        var completedTrips = await _db.DriverTrips
+            .AsNoTracking()
+            .Include(driverTrip => driverTrip.Driver)
+            .Include(driverTrip => driverTrip.Trip)
+            .Where(driverTrip => driverTrip.Status == TripStatus.Completed)
+            .OrderByDescending(driverTrip => driverTrip.CompletionDate ?? driverTrip.UpdateAt)
+            .ToListAsync();
+        return View(completedTrips);
     }
 
    

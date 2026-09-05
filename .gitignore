@@ -31,9 +31,13 @@ appsettings.Development.json
 # Logs
 logs/
 *.log
+.keys/
 
 # Database files
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
 *.sqlite
 *.sql
 

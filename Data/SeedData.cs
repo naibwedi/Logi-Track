@@ -1,197 +1,67 @@
-﻿using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using Microsoft.AspNetCore.Identity;
+
 namespace logirack.Data;
 
-using logirack.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
-
-/// <summary>
-/// Provides methods to seed the database with initial data.
-/// </summary>
-public class SeedData
+public static class SeedData
 {
-    /// <summary>
-    /// Initializes the database with default roles and users (SuperAdmin, Admin, Customer).
-    /// </summary>
-    /// <param name="serviceProvider">The service provider to get required services.</param>
+    private static readonly string[] Roles = ["SuperAdmin", "Admin", "Customer", "Driver"];
+
     public static async Task Initialize(IServiceProvider serviceProvider)
     {
-        using var db = new ApplicationDbContext(
-            serviceProvider.GetRequiredService<DbContextOptions<ApplicationDbContext>>()
-        );
-
-        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var logger = serviceProvider.GetRequiredService<ILogger<SeedData>>();
+        var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(nameof(SeedData));
 
-        // Define roles
-        string[] roleNames = { "Admin", "SuperAdmin", "Driver", "Customer" }; // Corrected "Customer" role spelling
-        IdentityResult roleResult;
-
-        foreach (var roleName in roleNames)
+        foreach (var role in Roles)
         {
-            var roleExist = await roleManager.RoleExistsAsync(roleName);
-            if (!roleExist)
+            if (await roleManager.RoleExistsAsync(role))
             {
-                roleResult = await roleManager.CreateAsync(new IdentityRole(roleName));
-                if (!roleResult.Succeeded)
-                {
-                    logger.LogError($"Error creating role {roleName}");
-                }
+                continue;
             }
+
+            var result = await roleManager.CreateAsync(new IdentityRole(role));
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(error => error.Description));
+                throw new InvalidOperationException($"Could not create role '{role}': {errors}");
+            }
+
+            logger.LogInformation("Created identity role {Role}", role);
         }
 
-        // Seed SuperAdmin
-        var superAdminEmail = "super@uia.no";
-        var superAdminUser = await userManager.FindByEmailAsync(superAdminEmail);
-
-        if (superAdminUser == null)
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        var email = configuration["BootstrapAdmin:Email"];
+        var password = configuration["BootstrapAdmin:Password"];
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
-            var superAdmin = new SuperAdmin
-            {
-                UserName = superAdminEmail,
-                Email = superAdminEmail,
-                EmailConfirmed = true,
-                IsApproved = true,
-                CreatedOn = DateTime.Now,
-                ModifiedOn = DateTime.Now,
-                PhoneNumber = "1234567890",
-                RoleType = "SuperAdmin",
-                FirstName = "Super",
-                LastName = "Admin"
-            };
-            var result = await userManager.CreateAsync(superAdmin, "P@ssw0rd12");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
-                logger.LogInformation("SuperAdmin user created successfully.");
-            }
-            else
-            {
-                foreach (var error in result.Errors)
-                {
-                    logger.LogError($"Error creating SuperAdmin: {error.Description}");
-                }
-            }
-        }
-        else
-        {
-            logger.LogInformation("SuperAdmin already exists.");
+            return;
         }
 
-        // Seed Admin
-        var adminEmail = "admin@uia.no";
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-
-        if (adminUser == null)
+        var userManager = serviceProvider.GetRequiredService<UserManager<logirack.Models.ApplicationUser>>();
+        if (await userManager.FindByEmailAsync(email) is not null)
         {
-            var admin = new Admin
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                IsApproved = true,
-                EmailConfirmed = true,
-                PhoneNumber = "0987654321",
-                FirstName = "Admin",
-                LastName = "User",
-                RoleType = "Admin",
-            };
-            var result = await userManager.CreateAsync(admin, "Admin@12345");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(admin, "Admin");
-                logger.LogInformation("Admin user created successfully.");
-            }
-            else
-            {
-                foreach (var error in result.Errors)
-                {
-                    logger.LogError($"Error creating Admin: {error.Description}");
-                }
-            }
-        }
-        else
-        {
-            logger.LogInformation("Admin already exists.");
+            return;
         }
 
-        // Seed Customer
-        var customerEmail = "customer@uia.no";
-        var customerUser = await userManager.FindByEmailAsync(customerEmail);
-
-        if (customerUser == null)
+        var user = new logirack.Models.SuperAdmin
         {
-            var customer = new Customer
-            {
-                UserName = customerEmail,
-                Email = customerEmail,
-                EmailConfirmed = true,
-                IsApproved = true,
-                PhoneNumber = "1231231234",
-                FirstName = "Customer",
-                LastName = "User",
-                RoleType = "Customer",
-                CreatedOn = DateTime.Now,
-                ModifiedOn = DateTime.Now
-            };
-            var result = await userManager.CreateAsync(customer, "Customer@12345");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(customer, "Customer");
-                logger.LogInformation("Customer user created successfully.");
-            }
-            else
-            {
-                foreach (var error in result.Errors)
-                {
-                    logger.LogError($"Error creating Customer: {error.Description}");
-                }
-            }
-        }
-        else
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            IsApproved = true,
+            RoleType = "SuperAdmin",
+            FirstName = "System",
+            LastName = "Administrator",
+            CreatedOn = DateTime.UtcNow,
+            ModifiedOn = DateTime.UtcNow
+        };
+        var createResult = await userManager.CreateAsync(user, password);
+        if (!createResult.Succeeded)
         {
-            logger.LogInformation("Customer already exists.");
+            var errors = string.Join(", ", createResult.Errors.Select(error => error.Description));
+            throw new InvalidOperationException($"Could not create bootstrap SuperAdmin: {errors}");
         }
 
-        // Seed Driver
-        var driverEmail = "driver@uia.no";
-        var driverUser = await userManager.FindByEmailAsync(driverEmail);
-
-        if (driverUser == null)
-        {
-            var driver = new Driver
-            {
-                UserName = driverEmail,
-                Email = driverEmail,
-                EmailConfirmed = true,
-                IsApproved = true,
-                PhoneNumber = "3213213210",
-                FirstName = "Driver",
-                LastName = "User",
-                RoleType = "Driver",
-                CreatedOn = DateTime.Now,
-                ModifiedOn = DateTime.Now
-            };
-            var result = await userManager.CreateAsync(driver, "Driver@12345");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(driver, "Driver");
-                logger.LogInformation("Driver user created successfully.");
-            }
-            else
-            {
-                foreach (var error in result.Errors)
-                {
-                    logger.LogError($"Error creating Driver: {error.Description}");
-                }
-            }
-        }
-        else
-        {
-            logger.LogInformation("Driver already exists.");
-        }
+        await userManager.AddToRoleAsync(user, "SuperAdmin");
+        logger.LogWarning("Bootstrap SuperAdmin {Email} was created. Remove BootstrapAdmin configuration now.", email);
     }
 }

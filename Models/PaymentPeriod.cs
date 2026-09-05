@@ -14,7 +14,7 @@ public class PaymentPeriod
     public PaymentFreq PaymentFreq { get; set; }
     public double Total { get; set; }
     public PaymentStatus Status { get; set; }
-    public List<DriverTrip> DriverTrips { get; set; }
-    public List<Payment> Payments { get; set; }
+    public List<DriverTrip> DriverTrips { get; set; } = [];
+    public List<Payment> Payments { get; set; } = [];
     
 }

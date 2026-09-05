@@ -51,6 +51,7 @@ ViewData["Title"] = "Admin Dashboard";
 <section class="add-new-trip">
     <h2>Create New Trip</h2>
     <form asp-action="AddNewTripByAdmin" asp-controller="Admin" method="post">
+        <div asp-validation-summary="All" class="text-danger" role="alert"></div>
         <div class="form-row">
             <div class="form-group">
                 <label for="CustomerId">Select Customer</label>
@@ -102,6 +103,14 @@ ViewData["Title"] = "Admin Dashboard";
             </div>
         </div>
 
+        <div class="form-row">
+            <div class="form-group"><label for="FromAddress">Pickup address</label><input id="FromAddress" name="FromAddress" required /></div>
+            <div class="form-group"><label for="FromZipCode">Pickup postcode</label><input id="FromZipCode" name="FromZipCode" required /></div>
+            <div class="form-group"><label for="ToAddress">Delivery address</label><input id="ToAddress" name="ToAddress" required /></div>
+            <div class="form-group"><label for="ToZipCode">Delivery postcode</label><input id="ToZipCode" name="ToZipCode" required /></div>
+            <div class="form-group"><label for="GoodsType">Goods type</label><input id="GoodsType" name="GoodsType" required /></div>
+        </div>
+
         <button type="submit" class="btn-primary">Create Trip</button>
     </form>
 </section>
@@ -125,8 +134,9 @@ ViewData["Title"] = "Admin Dashboard";
 <section class="financial-overview">
     <h2>Trip Revenue Overview</h2>
     <div class="financial-stats">
-        <div class="revenue-comparison">
-            <canvas id="tripRevenueChart"></canvas>
+        <div class="revenue-comparison" aria-label="Revenue summary">
+            <p class="display-6">@Model.TotalRevenue.ToString("C")</p>
+            <p>Total recorded trip revenue</p>
         </div>
         <div class="financial-details">
             <div class="detail">
@@ -148,30 +158,4 @@ ViewData["Title"] = "Admin Dashboard";
 <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
 @section Scripts {
-<script src="~/js/signalR.js"></script>
-<script>
-    const tripRevenueChart = new Chart(
-        document.getElementById('tripRevenueChart').getContext('2d'),
-        {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [{
-                    label: 'Trip Revenue',
-                    data: [@Model.TotalRevenue],
-                    borderColor: '#007bff',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        }
-    );
-</script>
 }

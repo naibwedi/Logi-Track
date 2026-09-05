@@ -2,7 +2,9 @@
 
 <h2>Admin Trip Log</h2>
 
+<div class="table-responsive">
 <table class="table">
+    <caption class="visually-hidden">All managed trips</caption>
     <thead>
     <tr>
         <th>Trip ID</th>
@@ -35,6 +37,7 @@
     }
     </tbody>
 </table>
+</div>
 
 @if (!Model.Any())
 {

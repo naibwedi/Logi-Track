@@ -8,16 +8,16 @@ public class DriverTrip
     [Required]
     public int TripId { get; set; }
     [Required]
-    public Trip Trip { get; set; }
+    public Trip Trip { get; set; } = null!;
     [Required]
-    public string DriverId { get; set; }
+    public string DriverId { get; set; } = string.Empty;
     [Required]
-    public Driver Driver { get; set; }
+    public Driver Driver { get; set; } = null!;
     [Required]
-    public string AssignedByAdminId { get; set; }
+    public string AssignedByAdminId { get; set; } = string.Empty;
     [Required]
 
-    public Admin Admin { get; set; }
+    public Admin Admin { get; set; } = null!;
     
     public double  DriverPayment { get; set; }
     //[Required] remove comment whene create a payment managmenet 

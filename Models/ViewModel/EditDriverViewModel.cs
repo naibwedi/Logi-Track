@@ -6,15 +6,15 @@ namespace logirack.Models.ViewModel;
 
 public class EditDriverViewModel
 {
-    public string id { get; set; }
+    public string id { get; set; } = string.Empty;
     
     [Required]
     [Display(Name = "First Name")]
-    public string FirstName { get; set; }
+    public string FirstName { get; set; } = string.Empty;
     
     [Required]
     [Display(Name = "Last Name")]
-    public string LastName { get; set; }
+    public string LastName { get; set; } = string.Empty;
     
     [Required]
     [EmailAddress]

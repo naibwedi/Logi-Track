@@ -1,1 +1,40 @@
-﻿<h3>Test</h3>
+@model IEnumerable<logirack.Models.Payment>
+@{ ViewData["Title"] = "Payment management"; }
+
+<h1>Payment management</h1>
+<p>Prepare completed, unpaid driver trips and track settlement status.</p>
+@if (TempData["PaymentMessage"] is string message)
+{
+    <div class="alert alert-info" role="status">@message</div>
+}
+<form asp-action="PreparePayments" method="post" class="mb-3">
+    <button type="submit" class="btn btn-primary">Prepare completed trips</button>
+</form>
+<div class="table-responsive">
+<table class="table table-striped">
+    <caption class="visually-hidden">Prepared driver payments</caption>
+    <thead><tr><th>Driver</th><th>Period</th><th>Amount</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead>
+    <tbody>
+    @foreach (var payment in Model)
+    {
+        <tr>
+            <td>@payment.Driver?.Email</td>
+            <td>@payment.PaymentPeriod?.StartDate.ToShortDateString() – @payment.PaymentPeriod?.EndDate.ToShortDateString()</td>
+            <td>@payment.Amount.ToString("C")</td>
+            <td>@payment.Status</td>
+            <td>@payment.PaymentDate.ToString("g")</td>
+            <td>
+                <a asp-action="Invoice" asp-route-id="@payment.Id" class="btn btn-outline-secondary btn-sm">Invoice</a>
+                @if (payment.Status != logirack.Models.PaymentStatus.Paid)
+                {
+                    <form asp-action="MarkPaymentPaid" asp-route-id="@payment.Id" method="post" class="d-inline">
+                        <button class="btn btn-success btn-sm" type="submit">Mark paid</button>
+                    </form>
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+</div>
+@if (!Model.Any()) { <p>No payments have been recorded.</p> }

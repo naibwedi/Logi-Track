@@ -1,1 +1,21 @@
-﻿<h3>Test</h3>
+@model IEnumerable<logirack.Models.DriverTrip>
+@{ ViewData["Title"] = "Completed-trip invoices"; }
+
+<h1>Completed-trip invoices</h1>
+<p>This report contains the completed work ready for payment processing.</p>
+<table class="table table-striped">
+    <thead><tr><th>Trip</th><th>Driver</th><th>Route</th><th>Completed</th><th>Driver payment</th></tr></thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>#@item.TripId</td>
+            <td>@item.Driver?.Email</td>
+            <td>@item.Trip?.FromCity → @item.Trip?.ToCity</td>
+            <td>@item.CompletionDate?.ToString("g")</td>
+            <td>@item.DriverPayment.ToString("C")</td>
+        </tr>
+    }
+    </tbody>
+</table>
+@if (!Model.Any()) { <p>No completed trips are ready.</p> }

@@ -123,6 +123,7 @@ public class DriverController : Controller
         driverTrip.Status = TripStatus.Completed;
         driverTrip.Trip.Status = TripStatus.Completed;
         driverTrip.UpdateAt = DateTime.Now;
+        driverTrip.CompletionDate = DateTime.Now;
         driverTrip.Driver.IsAvailable = true; 
 
         await _db.SaveChangesAsync();
@@ -131,7 +132,7 @@ public class DriverController : Controller
             try
             {
                 await _emailSender.SendEmailAsync(
-                    driverTrip.Trip.Admin.Email,
+                    driverTrip.Trip.Admin.Email!,
                     "Trip Completed Notification",
                     $"Trip ID: {tripId} has been completed by driver {driverTrip.Driver.FirstName} {driverTrip.Driver.LastName}.\n\n" +
                     $"Trip Details:\n" +
@@ -154,7 +155,7 @@ public class DriverController : Controller
             try 
             {
                 await _emailSender.SendEmailAsync(
-                driverTrip.Trip.Customer.Email,
+                driverTrip.Trip.Customer.Email!,
                 "Your Trip Has Been Completed",
                 $"Dear {driverTrip.Trip.Customer.FirstName},\n\n" +
                 $"Your trip has been completed successfully.\n\n" +
@@ -177,4 +178,18 @@ public class DriverController : Controller
         TempData["Success"] = "Trip has been marked as completed.";
         return RedirectToAction(nameof(CurrentTrips));
     }
+
+    [HttpGet]
+    public async Task<IActionResult> PaymentTracking()
+    {
+        var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var payments = await _db.Payments.AsNoTracking()
+            .Where(payment => payment.DriverId == driverId)
+            .OrderByDescending(payment => payment.PaymentDate)
+            .ToListAsync();
+        return View(payments);
+    }
+
+    [HttpGet]
+    public IActionResult DriverTripManagement() => RedirectToAction(nameof(CurrentTrips));
 }

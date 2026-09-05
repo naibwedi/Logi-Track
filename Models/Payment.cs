@@ -7,10 +7,10 @@ public class Payment
     public int Id { get; set; }
     [Required]
     public int PaymentPeriodId { get; set; }
-    public PaymentPeriod PaymentPeriod { get; set; }
+    public PaymentPeriod PaymentPeriod { get; set; } = null!;
     [Required]
-    public string DriverId { get; set; }
-    public Driver Driver { get; set; }
+    public string DriverId { get; set; } = string.Empty;
+    public Driver Driver { get; set; } = null!;
     
     [Required]
     [DataType(DataType.Currency)]
@@ -20,6 +20,6 @@ public class Payment
     
     public PaymentStatus Status { get; set; }
     [Required]
-    public String ProcByAdminID { get; set; }
-    public Admin ProcByAdmin { get; set; }
+    public string ProcByAdminID { get; set; } = string.Empty;
+    public Admin ProcByAdmin { get; set; } = null!;
 }

@@ -2,6 +2,6 @@
 
 public class SuperAdmin : ApplicationUser
 {
-    public List<AdminActionLog> ActionLogs { get; set; }
+    public List<AdminActionLog> ActionLogs { get; set; } = [];
 
 }

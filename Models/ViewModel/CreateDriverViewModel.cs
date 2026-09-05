@@ -10,20 +10,20 @@ public class CreateDriverViewModel
     [EmailAddress]
     [StringLength(30, MinimumLength = 3)]
     [Display(Name = "Driver Email")]
-    public string DriverEmail { get; set; }
+    public string DriverEmail { get; set; } = string.Empty;
     
     
     [Required]
     [StringLength(20 , MinimumLength = 2, ErrorMessage = "First Name must be between 2 and 20 characters.")]
     [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Use letters only please")]
     [Display(Name = "First Name")]
-    public string FirstName { get; set; }
+    public string FirstName { get; set; } = string.Empty;
     
     [Required]
     [StringLength(20 , MinimumLength = 2, ErrorMessage = "Last name must be between 2 and 20 characters.")]
     [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Use letters only please")]
     [Display(Name = "Last Name")]
-    public string LastName { get; set; }
+    public string LastName { get; set; } = string.Empty;
     
     [Required]
     [Range(0.1, 1000, ErrorMessage = "Price per kn must be between 0 and 1000 Nok.")]
@@ -36,7 +36,7 @@ public class CreateDriverViewModel
     [DataType(DataType.PhoneNumber)]
     [Display(Name = "Phone Number")]
 
-    public string PhoneNumber { get; set; }
+    public string PhoneNumber { get; set; } = string.Empty;
     
     [Required]
     [Display(Name = "Payment Frequency")]
@@ -47,5 +47,17 @@ public class CreateDriverViewModel
     [Display(Name = "Date of Birth")]
  
     public DateTime DateOfBirth { get; set; }
+
+    [Required]
+    [DataType(DataType.Password)]
+    [StringLength(100, MinimumLength = 12)]
+    [Display(Name = "Initial Password")]
+    public string Password { get; set; } = string.Empty;
+
+    [Required]
+    [DataType(DataType.Password)]
+    [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+    [Display(Name = "Confirm Password")]
+    public string ConfirmPassword { get; set; } = string.Empty;
     
 }

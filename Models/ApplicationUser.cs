@@ -30,12 +30,12 @@ public class ApplicationUser : IdentityUser
     [StringLength(20 , MinimumLength = 2, ErrorMessage = "First name must be between 2 and 20 characters.")]
     [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Use letters only please")]
     [Display(Name = "First Name")]
-    public string FirstName { get; set; }
+    public string FirstName { get; set; } = string.Empty;
     [Required]
     [StringLength(20 , MinimumLength = 2, ErrorMessage = "Last name must be between 2 and 20 characters.")]
     [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Use letters only please")]
     [Display(Name = "Last Name")]
-    public string LastName { get; set; }
+    public string LastName { get; set; } = string.Empty;
 
     [StringLength(50, ErrorMessage = "Company name cannot exceed 50 characters.")]
     [Display(Name = "Company Name")]

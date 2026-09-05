@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+.vscode
+bin
+obj
+tests
+*.db
+*.db-shm
+*.db-wal
+appsettings.Development.json

@@ -28,7 +28,7 @@
 
                 <div class="form-group mb-3">
                     <label asp-for="AdminPrice" class="form-label">Final Price (NOK)</label>
-                    <input asp-for="AdminPrice" class="form-control" type="text" required />
+                    <input asp-for="AdminPrice" class="form-control" type="number" min="100" step="0.01" inputmode="decimal" required />
                     <span asp-validation-for="AdminPrice" class="text-danger"></span>
                 </div>
 

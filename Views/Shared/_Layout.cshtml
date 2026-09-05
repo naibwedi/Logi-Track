@@ -4,23 +4,24 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - logirack</title>
+    <title>@ViewData["Title"] - LogiTrack</title>
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
-    <link rel="stylesheet" href="~/css/navBar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/adminDashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/driverDashboard.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/homePage.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/navBar.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
+<a class="visually-hidden-focusable position-absolute top-0 start-0 bg-white p-2" href="#main-content">Skip to main content</a>
 
 <header>
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
         <div class="container-fluid">
-            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                <img src="~/images/logo.png" alt="LogiTrack" width="30" height="30" class="d-inline-block align-text-top">
+            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="LogiTrack home">
+                <img src="~/images/logitrack-logo.png" alt="LogiTrack" class="brand-logo">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,7 +33,7 @@
                     @if (User.IsInRole("SuperAdmin"))
                     {
                     <li class="nav-item">
-                        <a class="nav-link text-dark">SuperAdmin</a>
+                        <span class="navbar-text role-label">SuperAdmin</span>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="SuperAdmin" asp-action="Dashboard">SuperAdmin Dashboard</a>
@@ -47,7 +48,7 @@
                     else if (User.IsInRole("Admin"))
                     {
                     <li class="nav-item admin-dashboard">
-                        <a class="nav-link text-dark">Admin</a>
+                        <span class="navbar-text role-label">Admin</span>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Admin" asp-action="Dashboard">Admin Dashboard</a>
@@ -70,11 +71,14 @@
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Admin" asp-action="CreateDriver">Create a Driver</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Admin" asp-action="PaymentManagement">Payments</a>
+                    </li>
                     }
                     else if (User.IsInRole("Driver"))
                     {
                     <li class="nav-item driver-dashboard">
-                        <a class="nav-link text-dark">Driver</a>
+                        <span class="navbar-text role-label">Driver</span>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Driver" asp-action="Dashboard">Driver Dashboard</a>
@@ -104,9 +108,6 @@
                     else
                     {
                     <li class="nav-item">
-                        <a id="LogiTrack" class="nav-link text-white" asp-controller="Home" asp-action="Index">LogiTrack</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link text-dark" asp-controller="Home" asp-action="Privacy">Privacy</a>
                     </li>
                     <li class="nav-item">
@@ -132,19 +133,22 @@
 </div>
 
 <div class="container">
-    <main role="main" class="pb-3">
+    <main id="main-content" role="main" class="pb-3" tabindex="-1">
         @RenderBody()
     </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"
-        integrity="sha512-XYZ..." crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
-<script src="~/js/signalR.js"></script>
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <script src="~/js/signalR.js" asp-append-version="true"></script>
+}
 
 <script src="~/js/site.js" asp-append-version="true"></script>
 

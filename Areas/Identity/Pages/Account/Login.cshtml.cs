@@ -89,7 +89,7 @@ public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         }
 
         // Forsøk innlogging uavhengig av godkjenning
-        var result = await _signInManager.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var result = await _signInManager.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: true);
 
         if (result.Succeeded)
         {
@@ -116,6 +116,10 @@ public async Task<IActionResult> OnPostAsync(string returnUrl = null)
             else if (roles.Contains("Driver"))
             {
                 return RedirectToAction("Dashboard", "Driver");
+            }
+            else if (roles.Contains("Customer"))
+            {
+                return RedirectToAction("Dashboard", "Customer");
             }
             else
             {

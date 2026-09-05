@@ -1,6 +1,7 @@
 ﻿"use strict";
 
 //SignalR connection
+if (typeof signalR !== "undefined") {
 const connection = new signalR.HubConnectionBuilder()
     .withUrl("/tripHub") // URL to the SignalR Hub
     .withAutomaticReconnect() 
@@ -115,4 +116,7 @@ function showToast(title, message, type = 'primary') {
     toastEl.addEventListener('hidden.bs.toast', () => {
         toastEl.remove();
     });
+}
+} else {
+    console.warn("Real-time updates are unavailable because the SignalR client could not be loaded.");
 }

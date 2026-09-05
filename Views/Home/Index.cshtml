@@ -1,13 +1,5 @@
-﻿<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"] - Truck Tracker</title>
-    <link rel="stylesheet" href="~/css/HomePage.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-</head>
-<body>
+@{ ViewData["Title"] = "Transport coordination"; }
+@section Styles { <link rel="stylesheet" href="~/css/HomePage.css" asp-append-version="true" /> }
 <!-- Header Section -->
 @* <header class="header"> *@
 @*     @*<div class="logo"> *@
@@ -29,10 +21,10 @@
 <section class="hero">
     <div class="hero-content">
         <h1>Effortless Fleet Management</h1>
-        <p>Empower your business with real-time tracking and advanced fleet management solutions.</p>
+        <p>Coordinate transport requests, pricing, driver assignments, and delivery status in one place.</p>
         <div class="hero-buttons">
-            <button class="btn learn-more" onclick="window.location.href='~/LearnMore'">Learn More</button>
-            <button class="btn get-started" onclick="window.location.href='~/dashboard'">Get Started</button>
+            <a class="btn learn-more" asp-controller="Home" asp-action="Services">Learn More</a>
+            <a class="btn get-started" asp-area="Identity" asp-page="/Account/Register">Get Started</a>
         </div>
     </div>
 </section>
@@ -43,18 +35,18 @@
     <div class="service-cards">
         <div class="card">
             <img src="~/images/gpstracking.jpg" alt="GPS Tracking">
-            <h3>Real-Time GPS Tracking</h3>
-            <p>Monitor your fleet's location in real-time with precision and ease.</p>
+            <h3>Trip Status Updates</h3>
+            <p>Follow each request from review and pricing through assignment and completion.</p>
         </div>
         <div class="card">
-            <img src="~/images/RouteOptimization.jpg" alt="Route Optimization">
-            <h3>Route Optimization</h3>
-            <p>Improve efficiency with intelligent route planning and scheduling.</p>
+            <img src="~/images/RouteOptimization.jpg" alt="Dispatch planning">
+            <h3>Driver Assignment</h3>
+            <p>Match approved, available drivers with scheduled transport work.</p>
         </div>
         <div class="card">
             <img src="~/images/hazard_logo.jpg" alt="Driver Safety">
-            <h3>Driver Safety Monitoring</h3>
-            <p>Enhance safety with driver behavior analysis and alerts.</p>
+            <h3>Payment Records</h3>
+            <p>Prepare completed driver work for transparent payment processing.</p>
         </div>
     </div>
 </section>
@@ -70,8 +62,8 @@
         </div>
         <div class="feature-item">
             <i class="icon fa fa-shield"></i>
-            <h3>Secure Platform</h3>
-            <p>Your data is protected with top-tier security protocols and encryption.</p>
+            <h3>Role-Based Access</h3>
+            <p>Customers, drivers, administrators, and super administrators see their relevant tools.</p>
         </div>
         <div class="feature-item">
             <i class="icon fa fa-cogs"></i>
@@ -99,8 +91,8 @@
 <!-- Call to Action Section -->
 <section class="cta">
     <h2>Ready to Optimize Your Fleet with us!</h2>
-    <button class="btn learn-more" onclick="window.location.href='@Url.Action("Features", "Home")'">Learn More</button>
-    <button class="btn get-started" onclick="window.location.href='@Url.Action("Dashboard", "Customer")'">Get Started</button>    @if (!User.Identity.IsAuthenticated)
+    <a class="btn learn-more" asp-controller="Home" asp-action="Services">Learn More</a>
+    @if (User.Identity?.IsAuthenticated != true)
     {
 
 
@@ -112,28 +104,21 @@
 <footer class="footer">
     <div class="footer-content">
         <div class="footer-section about">
-            <h3>About Truck Tracker</h3>
-            <p>We are a leading provider of fleet management solutions, dedicated to helping businesses streamline their operations and reduce costs.</p>
-            <div class="socials">
-                <a href="#"><i class="fa fa-facebook"></i></a>
-                <a href="#"><i class="fa fa-twitter"></i></a>
-                <a href="#"><i class="fa fa-linkedin"></i></a>
-            </div>
+            <h3>About LogiTrack</h3>
+            <p>A focused transport administration system for customers, dispatchers, and drivers.</p>
         </div>
         <div class="footer-section links">
             <h3>Quick Links</h3>
             <ul>
                 <li><a href="~/">Home</a></li>
-                <li><a href="~/Services">Services</a></li>
-                <li><a href="~/Features">Features</a></li>
-                <li><a href="~/About">About Us</a></li>
-                <li><a href="~/Contact">Contact</a></li>
-                <li><a href="~/Privacy">Privacy Policy</a></li>
+                <li><a asp-controller="Home" asp-action="Services">Services</a></li>
+                <li><a asp-controller="Home" asp-action="Contact">Contact</a></li>
+                <li><a asp-controller="Home" asp-action="Privacy">Privacy Policy</a></li>
             </ul>
         </div>
         <div class="footer-section contact-form">
             <h3>Contact Us</h3>
-            <form action="~/Contact" method="post">
+            <form asp-controller="Home" asp-action="Contact" method="post">
                 <input type="email" name="email" placeholder="Your Email Address" required>
                 <textarea name="message" rows="4" placeholder="Your Message" required></textarea>
                 <button type="submit" class="btn">Send</button>
@@ -141,10 +126,6 @@
         </div>
     </div>
     <div class="footer-bottom">
-        &copy; 2024 Truck Tracker | Designed by Group 15
+        &copy; @DateTime.UtcNow.Year LogiTrack
     </div>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-
 </footer>
-</body>
-</html>

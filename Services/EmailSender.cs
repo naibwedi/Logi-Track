@@ -8,12 +8,18 @@ public class EmailSender : IEmailSender
 {
     private readonly ISendGridClient _sendGridClient;
     private readonly ILogger _logger;
+    private readonly string _fromEmail;
+    private readonly string _fromName;
+    private readonly bool _isConfigured;
 
-    public EmailSender(ISendGridClient sendGridClient , ILogger<EmailSender> logger)
+    public EmailSender(ISendGridClient sendGridClient, ILogger<EmailSender> logger, IConfiguration configuration)
     {
         _sendGridClient = sendGridClient;
         _logger = logger;
-
+        _fromEmail = configuration["SendGrid:FromEmail"] ?? string.Empty;
+        _fromName = configuration["SendGrid:FromName"] ?? "Logi-Track";
+        _isConfigured = !string.IsNullOrWhiteSpace(configuration["SendGrid:ApiKey"])
+            && !string.IsNullOrWhiteSpace(_fromEmail);
     }
 
     public async Task SendEmailAsync(string email, string subject, string htmlMessage)
@@ -22,8 +28,13 @@ public class EmailSender : IEmailSender
         //try just for debug 
         try
         {
-            //change the email 
-            var from = new EmailAddress("Senderemailt@gmail.com", "123");
+            if (!_isConfigured)
+            {
+                _logger.LogWarning("Email delivery skipped because SendGrid is not configured.");
+                return;
+            }
+
+            var from = new EmailAddress(_fromEmail, _fromName);
             var to = new EmailAddress(email);
             //include the html content 
             var plainTextContent = htmlMessage.Replace("<br>", "\n").Replace("<br/>", "\n");

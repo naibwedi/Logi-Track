@@ -1,0 +1,14 @@
+@model IEnumerable<logirack.Models.Payment>
+@{ ViewData["Title"] = "Payment tracking"; }
+
+<h1>Payment tracking</h1>
+<table class="table table-striped">
+    <thead><tr><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+    <tbody>
+    @foreach (var payment in Model)
+    {
+        <tr><td>@payment.PaymentDate.ToString("g")</td><td>@payment.Amount.ToString("C")</td><td>@payment.Status</td></tr>
+    }
+    </tbody>
+</table>
+@if (!Model.Any()) { <p>No payments have been recorded.</p> }

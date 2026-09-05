@@ -1,81 +1,80 @@
 # Logi-Track
 
-Full-stack logistics and transport-management platform. Customers request trips,
-admins price and assign them to drivers, and every party follows the trip status
-in real time. Built as a university project and structured like a production
-ASP.NET Core application — layered services, role-based access, migrations,
-API docs, and containerised deployment.
+ASP.NET Core MVC logistics application for managing customer trip requests,
+admin pricing and approval, driver assignments, completion, and payment records.
 
-<!-- Add a screenshot at docs/screenshot.png and uncomment:
-![Logi-Track dashboard](docs/screenshot.png)
--->
+## Current features
 
-## Features
+- Customer registration, approval, trip requests, price response, and trip history
+- Admin customer approval, driver management, pricing, assignment, trip history,
+  completed-trip invoicing report, and payment overview
+- Driver current trips, completion workflow, history, and payment tracking
+- SuperAdmin administration of admin accounts
+- Authenticated SignalR subscriptions with server-side trip access checks
+- ASP.NET Core Identity roles and login lockout
+- SQLite development database and PostgreSQL production database
+- EF Core migrations, Docker packaging, integration tests, and GitHub Actions CI
 
-- **Four roles** with separate dashboards — SuperAdmin, Admin, Customer, Driver
-- **Trip lifecycle** — request → price set → driver assigned → in transit → delivered
-- **Real-time updates** via SignalR (`TripHub`): status changes, price updates, and
-  driver assignment push to everyone watching a trip; admin dashboard stats update live
-- **ASP.NET Identity** auth with email confirmation and role seeding on startup
-- **Transactional email** through SendGrid
-- **REST API + Swagger UI** with JWT bearer auth documented
-- **EF Core migrations**, seed data, and a clean layering: Controllers → Services →
-  Validators → Models/ViewModels
+This repository is an MVC web application. It does not currently expose a public
+REST/JWT API.
 
-## Tech stack
+## Local development
 
-| Area | Tech |
-|------|------|
-| Framework | ASP.NET Core MVC, .NET 8 |
-| Real-time | SignalR |
-| Data | Entity Framework Core — SQLite (dev), PostgreSQL (prod) |
-| Auth | ASP.NET Identity, JWT bearer for API |
-| Email | SendGrid |
-| API docs | Swashbuckle / Swagger |
-| Deployment | Docker (multi-stage build) |
-
-## Run locally
+Requirements: .NET 8 SDK.
 
 ```bash
 git clone https://github.com/naibwedi/Logi-Track.git
 cd Logi-Track
 dotnet restore
-dotnet ef database update      # applies migrations to the SQLite dev DB
 dotnet run
 ```
 
-App: `https://localhost:5001` · Swagger: `https://localhost:5001/swagger`
+The application applies EF Core migrations and creates the four Identity roles at
+startup. It intentionally does **not** create fixed-password users. Register customers
+through the UI. For the first startup only, supply `BootstrapAdmin__Email` and
+`BootstrapAdmin__Password`; remove both variables immediately after that account exists.
 
-Configuration (`appsettings.json` or user-secrets):
+Run verification with:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Data Source=app.db",
-    "PostgreSQLConnection": "Host=...;Database=...;Username=...;Password=..."
-  },
-  "SendGrid": { "ApiKey": "your-key" }
-}
+```bash
+dotnet build
+dotnet test
 ```
 
-### Docker
+## Configuration
+
+Never commit real credentials. For development, use .NET user secrets:
+
+```bash
+dotnet user-secrets set "SendGrid:ApiKey" "..."
+dotnet user-secrets set "SendGrid:FromEmail" "verified-sender@example.com"
+```
+
+Production configuration is supplied through environment variables:
+
+- `ConnectionStrings__PostgreSQLConnection`
+- `SendGrid__ApiKey`
+- `SendGrid__FromEmail`
+- `SendGrid__FromName`
+- `DataProtection__KeysPath` (use a persistent mounted directory)
+- `BootstrapAdmin__Email` and `BootstrapAdmin__Password` (first startup only)
+
+Email delivery is safely skipped when SendGrid is not configured.
+
+## Docker
 
 ```bash
 docker build -t logitrack .
-docker run -p 8080:8080 logitrack
+docker run --rm -p 8080:8080 \
+  -e ConnectionStrings__PostgreSQLConnection="..." \
+  -e SendGrid__ApiKey="..." \
+  -e SendGrid__FromEmail="..." \
+  logitrack
 ```
 
-## Architecture notes
+## Security notice
 
-- The environment decides the database: SQLite when `Development`, PostgreSQL otherwise.
-- Roles (`SuperAdmin`, `Admin`, `Customer`, `Driver`) and the initial SuperAdmin are
-  created at boot in `Program.cs` before the app starts serving requests.
-- `TripHub` groups clients by `trip_{id}` so status/price/driver events only reach
-  the users involved in that trip; admins join an `Admins` group for dashboard stats.
-- Cross-cutting rules live in `Services/` (e.g. `ApprovedOnlyAttribute` gates
-  unapproved drivers) and `Validators/` (e.g. `AgeValidator`).
-
-## Status
-
-University project, 2024 (142 commits). Demonstrates real-time full-stack .NET,
-EF migrations, Identity, and Docker.
+Older revisions contained credentials and fixed seed passwords. Removing values from
+the current branch does not invalidate leaked credentials or erase Git history.
+Rotate all affected database and SendGrid credentials before deployment, then use a
+history-rewrite tool if the repository must no longer retain the old values.

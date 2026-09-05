@@ -1,7 +1,11 @@
 ﻿@model logirack.Models.ViewModel.CreateDriverViewModel
 
 
-<form asp-action="CreateDriver" method="post">
+@{ ViewData["Title"] = "Create driver"; }
+<h1>Create driver</h1>
+<p class="text-muted">Create an approved driver account and share the initial password through a secure channel.</p>
+<form asp-action="CreateDriver" method="post" class="mx-auto" style="max-width: 42rem">
+    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
     <div class="form-group">
         <label asp-for="FirstName"></label>
         <input asp-for="FirstName" class="form-control" />
@@ -46,5 +50,19 @@
         <span asp-validation-for="PaymentFreq" class="text-danger"></span>
     </div>
 
+    <div class="form-group">
+        <label asp-for="Password"></label>
+        <input asp-for="Password" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="ConfirmPassword"></label>
+        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>
+
     <button type="submit" class="btn btn-primary">Create Driver</button>
 </form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

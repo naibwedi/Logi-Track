@@ -4,12 +4,66 @@
 }
 
 .navbar-nav {
-    
-    
-    
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: .5rem;
+}
+
+.brand-logo {
+    display: block;
+    width: auto;
+    height: 44px;
+    object-fit: contain;
+}
+
+.role-label {
+    font-weight: 700;
+    margin-right: .75rem;
+}
+
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+.btn-primary {
+    background-color: #064f9e;
+    border-color: #064f9e;
+    color: #fff;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #043b76;
+    border-color: #043b76;
+    color: #fff;
+}
+
+.btn-outline-primary {
+    color: #064f9e;
+    border-color: #064f9e;
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:focus {
+    background-color: #064f9e;
+    border-color: #064f9e;
+    color: #fff;
+}
+
+.text-muted {
+    color: #565e64 !important;
+}
+
+.accessible-link {
+    color: #064f9e;
+}
+
+.accessible-link:hover,
+.accessible-link:focus {
+    color: #043b76;
+}
+
+@media print {
+    header, .toast-container, .d-print-none { display: none !important; }
 }
 
 /* Styling for Admin navbar */
@@ -20,6 +74,12 @@
     padding: 5px 15px;
     line-height: 1; 
     margin-right: 50px;
+}
+
+@media (max-width: 991.98px) {
+    .navbar-nav { align-items: stretch; gap: 0; }
+    .admin-dashboard a, .driver-dashboard a { font-size: 1rem; margin-right: 0; }
+    .role-label { padding: .5rem 0; }
 }
 
 /* Styling for Driver navbar */

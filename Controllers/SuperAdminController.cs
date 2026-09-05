@@ -53,6 +53,7 @@ public class SuperAdminController : Controller
     /// <response code="200">If admin is created successfully</response>
     /// <response code="400">If the model is invalid or email/phone exists</response>
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateAdmin(CreateAdminViewModel model)
     {
         if (ModelState.IsValid)
@@ -100,11 +101,7 @@ public class SuperAdminController : Controller
                         "Welcome to Logirack Admin Team",
                         $"Dear {model.FirstName} {model.LastName},\n\n" +
                         $"Welcome to the Logirack admin team! Your admin account has been created successfully.\n\n" +
-                        $"Your login credentials:\n" +
-                        $"Email: {model.AdminEmail}\n" +
-                        $"Password: {model.AdminPassword}\n\n" +
-                        $"Please login at: [Your Login URL]\n\n" +
-                        $"For security reasons, we recommend changing your password after your first login.\n\n" +
+                        $"Sign in with the email address used to create your account. Contact the SuperAdmin through a secure channel if you did not receive your initial password.\n\n" +
                         $"Account Details:\n" +
                         $"Role: Admin\n" +
                         $"Phone: {model.PhoneNumber}\n" +
@@ -163,8 +160,8 @@ public class SuperAdminController : Controller
             Id = admin.Id,
             FirstName = admin.FirstName,
             LastName = admin.LastName,
-            AdminEmail = admin.Email,
-            PhoneNumber = admin.PhoneNumber,
+            AdminEmail = admin.Email ?? string.Empty,
+            PhoneNumber = admin.PhoneNumber ?? string.Empty,
             DateOfBirth = admin.DateOfBirth
         };
 

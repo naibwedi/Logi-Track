@@ -11,37 +11,37 @@ public class CreateAdminViewModel
     [EmailAddress]
     [StringLength(30, MinimumLength = 3)]
     [Display(Name = "Admin Email")]
-    public string AdminEmail { get; set; }
+    public string AdminEmail { get; set; } = string.Empty;
     
     [Required]
     [StringLength(100,ErrorMessage = "The password must at least {2} Characters long.", MinimumLength = 6)]
     [DataType(DataType.Password)]
     [Display(Name = "Admin Password")]
-    public string AdminPassword { get; set; }
+    public string AdminPassword { get; set; } = string.Empty;
     
     [DataType(DataType.Password)]
     [StringLength(100)]
     [Display(Name = "Confirm Password")]
     [Compare("AdminPassword", ErrorMessage = "The password and confirmation password do not match.")]
-    public string ConfirmPassword { get; set; }
+    public string ConfirmPassword { get; set; } = string.Empty;
     
     [Required]
     [StringLength(20 , MinimumLength = 2, ErrorMessage = "First Name must be between 2 and 20 characters.")]
     [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Use letters only please")]
     [Display(Name = "First Name")]
-    public string FirstName { get; set; }
+    public string FirstName { get; set; } = string.Empty;
     
     [Required]
     [StringLength(20 , MinimumLength = 2, ErrorMessage = "Last name must be between 2 and 20 characters.")]
     [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Use letters only please")]
     [Display(Name = "Last Name")]
-    public string LastName { get; set; }
+    public string LastName { get; set; } = string.Empty;
     
     [Required]
     [StringLength(15,MinimumLength = 3 , ErrorMessage = "Phone Number must be between 3 and 15 characters.")]
     [DataType(DataType.PhoneNumber)]
     [Display(Name = "Phone Number")]
-    public string PhoneNumber { get; set; }
+    public string PhoneNumber { get; set; } = string.Empty;
     
     [Required]
     [DataType(DataType.Date)]

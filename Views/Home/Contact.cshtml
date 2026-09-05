@@ -1,0 +1,23 @@
+@{ ViewData["Title"] = "Contact"; }
+<div class="mx-auto" style="max-width: 42rem">
+    <h1>Contact LogiTrack</h1>
+    <p>Send a question about a delivery request or your account.</p>
+    @if (TempData["ContactSuccess"] is string success)
+    {
+        <div class="alert alert-success" role="status">@success</div>
+    }
+    <form asp-action="Contact" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input id="email" name="email" type="email" value="@ViewData["Email"]" class="form-control" autocomplete="email" required />
+            @Html.ValidationMessage("email", new { @class = "text-danger" })
+        </div>
+        <div class="mb-3">
+            <label for="message" class="form-label">Message</label>
+            <textarea id="message" name="message" class="form-control" rows="6" minlength="10" required>@ViewData["Message"]</textarea>
+            @Html.ValidationMessage("message", new { @class = "text-danger" })
+        </div>
+        <button class="btn btn-primary" type="submit">Send message</button>
+    </form>
+</div>

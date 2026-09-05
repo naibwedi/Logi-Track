@@ -4,7 +4,7 @@
 
 <div class="dashboard-fullscreen">
     <h1>Dashboard</h1>
-    <p>Welcome, @User.Identity.Name!</p>
+    <p>Welcome, @User.Identity?.Name!</p>
     <div class="button-group">
         <a asp-action="CreateTrip" class="btn btn-primary">Create New Trip</a>
         <a asp-action="MyTrips" class="btn btn-secondary">View My Trips</a>

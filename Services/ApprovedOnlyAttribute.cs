@@ -1,19 +1,37 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using logirack.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using logirack.Models;
-using Microsoft.AspNetCore.Identity;
-//ghazi code
-public class ApprovedOnlyAttribute : AuthorizeAttribute, IAuthorizationFilter
+
+namespace logirack.Services;
+
+public sealed class ApprovedOnlyAttribute : AuthorizeAttribute, IAsyncAuthorizationFilter
 {
-    public void OnAuthorization(AuthorizationFilterContext context)
+    public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
-        var user = context.HttpContext.User;
-        if (user.Identity.IsAuthenticated)
+        if (context.ActionDescriptor.EndpointMetadata.OfType<IAllowAnonymous>().Any())
         {
-            var userManager = context.HttpContext.RequestServices.GetService(typeof(UserManager<ApplicationUser>)) as UserManager<ApplicationUser>;
-            var userId = userManager.GetUserId(context.HttpContext.User);
-            var appUser = userManager.FindByIdAsync(userId).Result;
+            return;
+        }
+
+        if (context.HttpContext.User.Identity?.IsAuthenticated != true)
+        {
+            context.Result = new ChallengeResult();
+            return;
+        }
+
+        var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.GetUserAsync(context.HttpContext.User);
+        if (user is null)
+        {
+            context.Result = new ChallengeResult();
+            return;
+        }
+
+        if (!user.IsApproved)
+        {
+            context.Result = new RedirectToActionResult("ApprovalPending", "Customer", null);
         }
     }
 }
