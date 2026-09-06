@@ -1,8 +1,18 @@
 ﻿@model IEnumerable<logirack.Models.ViewModel.TripDetailsViewModel>
 
-<h2>Current Trips</h2>
+@{ ViewData["Title"] = "Current trips"; }
 
+<h1 class="h2">Current trips</h1>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info" role="status">You currently have no assigned trips.</div>
+}
+else
+{
+<div class="table-responsive">
 <table class="table">
+    <caption class="visually-hidden">Your active trip assignments</caption>
     <thead>
     <tr>
         <th>Trip ID</th>
@@ -38,8 +48,5 @@
     }
     </tbody>
 </table>
-
-@if (!Model.Any())
-{
-    <p>You currently have no assigned trips.</p>
+</div>
 }

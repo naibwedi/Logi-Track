@@ -7,11 +7,19 @@ using logirack.Models;
 using SendGrid;
 using logirack.Services;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -23,8 +31,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }
     else
     {
-        var postgresConnection = builder.Configuration.GetConnectionString("PostgreSQLConnection")
-            ?? throw new InvalidOperationException("Connection string 'PostgreSQLConnection' not found.");
+        var postgresConnection = builder.Configuration.GetConnectionString("PostgreSQLConnection");
+        if (string.IsNullOrWhiteSpace(postgresConnection))
+            throw new InvalidOperationException("Set ConnectionStrings__PostgreSQLConnection before starting LogiTrack in production.");
         options.UseNpgsql(postgresConnection);
     }
 });
@@ -54,6 +63,11 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
         options.Lockout.AllowedForNewUsers = true;
         options.Lockout.MaxFailedAccessAttempts = 5;
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Password.RequiredLength = 12;
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
@@ -72,8 +86,31 @@ builder.Services.AddSingleton<ISendGridClient>(new SendGridClient(
 // Register EmailSender as the implementation of IEmailSender
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddSignalR();
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
+});
+
+if (!builder.Environment.IsDevelopment())
+{
+    string[] requiredSettings =
+    [
+        "SendGrid:ApiKey",
+        "SendGrid:FromEmail",
+        "Contact:Recipient"
+    ];
+    var missingSettings = requiredSettings.Where(key => string.IsNullOrWhiteSpace(builder.Configuration[key])).ToArray();
+    if (missingSettings.Length > 0)
+        throw new InvalidOperationException($"Missing production configuration: {string.Join(", ", missingSettings)}");
+}
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -85,6 +122,17 @@ else
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+app.UseStatusCodePagesWithReExecute("/Home/RequestError", "?code={0}");
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers.XFrameOptions = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    await next();
+});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -102,6 +150,19 @@ app.MapRazorPages();
 //  SignalR
 
 app.MapHub<TripHub>("/tripHub");
+app.MapGet("/health", async (ApplicationDbContext db, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        return await db.Database.CanConnectAsync(cancellationToken)
+            ? Results.Ok(new { status = "healthy" })
+            : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+    }
+    catch
+    {
+        return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+    }
+}).AllowAnonymous();
 // Set up roles and SuperAdmin user before the application starts
 using (var scope = app.Services.CreateScope())
 {

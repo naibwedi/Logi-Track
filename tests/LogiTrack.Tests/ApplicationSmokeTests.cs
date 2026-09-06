@@ -145,6 +145,22 @@ public sealed class ApplicationSmokeTests : IClassFixture<LogiTrackFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Health_endpoint_reports_database_connectivity()
+    {
+        var response = await _client.GetAsync("/health");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("healthy", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Unknown_routes_render_a_branded_not_found_page()
+    {
+        var response = await _client.GetAsync("/this-route-does-not-exist");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Contains("Page not found", await response.Content.ReadAsStringAsync());
+    }
+
     [Theory]
     [InlineData("/Admin/Dashboard")]
     [InlineData("/Driver/Dashboard")]

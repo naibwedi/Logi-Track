@@ -8,9 +8,10 @@
     # ----- Runtime Stage -----
     FROM mcr.microsoft.com/dotnet/aspnet:8.0
     WORKDIR /app
+    ENV ASPNETCORE_HTTP_PORTS=8080
+    EXPOSE 8080
     
     # Only copy published output (includes appsettings.json)
     COPY --from=build /app/out .
     
     ENTRYPOINT ["dotnet", "logirack.dll"]
-    

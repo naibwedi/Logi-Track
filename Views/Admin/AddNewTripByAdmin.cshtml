@@ -1,10 +1,12 @@
 ﻿@model logirack.Models.ViewModel.CreateTripByAdminViewModel
 
 
+@{ ViewData["Title"] = "Add new trip"; }
+
 <link rel="stylesheet" href="/css/addNewTripByAdmin.css">
 
 <div class="container">
-    <h2>Create New Trip</h2>
+    <h1 class="h2">Create new trip</h1>
 
     <form asp-controller="Admin" asp-action="AddNewTripByAdmin" method="post">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>

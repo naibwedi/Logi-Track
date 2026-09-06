@@ -244,8 +244,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
             return View(dashboardStats);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to load the admin dashboard.");
+            TempData["Error"] = "Dashboard data could not be loaded. Please try again.";
             return View(new DashboardStats
             {
                 RecentActivities = new List<RecentActivity>(),

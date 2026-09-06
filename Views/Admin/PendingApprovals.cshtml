@@ -1,8 +1,12 @@
 ﻿@model List<logirack.Models.ApplicationUser>
 
-<h2>Pending Approvals</h2>
+@{ ViewData["Title"] = "Pending approvals"; }
 
-<table class="table">
+<h1 class="h2">Pending approvals</h1>
+
+<div class="table-responsive">
+<table class="table align-middle">
+    <caption class="visually-hidden">Customers awaiting account approval</caption>
     <thead>
     <tr>
         <th>Email</th>
@@ -12,6 +16,10 @@
     </tr>
     </thead>
     <tbody>
+    @if (!Model.Any())
+    {
+        <tr><td colspan="4" class="text-center text-muted py-4">No customers are waiting for approval.</td></tr>
+    }
     @foreach (var user in Model)
     {
         <tr>
@@ -35,3 +43,4 @@
     }
     </tbody>
 </table>
+</div>

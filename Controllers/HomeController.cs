@@ -1,16 +1,21 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using logirack.Models;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace logirack.Controllers;
 
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
+    private readonly IEmailSender _emailSender;
+    private readonly string _contactRecipient;
 
-    public HomeController(ILogger<HomeController> logger)
+    public HomeController(ILogger<HomeController> logger, IEmailSender emailSender, IConfiguration configuration)
     {
         _logger = logger;
+        _emailSender = emailSender;
+        _contactRecipient = configuration["Contact:Recipient"] ?? string.Empty;
     }
 
     public IActionResult Index()
@@ -30,7 +35,7 @@ public class HomeController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Contact(string email, string message)
+    public async Task<IActionResult> Contact(string email, string message)
     {
         if (string.IsNullOrWhiteSpace(email) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(email))
             ModelState.AddModelError("email", "Enter a valid email address.");
@@ -44,9 +49,36 @@ public class HomeController : Controller
             return View();
         }
 
-        _logger.LogInformation("Contact request received from {Email}: {MessageLength} characters", email, message.Length);
+        try
+        {
+            if (!HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment())
+            {
+                await _emailSender.SendEmailAsync(
+                    _contactRecipient,
+                    $"LogiTrack contact request from {email}",
+                    $"Reply-to email: {System.Net.WebUtility.HtmlEncode(email)}<br><br>{System.Net.WebUtility.HtmlEncode(message).Replace("\n", "<br>")}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not deliver contact request from {Email}", email);
+            ModelState.AddModelError(string.Empty, "We could not deliver your message. Please try again later.");
+            ViewData["Email"] = email;
+            ViewData["Message"] = message;
+            return View();
+        }
+
+        _logger.LogInformation("Contact request accepted from {Email}: {MessageLength} characters", email, message.Length);
         TempData["ContactSuccess"] = "Thanks. Your message has been received.";
         return RedirectToAction(nameof(Contact));
+    }
+
+    [HttpGet]
+    public IActionResult RequestError(int code)
+    {
+        Response.StatusCode = code;
+        ViewData["StatusCode"] = code;
+        return View("StatusCode");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

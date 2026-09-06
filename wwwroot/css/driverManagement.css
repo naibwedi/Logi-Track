@@ -12,7 +12,7 @@ h2 {
 
 /* Button Styles */
 .btnCreateDriver {
-    background-color: #007bff;
+    background-color: #064f9e;
     color: #fff;
     padding: 10px 20px;
     font-size: 16px;
@@ -21,7 +21,7 @@ h2 {
 }
 
 .btnCreateDriver:hover {
-    background-color: #0056b3;
+    background-color: #043b76;
 }
 
 /* Table Styles */

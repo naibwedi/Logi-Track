@@ -1,8 +1,18 @@
 ﻿@model IEnumerable<logirack.Models.ViewModel.TripDetailsViewModel>
 
-<h2>Your Trip Log</h2>
+@{ ViewData["Title"] = "Trip log"; }
 
+<h1 class="h2">Your trip log</h1>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info" role="status">No trip history is available yet.</div>
+}
+else
+{
+<div class="table-responsive">
 <table class="table">
+    <caption class="visually-hidden">Your current and completed trips</caption>
     <thead>
     <tr>
         <th>Trip ID</th>
@@ -31,3 +41,5 @@
     }
     </tbody>
 </table>
+</div>
+}

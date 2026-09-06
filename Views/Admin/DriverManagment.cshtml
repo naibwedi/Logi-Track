@@ -1,13 +1,13 @@
 ﻿@model IEnumerable<logirack.Models.Driver>
 
 @{
-ViewBag.Title = "Driver List";
+ViewData["Title"] = "Driver management";
 Layout = "_Layout";
 }
 
 <link rel="stylesheet" href="/css/driverManagement.css">
 
-<h2 class="mb-4 text-center">Driver List</h2>
+<h1 class="h2 mb-4 text-center">Driver management</h1>
 
 @if (TempData["Success"] != null)
 {
@@ -25,12 +25,13 @@ Layout = "_Layout";
 
 <div class="mb-4 d-flex justify-content-between align-items-center">
     <!-- Create New Driver button on the left -->
-    <a asp-action="CreateDriver" class="btnCreateDriver btn btn-primary">Create New Driver</a>
+    <a asp-action="CreateDriver" class="btn btn-primary">Create New Driver</a>
 
     <!-- Search form aligned to the right -->
     <div class="input-group w-50">
         <!-- Dropdown filter for search criteria -->
         <div class="form-control input-group-append">
+            <label for="searchCriteria" class="visually-hidden">Search drivers by</label>
             <select class="custom-select" name="searchCriteria" id="searchCriteria">
                 <option value="FirstName" selected>First Name</option>
                 <option value="LastName">Last Name</option>
