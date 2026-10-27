@@ -1,4 +1,4 @@
-﻿@* Views/Shared/_Layout.cshtml *@
+@* Views/Shared/_Layout.cshtml *@
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="~/css/adminDashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/driverDashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/navBar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/leaflet/leaflet.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
@@ -55,6 +56,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Admin" asp-action="DriverManagment">Driver Management</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Admin" asp-action="VehicleManagement">Fleet Management</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Admin" asp-action="AddNewTripByAdmin">Add New Trip</a>
@@ -144,6 +148,7 @@
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/lib/leaflet/leaflet.js" asp-append-version="true"></script>
 
 @if (User.Identity?.IsAuthenticated == true)
 {

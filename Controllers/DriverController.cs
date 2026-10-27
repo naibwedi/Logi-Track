@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -6,6 +6,7 @@ using logirack.Data;
 using logirack.Models;
 using logirack.Models.ViewModel;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using logirack.Services;
 
 namespace logirack.Controllers;
 
@@ -19,12 +20,13 @@ public class DriverController : Controller
     private readonly ApplicationDbContext _db;
     private readonly ILogger<DriverController> _logger;
     private readonly IEmailSender _emailSender;
-    public DriverController(ApplicationDbContext db, ILogger<DriverController> logger,IEmailSender emailSender)
+    private readonly ICoordinateService _coordinateService;
+    public DriverController(ApplicationDbContext db, ILogger<DriverController> logger, IEmailSender emailSender, ICoordinateService coordinateService)
     {
         _db = db;
         _logger = logger;
         _emailSender = emailSender;
-
+        _coordinateService = coordinateService;
     }
     /// <summary>
     /// Displays the driver dashboard
@@ -76,21 +78,46 @@ public class DriverController : Controller
     {
         var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var currentTrips = await _db.DriverTrips
+        var driverTrips = await _db.DriverTrips
             .Include(dt => dt.Trip)
-            .Where(dt => dt.DriverId == driverId && dt.Status == TripStatus.Assigned) // Show only assigned trips
-            .Select(dt => new TripDetailsViewModel
+            .Where(dt => dt.DriverId == driverId && (dt.Status == TripStatus.Assigned || dt.Status == TripStatus.InProgress))
+            .ToListAsync();
+
+        var driverLocation = await _db.Locations.FirstOrDefaultAsync(l => l.DriverID == driverId);
+
+        var currentTrips = driverTrips.Select(dt =>
+        {
+            var startCoords = _coordinateService.GetCoordinatesForCity(dt.Trip.FromCity);
+            var destCoords = _coordinateService.GetCoordinatesForCity(dt.Trip.ToCity);
+            var currentLat = driverLocation != null ? driverLocation.Latitude : startCoords.Latitude;
+            var currentLng = driverLocation != null ? driverLocation.Longitude : startCoords.Longitude;
+
+            return new TripDetailsViewModel
             {
                 TripId = dt.Trip.Id,
                 FromCity = dt.Trip.FromCity,
                 ToCity = dt.Trip.ToCity,
+                FromAddress = dt.Trip.FromAddress,
+                ToAddress = dt.Trip.ToAddress,
+                FromZipCode = dt.Trip.FromZipCode,
+                ToZipCode = dt.Trip.ToZipCode,
                 Distance = dt.Trip.Distance,
                 Weight = dt.Trip.Weight,
+                Volume = dt.Trip.Volume,
+                GoodTypes = dt.Trip.GoodsType,
+                Notes = dt.Trip.Notes,
                 PickupDate = dt.Trip.PickupTime,
                 Status = dt.Trip.Status,
-                AdminPrice = dt.Trip.AdminPrice
-            })
-            .ToListAsync();
+                AdminPrice = dt.Trip.AdminPrice,
+                EstimatedPrice = dt.Trip.EstimatedPrice,
+                StartLatitude = startCoords.Latitude,
+                StartLongitude = startCoords.Longitude,
+                DestinationLatitude = destCoords.Latitude,
+                DestinationLongitude = destCoords.Longitude,
+                CurrentLatitude = currentLat,
+                CurrentLongitude = currentLng
+            };
+        }).ToList();
 
         return View(currentTrips);
     }
@@ -115,18 +142,27 @@ public class DriverController : Controller
             .Include(dt => dt.Driver)
             .FirstOrDefaultAsync(dt => dt.TripId == tripId && dt.DriverId == driverId);
 
-        if (driverTrip == null || driverTrip.Status != TripStatus.Assigned)
+        if (driverTrip == null || (driverTrip.Status != TripStatus.Assigned && driverTrip.Status != TripStatus.InProgress))
         {
             return NotFound("Trip not found or already completed.");
         }
 
         driverTrip.Status = TripStatus.Completed;
         driverTrip.Trip.Status = TripStatus.Completed;
-        driverTrip.UpdateAt = DateTime.Now;
-        driverTrip.CompletionDate = DateTime.Now;
+        driverTrip.UpdateAt = DateTime.UtcNow;
+        driverTrip.Trip.UpdatedAt = DateTime.UtcNow;
+        driverTrip.CompletionDate = DateTime.UtcNow;
         driverTrip.Driver.IsAvailable = true; 
 
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            _logger.LogWarning("Concurrency conflict while completing trip {TripId}", tripId);
+            return Conflict("The trip was modified by another process. Please refresh and try again.");
+        }
         if (driverTrip.Trip.Admin != null)
         {
             try

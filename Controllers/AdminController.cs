@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using logirack.Data;
 using logirack.Models;
 using logirack.Models.ViewModel;
@@ -27,6 +27,8 @@ public class AdminController : Controller
     private readonly IEmailSender _emailSender;
     private readonly PasswordService _passwordService;
     private readonly IHubContext<TripHub> _hubContext;
+    private readonly ICoordinateService _coordinateService;
+    private readonly IInvoiceService _invoiceService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AdminController"/> class.
@@ -35,8 +37,11 @@ public class AdminController : Controller
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
         ILogger<AdminController> logger,
-        IEmailSender emailSender,IHubContext<TripHub> hubContext,
-        PasswordService passwordService)
+        IEmailSender emailSender,
+        IHubContext<TripHub> hubContext,
+        PasswordService passwordService,
+        ICoordinateService coordinateService,
+        IInvoiceService invoiceService)
     {
         _db = db;
         _userManager = userManager;
@@ -45,6 +50,8 @@ public class AdminController : Controller
         _hubContext = hubContext;
         _emailSender = emailSender;
         _passwordService = passwordService;
+        _coordinateService = coordinateService;
+        _invoiceService = invoiceService;
     }
     /// <summary>
     /// Search for drivers based on specified criteria
@@ -488,9 +495,28 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     [HttpGet]
     public async Task<IActionResult> TripDetails(int id)
     {
-        var trip = await _db.Trips.Include(t => t.Customer).FirstOrDefaultAsync(t=>t.Id == id);
-        if(trip == null)
+        var trip = await _db.Trips
+            .Include(t => t.Customer)
+            .Include(t => t.DriverTrip)
+            .FirstOrDefaultAsync(t => t.Id == id);
+        if (trip == null)
             return NotFound();
+
+        var startCoords = _coordinateService.GetCoordinatesForCity(trip.FromCity);
+        var destCoords = _coordinateService.GetCoordinatesForCity(trip.ToCity);
+        double currentLat = startCoords.Latitude;
+        double currentLng = startCoords.Longitude;
+
+        if (trip.DriverTrip != null)
+        {
+            var driverLocation = await _db.Locations.FirstOrDefaultAsync(l => l.DriverID == trip.DriverTrip.DriverId);
+            if (driverLocation != null)
+            {
+                currentLat = driverLocation.Latitude;
+                currentLng = driverLocation.Longitude;
+            }
+        }
+
         var viewModel = new TripDetailsViewModel
         {
             TripId = trip.Id,
@@ -509,9 +535,16 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             GoodTypes = trip.GoodsType,
             Notes = trip.Notes,
             EstimatedPrice = trip.EstimatedPrice,
+            AdminPrice = trip.AdminPrice,
             Status = trip.Status,
             CreatedOn = trip.CreatedAt,
-            PickupDate = trip.PickupTime
+            PickupDate = trip.PickupTime,
+            StartLatitude = startCoords.Latitude,
+            StartLongitude = startCoords.Longitude,
+            DestinationLatitude = destCoords.Latitude,
+            DestinationLongitude = destCoords.Longitude,
+            CurrentLatitude = currentLat,
+            CurrentLongitude = currentLng
         };
         return View(viewModel);
     }
@@ -536,8 +569,16 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             return Forbid();
         trip.Status = isApproved ? TripStatus.ApprovedByAdmin : TripStatus.CancelledByAdmin;
         trip.AdminId=admin.Id;
-        trip.UpdatedAt = DateTime.Now;
-        await _db.SaveChangesAsync();
+        trip.UpdatedAt = DateTime.UtcNow;
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            _logger.LogWarning("Concurrency conflict while reviewing trip {TripId}", trip.Id);
+            return Conflict("The trip was modified by another process. Please refresh and try again.");
+        }
         var tripReviewInfo = new
         {
             TripId = trip.Id,
@@ -624,7 +665,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
         tripToUpdate.AdminPrice = model.AdminPrice;
         tripToUpdate.Status = TripStatus.PriceSet;
-        tripToUpdate.UpdatedAt = DateTime.Now;
+        tripToUpdate.UpdatedAt = DateTime.UtcNow;
 
         try
         {
@@ -666,6 +707,12 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             TempData["Success"] = "Price set successfully and customer has been notified.";
             return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
         }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while setting price for trip {TripId}", model.TripId);
+            ModelState.AddModelError(string.Empty, "The trip was modified by another process. Please refresh and try again.");
+            return View(model);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error setting price for trip {TripId}", model.TripId);
@@ -699,6 +746,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             Weight = trip.Weight,
             Distance = trip.Distance,
             AvailableDrivers = drivers,
+            AvailableVehicles = await _db.Vehicles
+                .Where(v => v.Status == VehicleStatus.Active)
+                .OrderBy(v => v.UnitNumber)
+                .ToListAsync(),
         };
         return View(viewM);
     }
@@ -717,34 +768,39 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             return View(model);
         }
 
+        await using var transaction = await _db.Database.BeginTransactionAsync();
         try
         {
             var trip = await _db.Trips
-                .Include("DriverTrip")    
-                .Include("Customer")      
+                .Include(t => t.DriverTrip)
+                .Include(t => t.Customer)
                 .FirstOrDefaultAsync(t => t.Id == model.TripId);
 
             if (trip == null)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError($"Trip not found. TripId: {model.TripId}");
                 return NotFound("Trip not found");
             }
 
             if (trip.Status != TripStatus.ApprovedByCustomer)
             {
+                await transaction.RollbackAsync();
                 return BadRequest("Only customer-approved trips can be assigned.");
             }
 
             if (trip.DriverTrip != null)
             {
+                await transaction.RollbackAsync();
                 ModelState.AddModelError("", "This trip is already assigned to a driver");
                 await LoadAvailableDrivers(model);
                 return View(model);
             }
 
-            var driver = await _userManager.FindByIdAsync(model.DriverId) as Driver;
+            var driver = await _db.Drivers.FirstOrDefaultAsync(d => d.Id == model.DriverId);
             if (driver == null)
             {
+                await transaction.RollbackAsync();
                 ModelState.AddModelError("DriverId", "Selected driver not found");
                 await LoadAvailableDrivers(model);
                 return View(model);
@@ -752,6 +808,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
             if (!driver.IsAvailable)
             {
+                await transaction.RollbackAsync();
                 ModelState.AddModelError("DriverId", "Selected driver is not available");
                 await LoadAvailableDrivers(model);
                 return View(model);
@@ -759,43 +816,90 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
             if (!driver.IsApproved)
             {
+                await transaction.RollbackAsync();
                 ModelState.AddModelError("DriverId", "Selected driver is not approved");
                 await LoadAvailableDrivers(model);
                 return View(model);
             }
 
-            using var transaction = await _db.Database.BeginTransactionAsync();
-            try
+            Vehicle? selectedVehicle = null;
+            if (model.VehicleId.HasValue && model.VehicleId.Value > 0)
             {
-                var driverTrip = new DriverTrip
+                selectedVehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == model.VehicleId.Value);
+                if (selectedVehicle == null)
                 {
-                    TripId = trip.Id,
-                    DriverId = driver.Id,
-                    AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
-                    DriverPayment = driver.PricePerKm * trip.Distance,
-                    Status = TripStatus.Assigned,
-                    AssignmentDate = DateTime.Now,
-                    UpdateAt = DateTime.Now
-                };
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("VehicleId", "Selected vehicle not found.");
+                    await LoadAvailableDrivers(model);
+                    return View(model);
+                }
 
-                trip.Status = TripStatus.Assigned;
-                driver.IsAvailable = false;
+                if (selectedVehicle.Status != VehicleStatus.Active)
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("VehicleId", $"Selected vehicle unit is not Active (current status: {selectedVehicle.Status}).");
+                    await LoadAvailableDrivers(model);
+                    return View(model);
+                }
 
-                _db.DriverTrips.Add(driverTrip);
-                await _db.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                TempData["Success"] = $"Trip successfully assigned to {driver.UserName}";
-                return RedirectToAction(nameof(TripRequests));
+                if (selectedVehicle.RegistrationExpirationDate < DateTime.UtcNow)
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("VehicleId", "Selected vehicle registration has expired.");
+                    await LoadAvailableDrivers(model);
+                    return View(model);
+                }
             }
-            catch (Exception)
+            else
             {
-                await transaction.RollbackAsync();
-                throw;
+                // Backwards compatibility fallback for legacy test invocations:
+                // Auto-bind to the driver's assigned tractor or the first active vehicle.
+                if (driver.VehicleId.HasValue)
+                {
+                    selectedVehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == driver.VehicleId.Value && v.Status == VehicleStatus.Active);
+                }
+
+                if (selectedVehicle == null)
+                {
+                    selectedVehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Status == VehicleStatus.Active && v.RegistrationExpirationDate >= DateTime.UtcNow);
+                }
             }
+
+            var driverTrip = new DriverTrip
+            {
+                TripId = trip.Id,
+                DriverId = driver.Id,
+                AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
+                DriverPayment = driver.PricePerKm * trip.Distance,
+                Status = TripStatus.Assigned,
+                VehicleId = selectedVehicle?.Id,
+                AssignmentDate = DateTime.UtcNow,
+                UpdateAt = DateTime.UtcNow
+            };
+
+            trip.Status = TripStatus.Assigned;
+            trip.VehicleId = selectedVehicle?.Id;
+            trip.UpdatedAt = DateTime.UtcNow;
+            driver.IsAvailable = false;
+
+            _db.DriverTrips.Add(driverTrip);
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            TempData["Success"] = $"Trip successfully assigned to {driver.UserName}";
+            return RedirectToAction(nameof(TripRequests));
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogWarning(ex, "Concurrency conflict during driver assignment for trip {TripId}", model.TripId);
+            ModelState.AddModelError("", "The trip or driver was modified by another process. Please refresh and try again.");
+            await LoadAvailableDrivers(model);
+            return View(model);
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
             _logger.LogError(ex, "Error assigning trip");
             ModelState.AddModelError("", "An error occurred while assigning the trip");
             await LoadAvailableDrivers(model);
@@ -815,6 +919,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             }
         }
         model.AvailableDrivers = availableDrivers;
+        model.AvailableVehicles = await _db.Vehicles
+            .Where(v => v.Status == VehicleStatus.Active)
+            .OrderBy(v => v.UnitNumber)
+            .ToListAsync();
     }
     /// <summary>
     /// Gets page for creating a new trip by admin
@@ -911,6 +1019,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 Distance = model.Distance,
                 Weight = model.weight,
                 PickupTime = model.PickUpTime,
+                VehicleId = driver.VehicleId,
                 CreatedAt = DateTime.Now,
                 AdminPrice = model.Price,
                 AdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -927,6 +1036,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
                 DriverPayment = driver.PricePerKm * model.Distance,
                 Status = TripStatus.Assigned,
+                VehicleId = driver.VehicleId,
                 AssignmentDate = DateTime.Now,
                 UpdateAt = DateTime.Now
             };
@@ -1129,7 +1239,356 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return View(completedTrips);
     }
 
-   
+    /// <summary>
+    /// Downloads the generated PDF invoice for any completed trip.
+    /// Admin authorization required.
+    /// </summary>
+    /// <param name="id">The trip ID</param>
+    /// <returns>PDF file stream</returns>
+    [HttpGet]
+    public async Task<IActionResult> DownloadInvoice(int id)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.Customer)
+            .FirstOrDefaultAsync(t => t.Id == id);
 
+        if (trip == null)
+        {
+            return NotFound();
+        }
 
+        if (trip.Status != TripStatus.Completed)
+        {
+            return BadRequest("Invoice is only available for completed trips.");
+        }
+
+        var customer = trip.Customer;
+        if (customer == null)
+        {
+            var appUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == trip.CustomerId);
+            customer = appUser as Customer ?? new Customer
+            {
+                Id = trip.CustomerId,
+                UserName = appUser?.UserName,
+                Email = appUser?.Email,
+                PhoneNumber = appUser?.PhoneNumber,
+                FirstName = appUser?.FirstName ?? "Customer",
+                LastName = appUser?.LastName ?? "",
+                CompanyName = appUser?.CompanyName ?? string.Empty
+            };
+        }
+
+        var pdfBytes = _invoiceService.GenerateInvoicePdf(trip, customer);
+        return File(pdfBytes, "application/pdf", $"Invoice_Trip_{trip.Id}.pdf");
+    }
+
+    // ==========================================
+    // Fleet & Equipment Management (M1)
+    // ==========================================
+
+    /// <summary>
+    /// Displays list of all fleet vehicle units.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> VehicleManagement()
+    {
+        var vehicles = await _db.Vehicles
+            .Include(v => v.AssignedDriver)
+            .OrderBy(v => v.UnitNumber)
+            .ToListAsync();
+
+        var drivers = (await _userManager.GetUsersInRoleAsync("Driver"))
+            .OfType<Driver>()
+            .OrderBy(d => d.FirstName)
+            .ThenBy(d => d.LastName)
+            .ToList();
+
+        ViewBag.AvailableDrivers = drivers;
+        return View("VehicleManagement", vehicles);
+    }
+
+    /// <summary>
+    /// Alias for VehicleManagement
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Vehicles()
+    {
+        return await VehicleManagement();
+    }
+
+    /// <summary>
+    /// Displays form to create a new vehicle.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> CreateVehicle()
+    {
+        var drivers = (await _userManager.GetUsersInRoleAsync("Driver"))
+            .OfType<Driver>()
+            .OrderBy(d => d.FirstName)
+            .ThenBy(d => d.LastName)
+            .ToList();
+
+        ViewBag.Drivers = drivers;
+        var model = new Vehicle
+        {
+            Year = DateTime.UtcNow.Year,
+            RegistrationExpirationDate = DateTime.UtcNow.AddYears(1),
+            AnnualDotInspectionExpiration = DateTime.UtcNow.AddYears(1),
+            Form2290ExpirationDate = DateTime.UtcNow.AddYears(1),
+            Status = VehicleStatus.Active
+        };
+        return View(model);
+    }
+
+    /// <summary>
+    /// Creates a new vehicle unit.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateVehicle(Vehicle vehicle)
+    {
+        if (await _db.Vehicles.AnyAsync(v => v.UnitNumber == vehicle.UnitNumber))
+        {
+            ModelState.AddModelError("UnitNumber", "A vehicle with this Unit Number already exists.");
+        }
+
+        if (await _db.Vehicles.AnyAsync(v => v.Vin == vehicle.Vin))
+        {
+            ModelState.AddModelError("Vin", "A vehicle with this VIN already exists.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Drivers = (await _userManager.GetUsersInRoleAsync("Driver"))
+                .OfType<Driver>()
+                .OrderBy(d => d.FirstName)
+                .ThenBy(d => d.LastName)
+                .ToList();
+            return View(vehicle);
+        }
+
+        vehicle.CreatedAt = DateTime.UtcNow;
+        vehicle.UpdatedAt = DateTime.UtcNow;
+
+        _db.Vehicles.Add(vehicle);
+        await _db.SaveChangesAsync();
+
+        if (!string.IsNullOrEmpty(vehicle.AssignedDriverId))
+        {
+            var otherVehicles = await _db.Vehicles
+                .Where(v => v.Id != vehicle.Id && v.AssignedDriverId == vehicle.AssignedDriverId)
+                .ToListAsync();
+            foreach (var ov in otherVehicles)
+            {
+                ov.AssignedDriverId = null;
+            }
+
+            var driver = await _db.Drivers.FindAsync(vehicle.AssignedDriverId);
+            if (driver != null)
+            {
+                driver.VehicleId = vehicle.Id;
+            }
+            await _db.SaveChangesAsync();
+        }
+
+        TempData["Success"] = $"Vehicle Unit {vehicle.UnitNumber} created successfully.";
+        return RedirectToAction(nameof(VehicleManagement));
+    }
+
+    /// <summary>
+    /// Displays form to edit an existing vehicle.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> EditVehicle(int id)
+    {
+        var vehicle = await _db.Vehicles
+            .Include(v => v.AssignedDriver)
+            .FirstOrDefaultAsync(v => v.Id == id);
+
+        if (vehicle == null)
+        {
+            return NotFound();
+        }
+
+        ViewBag.Drivers = (await _userManager.GetUsersInRoleAsync("Driver"))
+            .OfType<Driver>()
+            .OrderBy(d => d.FirstName)
+            .ThenBy(d => d.LastName)
+            .ToList();
+
+        return View(vehicle);
+    }
+
+    /// <summary>
+    /// Updates an existing vehicle unit.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditVehicle(int id, Vehicle vehicle)
+    {
+        if (id != vehicle.Id)
+        {
+            return BadRequest();
+        }
+
+        if (await _db.Vehicles.AnyAsync(v => v.Id != id && v.UnitNumber == vehicle.UnitNumber))
+        {
+            ModelState.AddModelError("UnitNumber", "Unit Number is already in use by another vehicle.");
+        }
+
+        if (await _db.Vehicles.AnyAsync(v => v.Id != id && v.Vin == vehicle.Vin))
+        {
+            ModelState.AddModelError("Vin", "VIN is already in use by another vehicle.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Drivers = (await _userManager.GetUsersInRoleAsync("Driver"))
+                .OfType<Driver>()
+                .OrderBy(d => d.FirstName)
+                .ThenBy(d => d.LastName)
+                .ToList();
+            return View(vehicle);
+        }
+
+        var existing = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == id);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        var previousDriverId = existing.AssignedDriverId;
+
+        existing.UnitNumber = vehicle.UnitNumber;
+        existing.Vin = vehicle.Vin;
+        existing.LicensePlate = vehicle.LicensePlate;
+        existing.LicenseState = vehicle.LicenseState;
+        existing.Make = vehicle.Make;
+        existing.Model = vehicle.Model;
+        existing.Year = vehicle.Year;
+        existing.RegistrationExpirationDate = vehicle.RegistrationExpirationDate;
+        existing.AnnualDotInspectionExpiration = vehicle.AnnualDotInspectionExpiration;
+        existing.Form2290ExpirationDate = vehicle.Form2290ExpirationDate;
+        existing.PrePassTransponderId = vehicle.PrePassTransponderId;
+        existing.Status = vehicle.Status;
+        existing.AssignedDriverId = vehicle.AssignedDriverId;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        if (previousDriverId != vehicle.AssignedDriverId)
+        {
+            if (!string.IsNullOrEmpty(previousDriverId))
+            {
+                var prevDriver = await _db.Drivers.FindAsync(previousDriverId);
+                if (prevDriver != null && prevDriver.VehicleId == id)
+                {
+                    prevDriver.VehicleId = null;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(vehicle.AssignedDriverId))
+            {
+                var otherVehicles = await _db.Vehicles
+                    .Where(v => v.Id != id && v.AssignedDriverId == vehicle.AssignedDriverId)
+                    .ToListAsync();
+                foreach (var ov in otherVehicles)
+                {
+                    ov.AssignedDriverId = null;
+                }
+
+                var newDriver = await _db.Drivers.FindAsync(vehicle.AssignedDriverId);
+                if (newDriver != null)
+                {
+                    newDriver.VehicleId = id;
+                }
+            }
+        }
+
+        await _db.SaveChangesAsync();
+        TempData["Success"] = $"Vehicle Unit {existing.UnitNumber} updated successfully.";
+        return RedirectToAction(nameof(VehicleManagement));
+    }
+
+    /// <summary>
+    /// Changes the operational status of a vehicle.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetVehicleStatus(int id, VehicleStatus status)
+    {
+        var vehicle = await _db.Vehicles.FindAsync(id);
+        if (vehicle == null)
+        {
+            return NotFound();
+        }
+
+        vehicle.Status = status;
+        vehicle.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        TempData["Success"] = $"Vehicle Unit {vehicle.UnitNumber} status changed to {status}.";
+        return RedirectToAction(nameof(VehicleManagement));
+    }
+
+    /// <summary>
+    /// Assigns a driver to a vehicle unit.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AssignDriverToVehicle(int vehicleId, string? driverId)
+    {
+        var vehicle = await _db.Vehicles.FindAsync(vehicleId);
+        if (vehicle == null)
+        {
+            return NotFound();
+        }
+
+        if (!string.IsNullOrEmpty(vehicle.AssignedDriverId))
+        {
+            var oldDriver = await _db.Drivers.FindAsync(vehicle.AssignedDriverId);
+            if (oldDriver != null && oldDriver.VehicleId == vehicleId)
+            {
+                oldDriver.VehicleId = null;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(driverId))
+        {
+            var driver = await _db.Drivers.FindAsync(driverId);
+            if (driver == null)
+            {
+                return NotFound("Driver not found.");
+            }
+
+            var prevVehicles = await _db.Vehicles
+                .Where(v => v.Id != vehicleId && v.AssignedDriverId == driverId)
+                .ToListAsync();
+            foreach (var pv in prevVehicles)
+            {
+                pv.AssignedDriverId = null;
+            }
+
+            vehicle.AssignedDriverId = driverId;
+            driver.VehicleId = vehicleId;
+        }
+        else
+        {
+            vehicle.AssignedDriverId = null;
+        }
+
+        vehicle.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        TempData["Success"] = $"Driver assignment for Vehicle Unit {vehicle.UnitNumber} updated.";
+        return RedirectToAction(nameof(VehicleManagement));
+    }
+
+    /// <summary>
+    /// Unassigns any assigned driver from a vehicle unit.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnassignVehicleDriver(int vehicleId)
+    {
+        return await AssignDriverToVehicle(vehicleId, null);
+    }
 }

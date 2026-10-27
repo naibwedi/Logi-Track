@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace logirack.Models;
 /// <summary>
@@ -17,6 +18,23 @@ public class Driver : ApplicationUser
     public PaymentFreq PaymentFreq { get; set; }
     public string DriverEmail { get; set; } = string.Empty;
     public bool IsAvailable { get; set; }
+    public int? VehicleId { get; set; }
+    public Vehicle? Vehicle { get; set; }
+
+    [NotMapped]
+    public int? AssignedVehicleId
+    {
+        get => VehicleId;
+        set => VehicleId = value;
+    }
+
+    [NotMapped]
+    public Vehicle? AssignedVehicle
+    {
+        get => Vehicle;
+        set => Vehicle = value;
+    }
+
     public List<DriverTrip> DriverTrips { get; set; } = [];
     public List<PaymentPeriod> PaymentPeriods { get; set; } = [];
     public Address PermanentAddress { get; set; } = null!;

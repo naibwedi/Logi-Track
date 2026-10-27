@@ -1,4 +1,4 @@
-﻿@model logirack.Models.ViewModel.AssignTripViewModel
+@model logirack.Models.ViewModel.AssignTripViewModel
 
 <h2>Assign Trip</h2>
 
@@ -18,7 +18,7 @@
     <input type="hidden" asp-for="Weight" />
     <input type="hidden" asp-for="Distance" />
     
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label asp-for="DriverId">Select Driver</label>
         <select asp-for="DriverId" class="form-control" id="driverSelect">
             <option value="">Choose a driver...</option>
@@ -32,6 +32,20 @@
             }
         </select>
         <span asp-validation-for="DriverId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="VehicleId">Select Tractor Unit</label>
+        <select asp-for="VehicleId" class="form-control" id="vehicleSelect">
+            <option value="">Choose a tractor unit...</option>
+            @foreach (var vehicle in Model.AvailableVehicles)
+            {
+                <option value="@vehicle.Id">
+                    Unit @vehicle.UnitNumber — @vehicle.Year @vehicle.Make @vehicle.Model (Plate: @vehicle.LicensePlate, VIN: @vehicle.Vin)
+                </option>
+            }
+        </select>
+        <span asp-validation-for="VehicleId" class="text-danger"></span>
     </div>
 
     <div id="paymentInfo" style="display:none;" class="alert alert-info mt-3">

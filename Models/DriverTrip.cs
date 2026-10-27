@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace logirack.Models;
 
@@ -20,11 +20,15 @@ public class DriverTrip
     public Admin Admin { get; set; } = null!;
     
     public double  DriverPayment { get; set; }
+    public int? VehicleId { get; set; }
+    public Vehicle? Vehicle { get; set; }
     //[Required] remove comment whene create a payment managmenet 
     public int? PaymentPeriodId { get; set; }
     //[Required]
     public PaymentPeriod? PaymentPeriod { get; set; }
     public TripStatus Status { get; set; }
+    [ConcurrencyCheck]
+    public Guid ConcurrencyToken { get; set; } = Guid.NewGuid();
     public DateTime? CompletionDate { get; set; }
     public DateTime AssignmentDate { get; set; }
     public DateTime UpdateAt { get; set; }

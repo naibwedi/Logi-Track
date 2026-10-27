@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace logirack.Models.ViewModel;
@@ -16,4 +16,8 @@ public class AssignTripViewModel
 
     public List<Driver> AvailableDrivers { get; set; } = new List<Driver>();
 
+    [Display(Name = "Tractor Unit")]
+    public int? VehicleId { get; set; }
+
+    public List<Vehicle> AvailableVehicles { get; set; } = new List<Vehicle>();
 }

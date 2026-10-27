@@ -1,4 +1,4 @@
-﻿namespace logirack.Models.ViewModel;
+namespace logirack.Models.ViewModel;
 
 public class TripDetailsViewModel
 {
@@ -23,4 +23,10 @@ public class TripDetailsViewModel
     public TripStatus Status { get; set; }
     public DateTime CreatedOn { get; set; }
     public DateTime PickupDate { get; set; }
+    public double StartLatitude { get; set; }
+    public double StartLongitude { get; set; }
+    public double DestinationLatitude { get; set; }
+    public double DestinationLongitude { get; set; }
+    public double CurrentLatitude { get; set; }
+    public double CurrentLongitude { get; set; }
 }

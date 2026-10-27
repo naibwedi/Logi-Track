@@ -4,7 +4,7 @@
 <h1>Completed-trip invoices</h1>
 <p>This report contains the completed work ready for payment processing.</p>
 <table class="table table-striped">
-    <thead><tr><th>Trip</th><th>Driver</th><th>Route</th><th>Completed</th><th>Driver payment</th></tr></thead>
+    <thead><tr><th>Trip</th><th>Driver</th><th>Route</th><th>Completed</th><th>Driver payment</th><th>Actions</th></tr></thead>
     <tbody>
     @foreach (var item in Model)
     {
@@ -14,6 +14,11 @@
             <td>@item.Trip?.FromCity → @item.Trip?.ToCity</td>
             <td>@item.CompletionDate?.ToString("g")</td>
             <td>@item.DriverPayment.ToString("C")</td>
+            <td>
+                <a asp-action="DownloadInvoice" asp-route-id="@item.TripId" class="btn btn-outline-primary btn-sm">
+                    Download PDF Invoice
+                </a>
+            </td>
         </tr>
     }
     </tbody>

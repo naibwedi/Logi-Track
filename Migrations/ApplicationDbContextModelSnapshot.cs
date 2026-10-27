@@ -15,7 +15,7 @@ namespace logirack.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.30");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -336,6 +336,10 @@ namespace logirack.Migrations
                     b.Property<DateTime?>("CompletionDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("DriverId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -355,6 +359,9 @@ namespace logirack.Migrations
                     b.Property<DateTime>("UpdateAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("VehicleId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedByAdminId");
@@ -365,6 +372,8 @@ namespace logirack.Migrations
 
                     b.HasIndex("TripId")
                         .IsUnique();
+
+                    b.HasIndex("VehicleId");
 
                     b.ToTable("DriverTrips");
                 });
@@ -515,6 +524,10 @@ namespace logirack.Migrations
                     b.Property<double>("AdminPrice")
                         .HasColumnType("REAL");
 
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -530,7 +543,7 @@ namespace logirack.Migrations
 
                     b.Property<string>("FromAddress")
                         .IsRequired()
-                        .HasMaxLength(100)
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FromCity")
@@ -548,6 +561,7 @@ namespace logirack.Migrations
 
                     b.Property<string>("Notes")
                         .IsRequired()
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("PickupTime")
@@ -558,7 +572,7 @@ namespace logirack.Migrations
 
                     b.Property<string>("ToAddress")
                         .IsRequired()
-                        .HasMaxLength(100)
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ToCity")
@@ -573,6 +587,9 @@ namespace logirack.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("VehicleId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<double>("Volume")
                         .HasColumnType("REAL");
 
@@ -585,7 +602,86 @@ namespace logirack.Migrations
 
                     b.HasIndex("CustomerId");
 
+                    b.HasIndex("VehicleId");
+
                     b.ToTable("Trips");
+                });
+
+            modelBuilder.Entity("logirack.Models.Vehicle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("AnnualDotInspectionExpiration")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AssignedDriverId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("Form2290ExpirationDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LicensePlate")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LicenseState")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Make")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PrePassTransponderId")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RegistrationExpirationDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UnitNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Vin")
+                        .IsRequired()
+                        .HasMaxLength(17)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedDriverId");
+
+                    b.HasIndex("UnitNumber")
+                        .IsUnique();
+
+                    b.HasIndex("Vin")
+                        .IsUnique();
+
+                    b.ToTable("Vehicles");
                 });
 
             modelBuilder.Entity("logirack.Models.Admin", b =>
@@ -628,6 +724,11 @@ namespace logirack.Migrations
 
                     b.Property<double>("PricePerKm")
                         .HasColumnType("REAL");
+
+                    b.Property<int?>("VehicleId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasIndex("VehicleId");
 
                     b.HasDiscriminator().HasValue("Driver");
                 });
@@ -740,6 +841,11 @@ namespace logirack.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("logirack.Models.Vehicle", "Vehicle")
+                        .WithMany("DriverTrips")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Admin");
 
                     b.Navigation("Driver");
@@ -747,6 +853,8 @@ namespace logirack.Migrations
                     b.Navigation("PaymentPeriod");
 
                     b.Navigation("Trip");
+
+                    b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("logirack.Models.Location", b =>
@@ -817,9 +925,36 @@ namespace logirack.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("logirack.Models.Vehicle", "Vehicle")
+                        .WithMany("Trips")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Admin");
 
                     b.Navigation("Customer");
+
+                    b.Navigation("Vehicle");
+                });
+
+            modelBuilder.Entity("logirack.Models.Vehicle", b =>
+                {
+                    b.HasOne("logirack.Models.Driver", "AssignedDriver")
+                        .WithMany()
+                        .HasForeignKey("AssignedDriverId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AssignedDriver");
+                });
+
+            modelBuilder.Entity("logirack.Models.Driver", b =>
+                {
+                    b.HasOne("logirack.Models.Vehicle", "Vehicle")
+                        .WithMany()
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("logirack.Models.PaymentPeriod", b =>
@@ -831,10 +966,16 @@ namespace logirack.Migrations
 
             modelBuilder.Entity("logirack.Models.Trip", b =>
                 {
-                    b.Navigation("DriverTrip")
-                        .IsRequired();
+                    b.Navigation("DriverTrip");
 
                     b.Navigation("RecentActivities");
+                });
+
+            modelBuilder.Entity("logirack.Models.Vehicle", b =>
+                {
+                    b.Navigation("DriverTrips");
+
+                    b.Navigation("Trips");
                 });
 
             modelBuilder.Entity("logirack.Models.Admin", b =>

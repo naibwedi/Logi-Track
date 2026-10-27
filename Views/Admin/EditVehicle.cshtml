@@ -1,0 +1,132 @@
+@model logirack.Models.Vehicle
+
+@{
+    ViewData["Title"] = "Edit Power Unit";
+    Layout = "_Layout";
+    var drivers = ViewBag.Drivers as List<logirack.Models.Driver> ?? new List<logirack.Models.Driver>();
+}
+
+<div class="container py-3" style="max-width: 52rem;">
+    <div class="mb-4">
+        <h1 class="h2 mb-1">Edit Power Unit — Unit @Model.UnitNumber</h1>
+        <p class="text-muted">Update equipment details, regulatory expiration dates, or driver assignment.</p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form asp-action="EditVehicle" asp-route-id="@Model.Id" method="post">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CreatedAt" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="UnitNumber" class="form-label fw-bold"></label>
+                        <input asp-for="UnitNumber" class="form-control" />
+                        <span asp-validation-for="UnitNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Vin" class="form-label fw-bold">17-Character VIN</label>
+                        <input asp-for="Vin" class="form-control text-uppercase font-monospace" maxlength="17" />
+                        <span asp-validation-for="Vin" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label asp-for="Make" class="form-label fw-bold"></label>
+                        <input asp-for="Make" class="form-control" />
+                        <span asp-validation-for="Make" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Model" class="form-label fw-bold"></label>
+                        <input asp-for="Model" class="form-control" />
+                        <span asp-validation-for="Model" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Year" class="form-label fw-bold"></label>
+                        <input asp-for="Year" class="form-control" type="number" min="1990" max="2035" />
+                        <span asp-validation-for="Year" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="LicensePlate" class="form-label fw-bold"></label>
+                        <input asp-for="LicensePlate" class="form-control" />
+                        <span asp-validation-for="LicensePlate" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="LicenseState" class="form-label fw-bold"></label>
+                        <input asp-for="LicenseState" class="form-control" />
+                        <span asp-validation-for="LicenseState" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+                <h5 class="card-subtitle mb-3 text-secondary">Regulatory & Safety Compliance</h5>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label asp-for="RegistrationExpirationDate" class="form-label fw-bold"></label>
+                        <input asp-for="RegistrationExpirationDate" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}" />
+                        <span asp-validation-for="RegistrationExpirationDate" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="AnnualDotInspectionExpiration" class="form-label fw-bold"></label>
+                        <input asp-for="AnnualDotInspectionExpiration" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}" />
+                        <span asp-validation-for="AnnualDotInspectionExpiration" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Form2290ExpirationDate" class="form-label fw-bold"></label>
+                        <input asp-for="Form2290ExpirationDate" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}" />
+                        <span asp-validation-for="Form2290ExpirationDate" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label asp-for="PrePassTransponderId" class="form-label fw-bold"></label>
+                        <input asp-for="PrePassTransponderId" class="form-control" />
+                        <span asp-validation-for="PrePassTransponderId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Status" class="form-label fw-bold"></label>
+                        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<logirack.Models.VehicleStatus>()"></select>
+                        <span asp-validation-for="Status" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="AssignedDriverId" class="form-label fw-bold">Assigned Driver</label>
+                        <select asp-for="AssignedDriverId" class="form-select">
+                            <option value="">Unassigned</option>
+                            @foreach (var driver in drivers)
+                            {
+                                <option value="@driver.Id" selected="@(driver.Id == Model.AssignedDriverId)">
+                                    @driver.FirstName @driver.LastName (@driver.Email)
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="AssignedDriverId" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="VehicleManagement" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-warning px-4">Update Power Unit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

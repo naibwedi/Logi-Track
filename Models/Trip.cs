@@ -1,4 +1,4 @@
-﻿namespace logirack.Models;
+namespace logirack.Models;
 using System.ComponentModel.DataAnnotations;
 
 /// <summary>
@@ -21,10 +21,10 @@ public class Trip
     [StringLength(100)]
     public string ToCity { get; set; } = string.Empty;
     [Required]
-    [StringLength(100)]
+    [StringLength(200)]
     public string FromAddress { get; set; } = string.Empty;
     [Required]
-    [StringLength(100)]
+    [StringLength(200)]
     public string ToAddress { get; set; } = string.Empty;
     [Required]
     public string FromZipCode { get; set; } = string.Empty;
@@ -36,6 +36,7 @@ public class Trip
     public double Volume { get; set; }
     [Required]
     public double Distance { get; set; }
+    [StringLength(1000)]
     public string Notes { get; set; }=String.Empty;
     [Required]
     public string GoodsType { get; set; } = string.Empty;
@@ -44,6 +45,10 @@ public class Trip
     public double EstimatedPrice { get; set; }
     public double AdminPrice { get; set; }
     public TripStatus Status { get; set; }
+    public int? VehicleId { get; set; }
+    public Vehicle? Vehicle { get; set; }
+    [ConcurrencyCheck]
+    public Guid ConcurrencyToken { get; set; } = Guid.NewGuid();
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
     public DriverTrip? DriverTrip { get; set; }

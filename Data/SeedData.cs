@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using logirack.Models;
 
 namespace logirack.Data;
 
@@ -26,6 +28,69 @@ public static class SeedData
             }
 
             logger.LogInformation("Created identity role {Role}", role);
+        }
+
+        var db = serviceProvider.GetRequiredService<ApplicationDbContext>();
+        if (!await db.Vehicles.AnyAsync())
+        {
+            var vehicles = new List<Vehicle>
+            {
+                new Vehicle
+                {
+                    UnitNumber = "4604",
+                    Vin = "1FUJGLDR8NLHA4604",
+                    LicensePlate = "IL-4604TR",
+                    LicenseState = "IL",
+                    Make = "Freightliner",
+                    Model = "Cascadia",
+                    Year = 2022,
+                    RegistrationExpirationDate = DateTime.UtcNow.AddMonths(9),
+                    AnnualDotInspectionExpiration = DateTime.UtcNow.AddMonths(8),
+                    Form2290ExpirationDate = DateTime.UtcNow.AddMonths(10),
+                    PrePassTransponderId = "PP-460401",
+                    Status = VehicleStatus.Active,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new Vehicle
+                {
+                    UnitNumber = "1717",
+                    Vin = "4V4NC9EH5PN171701",
+                    LicensePlate = "IL-1717TR",
+                    LicenseState = "IL",
+                    Make = "Volvo",
+                    Model = "VNL 860",
+                    Year = 2023,
+                    RegistrationExpirationDate = DateTime.UtcNow.AddMonths(11),
+                    AnnualDotInspectionExpiration = DateTime.UtcNow.AddMonths(10),
+                    Form2290ExpirationDate = DateTime.UtcNow.AddMonths(11),
+                    PrePassTransponderId = "PP-171702",
+                    Status = VehicleStatus.Active,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new Vehicle
+                {
+                    UnitNumber = "6328",
+                    Vin = "1XKYDP9X5MJ632801",
+                    LicensePlate = "IL-6328TR",
+                    LicenseState = "IL",
+                    Make = "Kenworth",
+                    Model = "T680",
+                    Year = 2021,
+                    RegistrationExpirationDate = DateTime.UtcNow.AddMonths(2),
+                    AnnualDotInspectionExpiration = DateTime.UtcNow.AddMonths(1),
+                    Form2290ExpirationDate = DateTime.UtcNow.AddMonths(3),
+                    PrePassTransponderId = "PP-632803",
+                    Status = VehicleStatus.Maintenance,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                }
+            };
+
+            await db.Vehicles.AddRangeAsync(vehicles);
+            await db.SaveChangesAsync();
+            logger.LogInformation("Seeded Rufta Logistics LLC initial fleet units (4604, 1717, 6328).");
         }
 
         var configuration = serviceProvider.GetRequiredService<IConfiguration>();

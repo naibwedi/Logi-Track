@@ -1,6 +1,9 @@
-﻿@model IEnumerable<logirack.Models.ViewModel.TripDetailsViewModel>
+@model IEnumerable<logirack.Models.ViewModel.TripDetailsViewModel>
 
-@{ ViewData["Title"] = "Current trips"; }
+@{ 
+    ViewData["Title"] = "Current trips";
+    var activeTrip = Model.FirstOrDefault(t => t.Status == TripStatus.Assigned || t.Status == TripStatus.InProgress) ?? Model.FirstOrDefault();
+}
 
 <h1 class="h2">Current trips</h1>
 
@@ -10,43 +13,109 @@
 }
 else
 {
-<div class="table-responsive">
-<table class="table">
-    <caption class="visually-hidden">Your active trip assignments</caption>
-    <thead>
-    <tr>
-        <th>Trip ID</th>
-        <th>From</th>
-        <th>To</th>
-        <th>Distance (km)</th>
-        <th>Weight (kg)</th>
-        <th>Pickup Date</th>
-        <th>Status</th>
-        <th>Actions</th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var trip in Model)
+    if (activeTrip != null)
     {
-        <tr>
-            <td>@trip.TripId</td>
-            <td>@trip.FromCity</td>
-            <td>@trip.ToCity</td>
-            <td>@trip.Distance</td>
-            <td>@trip.Weight</td>
-            <td>@trip.PickupDate.ToString("dd MMM yyyy")</td>
-            <td>@trip.Status</td>
-            <td>
-                <form asp-action="EndTrip" method="post">
-                    <input type="hidden" name="tripId" value="@trip.TripId" />
-                    <button type="submit" class="btn btn-primary">
-                        End Trip <!-- This adds the text inside the button -->
-                    </button>
-                </form>
-            </td>
-        </tr>
+        <div id="driver-simulation-panel" class="card my-4"
+             data-trip-id="@activeTrip.TripId"
+             data-start-lat="@activeTrip.StartLatitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+             data-start-lng="@activeTrip.StartLongitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+             data-dest-lat="@activeTrip.DestinationLatitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+             data-dest-lng="@activeTrip.DestinationLongitude.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Driver GPS Simulation & Tracking — Trip #@activeTrip.TripId (@activeTrip.FromCity to @activeTrip.ToCity)</h5>
+                <span id="sim-status-badge" class="badge bg-secondary">Ready to simulate</span>
+            </div>
+            <div class="card-body">
+                <div id="trip-map" style="height: 420px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"
+                     data-trip-id="@activeTrip.TripId"
+                     data-from-city="@activeTrip.FromCity"
+                     data-to-city="@activeTrip.ToCity"
+                     data-from-address="@activeTrip.FromAddress"
+                     data-to-address="@activeTrip.ToAddress"
+                     data-start-lat="@activeTrip.StartLatitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                     data-start-lng="@activeTrip.StartLongitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                     data-dest-lat="@activeTrip.DestinationLatitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                     data-dest-lng="@activeTrip.DestinationLongitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                     data-current-lat="@activeTrip.CurrentLatitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                     data-current-lng="@activeTrip.CurrentLongitude.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label fw-bold">Route Progress:</label>
+                    <div class="progress" style="height: 24px;">
+                        <div id="sim-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                             role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            <span id="sim-progress-text">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 d-flex flex-wrap justify-content-between align-items-center">
+                    <div class="btn-group mb-2" role="group">
+                        <button type="button" id="btn-start-simulation" class="btn btn-success">
+                            Start GPS Simulation
+                        </button>
+                        <button type="button" id="btn-pause-simulation" class="btn btn-warning" disabled>
+                            Pause Simulation
+                        </button>
+                        <button type="button" id="btn-reset-simulation" class="btn btn-outline-secondary">
+                            Reset
+                        </button>
+                    </div>
+                    <div class="text-muted small mb-2">
+                        <strong>GPS Coordinates:</strong> Lat <span id="sim-lat-val">@activeTrip.CurrentLatitude.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)</span>, 
+                        Lng <span id="sim-lng-val">@activeTrip.CurrentLongitude.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
-    </tbody>
-</table>
-</div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <caption class="visually-hidden">Your active trip assignments</caption>
+            <thead>
+            <tr>
+                <th>Trip ID</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Distance (km)</th>
+                <th>Weight (kg)</th>
+                <th>Pickup Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var trip in Model)
+            {
+                <tr>
+                    <td>@trip.TripId</td>
+                    <td>@trip.FromCity</td>
+                    <td>@trip.ToCity</td>
+                    <td>@trip.Distance</td>
+                    <td>@trip.Weight</td>
+                    <td>@trip.PickupDate.ToString("dd MMM yyyy")</td>
+                    <td>@trip.Status</td>
+                    <td>
+                        <form asp-action="EndTrip" method="post">
+                            <input type="hidden" name="tripId" value="@trip.TripId" />
+                            <button type="submit" class="btn btn-primary">
+                                End Trip
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (activeTrip != null)
+{
+    @section Scripts {
+        <script src="~/js/tripTracking.js" asp-append-version="true"></script>
+        <script src="~/js/driverSimulation.js" asp-append-version="true"></script>
+    }
 }
