@@ -1,4 +1,4 @@
-﻿@model logirack.Models.ViewModel.EditDriverViewModel
+@model logirack.Models.ViewModel.EditDriverViewModel
 
 @{
 ViewBag.Title = "Edit Driver";
@@ -41,6 +41,29 @@ Layout = "_Layout";
         <label asp-for="PaymentFreq"></label>
         <select asp-for="PaymentFreq" class="form-control" asp-items="Html.GetEnumSelectList<logirack.Models.PaymentFreq>()"></select>
         <span asp-validation-for="PaymentFreq" class="text-danger"></span>
+
+        <div class="row g-2 mt-2 mb-2">
+            <div class="col-md-8 form-group">
+                <label asp-for="CdlNumber"></label>
+                <input asp-for="CdlNumber" class="form-control font-monospace" />
+                <span asp-validation-for="CdlNumber" class="text-danger"></span>
+            </div>
+            <div class="col-md-4 form-group">
+                <label asp-for="CdlState"></label>
+                <input asp-for="CdlState" class="form-control text-uppercase" maxlength="2" />
+                <span asp-validation-for="CdlState" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 form-group">
+                <label asp-for="CdlExpirationDate"></label>
+                <input asp-for="CdlExpirationDate" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}" />
+                <span asp-validation-for="CdlExpirationDate" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 form-group">
+                <label asp-for="MedicalCardExpirationDate"></label>
+                <input asp-for="MedicalCardExpirationDate" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}" />
+                <span asp-validation-for="MedicalCardExpirationDate" class="text-danger"></span>
+            </div>
+        </div>
     </div>
 
     <!-- Checkbox for IsAvailable -->

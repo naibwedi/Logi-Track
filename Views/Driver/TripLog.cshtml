@@ -1,4 +1,4 @@
-﻿@model IEnumerable<logirack.Models.ViewModel.TripDetailsViewModel>
+@model IEnumerable<logirack.Models.ViewModel.TripDetailsViewModel>
 
 @{ ViewData["Title"] = "Trip log"; }
 
@@ -23,6 +23,7 @@ else
         <th>Pickup Date</th>
         <th>Status</th>
         <th>Payment (Admin Price)</th>
+        <th>Settlement (88% Split)</th>
     </tr>
     </thead>
     <tbody>
@@ -37,6 +38,11 @@ else
             <td>@trip.PickupDate.ToString("dd MMM yyyy")</td>
             <td>@trip.Status</td>
             <td>@trip.AdminPrice.ToString("C")</td>
+            <td>
+                <a asp-controller="Driver" asp-action="DownloadSettlement" asp-route-id="@trip.TripId" class="btn btn-sm btn-outline-primary">
+                    Download Settlement PDF
+                </a>
+            </td>
         </tr>
     }
     </tbody>
