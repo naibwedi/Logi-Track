@@ -1,0 +1,8 @@
+:80 {
+    reverse_proxy logitrack:5000
+}
+
+# If you attach a domain (e.g. tms.ruftalogistics.com), replace :80 with your domain:
+# tms.ruftalogistics.com {
+#     reverse_proxy logitrack:5000
+# }

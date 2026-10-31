@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  logitrack:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - BootstrapAdmin__Email=admin@ruftalogistics.com
+      - BootstrapAdmin__Password=RuftaAdmin2026!ChangeMe
+    volumes:
+      # Mount directory on host VM to persist SQLite app.db
+      - ./data:/app/data
+    ports:
+      - "5000:5000"
+
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - logitrack
+
+volumes:
+  caddy_data:
+  caddy_config:
