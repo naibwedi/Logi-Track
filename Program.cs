@@ -23,18 +23,15 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    if (builder.Environment.IsDevelopment())
+    var postgresConnection = builder.Configuration.GetConnectionString("PostgreSQLConnection");
+    if (!string.IsNullOrWhiteSpace(postgresConnection))
     {
-        var sqliteConnection = builder.Configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-        options.UseSqlite(sqliteConnection);
+        options.UseNpgsql(postgresConnection);
     }
     else
     {
-        var postgresConnection = builder.Configuration.GetConnectionString("PostgreSQLConnection");
-        if (string.IsNullOrWhiteSpace(postgresConnection))
-            throw new InvalidOperationException("Set ConnectionStrings__PostgreSQLConnection before starting LogiTrack in production.");
-        options.UseNpgsql(postgresConnection);
+        var sqliteConnection = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=app.db";
+        options.UseSqlite(sqliteConnection);
     }
 });
 
@@ -189,3 +186,4 @@ using (var scope = app.Services.CreateScope())
 app.Run();
 
 public partial class Program;
+
