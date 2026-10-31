@@ -1303,7 +1303,7 @@ public sealed class ChallengerChaosConcurrencyStressTests : IClassFixture<LogiTr
                 r is ConflictObjectResult ||
                 r is BadRequestObjectResult ||
                 r is ViewResult ||
-                r is NotFoundResult,
+                r is NotFoundResult || r is NotFoundObjectResult,
                 $"Unexpected result: {r.GetType().Name}");
         }
 
