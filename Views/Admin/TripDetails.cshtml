@@ -46,6 +46,75 @@
             </div>
 
             <!-- Cargo Details -->
+            @if (Model.IsBrokerBlacklisted)
+            {
+                <div class="alert alert-danger mb-4">
+                    <strong>BAD BROKER WARNING (@Model.BrokerName - @Model.BrokerMcNumber):</strong>
+                    @(Model.BrokerBlacklistReason ?? "Flagged on Do-Not-Load list.")
+                </div>
+            }
+
+            @if (Model.Settlement != null)
+            {
+                <div class="card border-primary mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <span>Load Accounting &amp; Driver Settlement (12% Dispatch / 88% Driver Split)</span>
+                        <div>
+                            @if (!string.IsNullOrWhiteSpace(Model.InvoiceNumber))
+                            {
+                                <span class="badge bg-light text-dark font-monospace me-1">Invoice: @Model.InvoiceNumber</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.BrokerLoadNumber))
+                            {
+                                <span class="badge bg-warning text-dark font-monospace">Load #: @Model.BrokerLoadNumber</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center mb-3">
+                            <div class="col-md-3">
+                                <div class="text-muted small">Gross Rate</div>
+                                <div class="fs-5 fw-bold">$@Model.Settlement.GrossRate.ToString("F2")</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Factoring Fee (1.5%)</div>
+                                <div class="fs-5 text-secondary">-$@Model.Settlement.FactoringFee.ToString("F2")</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Dispatch Fee (12.0%)</div>
+                                <div class="fs-5 text-primary">-$@Model.Settlement.DispatchFee.ToString("F2")</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Driver Net Pay (88%)</div>
+                                <div class="fs-4 fw-bold text-success">$@Model.Settlement.DriverNetPay.ToString("F2")</div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                            <div>
+                                <strong>Broker:</strong> @(Model.BrokerName ?? "Direct Shipper")
+                                @if (!string.IsNullOrWhiteSpace(Model.BrokerMcNumber))
+                                {
+                                    <span class="badge bg-dark font-monospace ms-1">@Model.BrokerMcNumber</span>
+                                }
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a asp-action="DownloadSettlement" asp-route-id="@Model.TripId" class="btn btn-sm btn-outline-primary">
+                                    Download Driver Settlement PDF
+                                </a>
+                                @if (Model.Status != TripStatus.Completed && Model.Status != TripStatus.Tonu)
+                                {
+                                    <form asp-action="MarkTripTonu" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="tripId" value="@Model.TripId" />
+                                        <input type="hidden" name="tonuAmount" value="150" />
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">Mark TONU ($150)</button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
             <div class="mb-4">
                 <h2 class="h5">Cargo Details</h2>
                 <div class="row">

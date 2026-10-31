@@ -46,6 +46,48 @@
             }
         </select>
         <span asp-validation-for="VehicleId" class="text-danger"></span>
+
+        <div class="card border-0 bg-light p-3 mt-3">
+            <h5 class="h6 fw-bold mb-3">Broker &amp; Load Settlement (12% Dispatch / 88% Driver Split)</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="BrokerId" class="form-label">Freight Broker (MC#)</label>
+                    <select asp-for="BrokerId" class="form-control" id="brokerSelect">
+                        <option value="">Direct Shipper / Select Broker...</option>
+                        @foreach (var broker in Model.AvailableBrokers)
+                        {
+                            <option value="@broker.Id" data-blacklisted="@broker.IsBlacklisted.ToString().ToLowerInvariant()" data-reason="@broker.BlacklistReason">
+                                @broker.CompanyName (@broker.DisplayMc) @(broker.IsBlacklisted ? "— [BAD BROKER / DO NOT LOAD]" : "")
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="InvoiceNumber" class="form-label">Invoice #</label>
+                    <input asp-for="InvoiceNumber" class="form-control font-monospace" placeholder="IN001" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="BrokerLoadNumber" class="form-label">Broker Load #</label>
+                    <input asp-for="BrokerLoadNumber" class="form-control font-monospace" placeholder="23044790" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="RateConfirmationAmount" class="form-label">Rate Con ($)</label>
+                    <input asp-for="RateConfirmationAmount" class="form-control" type="number" step="0.01" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="DetentionFee" class="form-label">Detention ($)</label>
+                    <input asp-for="DetentionFee" class="form-control" type="number" step="0.01" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="LumperFee" class="form-label">Lumper ($)</label>
+                    <input asp-for="LumperFee" class="form-control" type="number" step="0.01" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Deductions" class="form-label">Deductions ($)</label>
+                    <input asp-for="Deductions" class="form-control" type="number" step="0.01" />
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="paymentInfo" style="display:none;" class="alert alert-info mt-3">

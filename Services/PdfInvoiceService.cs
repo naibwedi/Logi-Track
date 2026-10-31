@@ -264,6 +264,184 @@ public class PdfInvoiceService : IInvoiceService
             smallFont, textMutedBrush, new XRect(margin, footerY + 18, contentWidth, 12), XStringFormats.Center);
     }
 
+    public byte[] GenerateSettlementStatementPdf(Trip trip, Driver driver, SettlementBreakdown breakdown, Vehicle? vehicle = null, Broker? broker = null)
+    {
+        if (trip == null) throw new ArgumentNullException(nameof(trip));
+        if (driver == null) throw new ArgumentNullException(nameof(driver));
+
+        var document = new PdfDocument();
+        string invLabel = !string.IsNullOrWhiteSpace(trip.InvoiceNumber) ? trip.InvoiceNumber : $"INV-{trip.Id:D6}";
+        document.Info.Title = $"Driver Settlement Statement {invLabel}";
+        document.Info.Author = "Rufta Logistics LLC";
+        document.Info.Subject = $"Trip #{trip.Id} Driver Settlement Statement (88% Split)";
+        document.Info.Creator = "Logi-Track Settlement Engine";
+
+        var page = document.AddPage();
+        page.Size = PdfSharpCore.PageSize.A4;
+
+        using (var gfx = XGraphics.FromPdfPage(page))
+        {
+            DrawSettlementStatement(gfx, page, trip, driver, breakdown, vehicle, broker);
+        }
+
+        using var stream = new MemoryStream();
+        document.Save(stream);
+        return stream.ToArray();
+    }
+
+    private static void DrawSettlementStatement(
+        XGraphics gfx,
+        PdfPage page,
+        Trip trip,
+        Driver driver,
+        SettlementBreakdown breakdown,
+        Vehicle? vehicle,
+        Broker? broker)
+    {
+        double pageWidth = page.Width;
+        double margin = 40;
+        double contentWidth = pageWidth - (margin * 2);
+        double y = margin;
+
+        var titleFont = new XFont("Arial", 18, XFontStyle.Bold);
+        var subtitleFont = new XFont("Arial", 9, XFontStyle.Regular);
+        var sectionHeaderFont = new XFont("Arial", 11, XFontStyle.Bold);
+        var labelFont = new XFont("Arial", 9, XFontStyle.Bold);
+        var valueFont = new XFont("Arial", 9, XFontStyle.Regular);
+        var boldValueFont = new XFont("Arial", 9, XFontStyle.Bold);
+        var smallFont = new XFont("Arial", 8, XFontStyle.Regular);
+        var totalFont = new XFont("Arial", 12, XFontStyle.Bold);
+
+        var primaryBrush = new XSolidBrush(PrimaryColor);
+        var textDarkBrush = new XSolidBrush(TextDark);
+        var textMutedBrush = new XSolidBrush(TextMuted);
+        var borderPen = new XPen(BorderGray, 1);
+        var lightGrayBrush = new XSolidBrush(LightGray);
+
+        // Header banner
+        gfx.DrawRectangle(primaryBrush, margin, y, contentWidth, 62);
+        gfx.DrawString("RUFTA LOGISTICS LLC", titleFont, XBrushes.White, margin + 15, y + 26);
+        gfx.DrawString("DRIVER SETTLEMENT VOUCHER (12% DISPATCH / 88% DRIVER SPLIT)", subtitleFont,
+            new XSolidBrush(XColor.FromArgb(191, 219, 254)), margin + 15, y + 45);
+
+        string invLabel = !string.IsNullOrWhiteSpace(trip.InvoiceNumber) ? trip.InvoiceNumber : $"INV-{trip.Id:D6}";
+        string issueDate = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        gfx.DrawString(invLabel, new XFont("Arial", 14, XFontStyle.Bold), XBrushes.White,
+            new XRect(margin, y + 15, contentWidth - 15, 20), XStringFormats.TopRight);
+        gfx.DrawString($"Settlement Date: {issueDate}", subtitleFont, new XSolidBrush(XColor.FromArgb(229, 231, 235)),
+            new XRect(margin, y + 38, contentWidth - 15, 15), XStringFormats.TopRight);
+
+        y += 76;
+
+        // Driver & Equipment metadata
+        double colWidth = (contentWidth - 15) / 2;
+        double colHeight = 96;
+        gfx.DrawRoundedRectangle(borderPen, XBrushes.White, margin, y, colWidth, colHeight, 4, 4);
+        gfx.DrawRectangle(lightGrayBrush, margin, y, colWidth, 22);
+        gfx.DrawString("DRIVER & EQUIPMENT", sectionHeaderFont, primaryBrush, margin + 10, y + 15);
+
+        string driverName = $"{driver.FirstName} {driver.LastName}".Trim();
+        if (string.IsNullOrWhiteSpace(driverName)) driverName = driver.Email ?? "Driver";
+
+        double dy = y + 36;
+        gfx.DrawString("Driver:", labelFont, textMutedBrush, margin + 10, dy);
+        gfx.DrawString(driverName, boldValueFont, textDarkBrush, margin + 75, dy);
+
+        dy += 16;
+        gfx.DrawString("Tractor Unit:", labelFont, textMutedBrush, margin + 10, dy);
+        string unitInfo = vehicle != null ? $"Unit #{vehicle.UnitNumber} ({vehicle.LicensePlate})" : "Unassigned";
+        gfx.DrawString(unitInfo, valueFont, textDarkBrush, margin + 75, dy);
+
+        dy += 16;
+        gfx.DrawString("CDL / State:", labelFont, textMutedBrush, margin + 10, dy);
+        string cdlInfo = !string.IsNullOrWhiteSpace(driver.CdlNumber) ? $"{driver.CdlNumber} ({driver.CdlState ?? "US"})" : "On File";
+        gfx.DrawString(cdlInfo, valueFont, textDarkBrush, margin + 75, dy);
+
+        // Load & Broker metadata
+        double col2X = margin + colWidth + 15;
+        gfx.DrawRoundedRectangle(borderPen, XBrushes.White, col2X, y, colWidth, colHeight, 4, 4);
+        gfx.DrawRectangle(lightGrayBrush, col2X, y, colWidth, 22);
+        gfx.DrawString("LOAD & BROKER DETAILS", sectionHeaderFont, primaryBrush, col2X + 10, y + 15);
+
+        double ly = y + 36;
+        gfx.DrawString("Broker:", labelFont, textMutedBrush, col2X + 10, ly);
+        string brokerName = broker != null ? $"{broker.CompanyName} ({broker.DisplayMc})" : "Direct Shipper";
+        gfx.DrawString(Truncate(brokerName, 30), valueFont, textDarkBrush, col2X + 80, ly);
+
+        ly += 16;
+        gfx.DrawString("Load #:", labelFont, textMutedBrush, col2X + 10, ly);
+        gfx.DrawString(trip.BrokerLoadNumber ?? $"TRIP-{trip.Id}", boldValueFont, textDarkBrush, col2X + 80, ly);
+
+        ly += 16;
+        gfx.DrawString("Lane:", labelFont, textMutedBrush, col2X + 10, ly);
+        gfx.DrawString(Truncate($"{trip.FromCity} -> {trip.ToCity}", 30), valueFont, textDarkBrush, col2X + 80, ly);
+
+        y += colHeight + 20;
+
+        // Settlement calculation table
+        gfx.DrawString("SETTLEMENT ACCOUNTING BREAKDOWN", sectionHeaderFont, primaryBrush, margin, y);
+        y += 10;
+
+        double colDescWidth = contentWidth * 0.55;
+        double colRateWidth = contentWidth * 0.25;
+        double colSubtotalWidth = contentWidth * 0.20;
+
+        gfx.DrawRectangle(primaryBrush, margin, y, contentWidth, 24);
+        gfx.DrawString("Line Item", labelFont, XBrushes.White, margin + 10, y + 16);
+        gfx.DrawString("Formula / Basis", labelFont, XBrushes.White, margin + colDescWidth + 10, y + 16);
+        gfx.DrawString("Amount (USD)", labelFont, XBrushes.White,
+            new XRect(margin + colDescWidth + colRateWidth, y, colSubtotalWidth - 10, 24), XStringFormats.CenterRight);
+
+        y += 24;
+
+        var rows = new List<(string Desc, string Basis, decimal Amount)>
+        {
+            (breakdown.IsTonu ? "TONU (Truck Order Not Used) Payout" : "Gross Load Rate (Rate Con + Accessorials)",
+             breakdown.IsTonu ? "Canceled Load Flat Fee" : $"Rate Con + Accessorials (${breakdown.AccessorialsTotal:F2})",
+             breakdown.GrossRate),
+            ("Phoenix Capital Factoring Fee (Info)", "1.50% of Gross Rate", -breakdown.FactoringFee),
+            ("Rufta Logistics Dispatch Fee", "12.00% of Gross Rate", -breakdown.DispatchFee),
+            ("Driver Gross Share (Before Deductions)", "88.00% of Gross Rate", breakdown.DriverGrossShare)
+        };
+
+        if (breakdown.Deductions > 0)
+        {
+            string reason = !string.IsNullOrWhiteSpace(trip.DeductionReason) ? trip.DeductionReason : "Fuel / Cash Advance / Escrow";
+            rows.Add(($"Driver Deductions ({Truncate(reason, 28)})", "Direct Deduction", -breakdown.Deductions));
+        }
+
+        bool alt = false;
+        foreach (var row in rows)
+        {
+            var rowBrush = alt ? lightGrayBrush : XBrushes.White;
+            gfx.DrawRectangle(rowBrush, margin, y, contentWidth, 22);
+            gfx.DrawRectangle(borderPen, margin, y, contentWidth, 22);
+
+            gfx.DrawString(row.Desc, valueFont, textDarkBrush, margin + 10, y + 15);
+            gfx.DrawString(row.Basis, valueFont, textMutedBrush, margin + colDescWidth + 10, y + 15);
+            string formattedAmt = row.Amount < 0 ? $"-${Math.Abs(row.Amount):F2}" : $"${row.Amount:F2}";
+            gfx.DrawString(formattedAmt, boldValueFont, textDarkBrush,
+                new XRect(margin + colDescWidth + colRateWidth, y, colSubtotalWidth - 10, 22), XStringFormats.CenterRight);
+
+            y += 22;
+            alt = !alt;
+        }
+
+        y += 10;
+        double totalsWidth = 280;
+        double totalsX = margin + contentWidth - totalsWidth;
+
+        gfx.DrawRectangle(new XSolidBrush(SuccessGreen), totalsX, y, totalsWidth, 32);
+        gfx.DrawString("DRIVER NET PAYOUT (88%):", labelFont, XBrushes.White, totalsX + 12, y + 20);
+        gfx.DrawString($"${breakdown.DriverNetPay:F2} USD", totalFont, XBrushes.White,
+            new XRect(totalsX, y, totalsWidth - 12, 32), XStringFormats.CenterRight);
+
+        double footerY = page.Height - margin - 20;
+        gfx.DrawLine(borderPen, margin, footerY, margin + contentWidth, footerY);
+        gfx.DrawString("Rufta Logistics LLC • FMCSA Motor Carrier Settlement Statement • Confidential Driver Voucher",
+            smallFont, textMutedBrush, new XRect(margin, footerY + 6, contentWidth, 12), XStringFormats.Center);
+    }
+
     private static string Truncate(string value, int maxLength)
     {
         if (string.IsNullOrEmpty(value) || value.Length <= maxLength) return value;

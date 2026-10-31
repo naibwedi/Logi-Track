@@ -20,6 +20,19 @@ public class Driver : ApplicationUser
     public bool IsAvailable { get; set; }
     public int? VehicleId { get; set; }
     public Vehicle? Vehicle { get; set; }
+    [StringLength(30)]
+    [Display(Name = "CDL Number")]
+    public string? CdlNumber { get; set; }
+    [StringLength(2)]
+    [Display(Name = "CDL State")]
+    public string? CdlState { get; set; }
+    [DataType(DataType.Date)]
+    [Display(Name = "CDL Expiration")]
+    public DateTime? CdlExpirationDate { get; set; }
+    /// <summary>DOT medical examiner's certificate expiration (49 CFR 391.41). Expired = may not be dispatched.</summary>
+    [DataType(DataType.Date)]
+    [Display(Name = "DOT Medical Card Expiration")]
+    public DateTime? MedicalCardExpirationDate { get; set; }
 
     [NotMapped]
     public int? AssignedVehicleId

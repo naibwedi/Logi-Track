@@ -45,4 +45,13 @@ public static class InputSanitizer
 
         return encoded.Trim();
     }
+
+    public static string? StripDangerousTags(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return null;
+        }
+        return Sanitize(input);
+    }
 }

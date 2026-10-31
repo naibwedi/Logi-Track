@@ -1,4 +1,4 @@
-﻿namespace logirack.Models.ViewModel;
+namespace logirack.Models.ViewModel;
 using System.ComponentModel.DataAnnotations;
 
 /// <summary>
@@ -59,5 +59,21 @@ public class CreateDriverViewModel
     [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
     [Display(Name = "Confirm Password")]
     public string ConfirmPassword { get; set; } = string.Empty;
+
+    [StringLength(30)]
+    [Display(Name = "CDL Number")]
+    public string? CdlNumber { get; set; }
+
+    [StringLength(2)]
+    [Display(Name = "CDL State")]
+    public string? CdlState { get; set; }
+
+    [DataType(DataType.Date)]
+    [Display(Name = "CDL Expiration Date")]
+    public DateTime? CdlExpirationDate { get; set; }
+
+    [DataType(DataType.Date)]
+    [Display(Name = "DOT Medical Card Expiration Date")]
+    public DateTime? MedicalCardExpirationDate { get; set; }
     
 }

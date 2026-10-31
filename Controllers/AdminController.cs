@@ -142,6 +142,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 PaymentFreq = model.PaymentFreq,
                 IsAvailable = true,
                 DateOfBirth = model.DateOfBirth,
+                CdlNumber = model.CdlNumber,
+                CdlState = model.CdlState?.ToUpperInvariant(),
+                CdlExpirationDate = model.CdlExpirationDate,
+                MedicalCardExpirationDate = model.MedicalCardExpirationDate,
             };
             var result = await _userManager.CreateAsync(newDriver, model.Password);
             if (result.Succeeded)
@@ -235,6 +239,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 .ToListAsync();
 
             var pendingApprovals = await _db.Users.CountAsync(u => !u.IsApproved);
+            var allDriversForCompliance = await _db.Users.OfType<Driver>().ToListAsync();
+            var allVehiclesForCompliance = await _db.Vehicles.ToListAsync();
+            var complianceAlerts = ComplianceService.GetAlerts(allDriversForCompliance, allVehiclesForCompliance, DateTime.UtcNow).ToList();
+            var blacklistedBrokersCount = await _db.Brokers.CountAsync(b => b.IsBlacklisted);
 
             var dashboardStats = new DashboardStats
             {
@@ -246,7 +254,9 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 TotalRevenue = totalRevenue,
                 RecentActivities = recentActivities,
                 AvailableDriversList = availableDriversList,
-                Customers = customers
+                Customers = customers,
+                ComplianceAlerts = complianceAlerts,
+                BlacklistedBrokersCount = blacklistedBrokersCount
             };
 
             return View(dashboardStats);
@@ -291,6 +301,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             PricePerKm = driver.PricePerKm,
             PaymentFreq = driver.PaymentFreq,
             IsAvailable = driver.IsAvailable,
+            CdlNumber = driver.CdlNumber,
+            CdlState = driver.CdlState,
+            CdlExpirationDate = driver.CdlExpirationDate,
+            MedicalCardExpirationDate = driver.MedicalCardExpirationDate,
         };
         return View(model);
     }
@@ -339,6 +353,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             driver.PricePerKm = model.PricePerKm;
             driver.PaymentFreq = model.PaymentFreq;
             driver.IsAvailable = model.IsAvailable;
+            driver.CdlNumber = model.CdlNumber;
+            driver.CdlState = model.CdlState?.ToUpperInvariant();
+            driver.CdlExpirationDate = model.CdlExpirationDate;
+            driver.MedicalCardExpirationDate = model.MedicalCardExpirationDate;
             driver.ModifiedOn = DateTime.Now;
             var result = await _userManager.UpdateAsync(driver);
             if (result.Succeeded)
@@ -498,6 +516,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         var trip = await _db.Trips
             .Include(t => t.Customer)
             .Include(t => t.DriverTrip)
+            .Include(t => t.Broker)
             .FirstOrDefaultAsync(t => t.Id == id);
         if (trip == null)
             return NotFound();
@@ -544,7 +563,22 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             DestinationLatitude = destCoords.Latitude,
             DestinationLongitude = destCoords.Longitude,
             CurrentLatitude = currentLat,
-            CurrentLongitude = currentLng
+            CurrentLongitude = currentLng,
+            BrokerId = trip.BrokerId,
+            BrokerName = trip.Broker?.CompanyName,
+            BrokerMcNumber = trip.Broker?.DisplayMc,
+            IsBrokerBlacklisted = trip.Broker?.IsBlacklisted ?? false,
+            BrokerBlacklistReason = trip.Broker?.BlacklistReason,
+            InvoiceNumber = trip.InvoiceNumber,
+            BrokerLoadNumber = trip.BrokerLoadNumber,
+            RateConfirmationAmount = trip.RateConfirmationAmount,
+            DetentionFee = trip.DetentionFee,
+            LumperFee = trip.LumperFee,
+            OtherAccessorials = trip.OtherAccessorials,
+            Deductions = trip.Deductions,
+            DeductionReason = trip.DeductionReason,
+            TonuAmount = trip.TonuAmount,
+            Settlement = SettlementCalculator.ForTrip(trip)
         };
         return View(viewModel);
     }
@@ -746,6 +780,16 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             Weight = trip.Weight,
             Distance = trip.Distance,
             AvailableDrivers = drivers,
+            AvailableBrokers = await _db.Brokers.OrderBy(b => b.CompanyName).ToListAsync(),
+            BrokerId = trip.BrokerId,
+            InvoiceNumber = trip.InvoiceNumber,
+            BrokerLoadNumber = trip.BrokerLoadNumber,
+            RateConfirmationAmount = trip.RateConfirmationAmount ?? (trip.AdminPrice > 0 ? (decimal)trip.AdminPrice : (decimal)trip.EstimatedPrice),
+            DetentionFee = trip.DetentionFee,
+            LumperFee = trip.LumperFee,
+            OtherAccessorials = trip.OtherAccessorials,
+            Deductions = trip.Deductions,
+            DeductionReason = trip.DeductionReason,
             AvailableVehicles = await _db.Vehicles
                 .Where(v => v.Status == VehicleStatus.Active)
                 .OrderBy(v => v.UnitNumber)
@@ -773,6 +817,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         {
             var trip = await _db.Trips
                 .Include(t => t.DriverTrip)
+            .Include(t => t.Broker)
                 .Include(t => t.Customer)
                 .FirstOrDefaultAsync(t => t.Id == model.TripId);
 
@@ -818,6 +863,24 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             {
                 await transaction.RollbackAsync();
                 ModelState.AddModelError("DriverId", "Selected driver is not approved");
+                await LoadAvailableDrivers(model);
+                return View(model);
+            }
+
+            Broker? selectedBroker = null;
+            if (model.BrokerId.HasValue && model.BrokerId.Value > 0)
+            {
+                selectedBroker = await _db.Brokers.FirstOrDefaultAsync(b => b.Id == model.BrokerId.Value);
+                if (selectedBroker != null && selectedBroker.IsBlacklisted)
+                {
+                    TempData["Warning"] = $"WARNING: Broker {selectedBroker.CompanyName} ({selectedBroker.DisplayMc}) is on the Bad Broker / Do-Not-Load list! Reason: {selectedBroker.BlacklistReason ?? "Unspecified"}";
+                }
+            }
+
+            if (driver.MedicalCardExpirationDate.HasValue && ComplianceService.IsMedicalCardExpired(driver, DateTime.UtcNow))
+            {
+                await transaction.RollbackAsync();
+                ModelState.AddModelError("DriverId", "Selected driver's DOT Medical Card has expired (49 CFR 391.41) and cannot be dispatched.");
                 await LoadAvailableDrivers(model);
                 return View(model);
             }
@@ -879,6 +942,29 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
             trip.Status = TripStatus.Assigned;
             trip.VehicleId = selectedVehicle?.Id;
+            if (selectedBroker != null)
+            {
+                trip.BrokerId = selectedBroker.Id;
+            }
+            if (!string.IsNullOrWhiteSpace(model.InvoiceNumber))
+            {
+                trip.InvoiceNumber = InputSanitizer.StripDangerousTags(model.InvoiceNumber.Trim());
+            }
+            if (!string.IsNullOrWhiteSpace(model.BrokerLoadNumber))
+            {
+                trip.BrokerLoadNumber = InputSanitizer.StripDangerousTags(model.BrokerLoadNumber.Trim());
+            }
+            if (model.RateConfirmationAmount.HasValue && model.RateConfirmationAmount.Value > 0)
+            {
+                trip.RateConfirmationAmount = model.RateConfirmationAmount.Value;
+                trip.DetentionFee = model.DetentionFee;
+                trip.LumperFee = model.LumperFee;
+                trip.OtherAccessorials = model.OtherAccessorials;
+                trip.Deductions = model.Deductions;
+                trip.DeductionReason = InputSanitizer.StripDangerousTags(model.DeductionReason);
+                var settlement = SettlementCalculator.ForTrip(trip);
+                driverTrip.DriverPayment = (double)settlement.DriverNetPay;
+            }
             trip.UpdatedAt = DateTime.UtcNow;
             driver.IsAvailable = false;
 
@@ -919,6 +1005,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             }
         }
         model.AvailableDrivers = availableDrivers;
+        model.AvailableBrokers = await _db.Brokers.OrderBy(b => b.CompanyName).ToListAsync();
         model.AvailableVehicles = await _db.Vehicles
             .Where(v => v.Status == VehicleStatus.Active)
             .OrderBy(v => v.UnitNumber)
@@ -1590,5 +1677,292 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     public async Task<IActionResult> UnassignVehicleDriver(int vehicleId)
     {
         return await AssignDriverToVehicle(vehicleId, null);
+    }
+
+    // ==========================================
+    // Broker CRM & Bad Broker Protection (R2)
+    // ==========================================
+
+    [HttpGet]
+    public async Task<IActionResult> BrokerManagement()
+    {
+        var brokers = await _db.Brokers
+            .OrderByDescending(b => b.IsBlacklisted)
+            .ThenBy(b => b.CompanyName)
+            .ToListAsync();
+        return View("Brokers", brokers);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Brokers()
+    {
+        return await BrokerManagement();
+    }
+
+    [HttpGet]
+    public IActionResult CreateBroker()
+    {
+        return View(new Broker());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateBroker(Broker broker)
+    {
+        broker.McNumber = Broker.NormalizeMc(broker.McNumber);
+        broker.CompanyName = InputSanitizer.StripDangerousTags(broker.CompanyName)?.Trim() ?? string.Empty;
+        broker.AgentName = InputSanitizer.StripDangerousTags(broker.AgentName)?.Trim();
+        broker.BlacklistReason = InputSanitizer.StripDangerousTags(broker.BlacklistReason)?.Trim();
+        broker.Notes = InputSanitizer.StripDangerousTags(broker.Notes)?.Trim();
+
+        ModelState.Remove(nameof(Broker.McNumber));
+        if (string.IsNullOrWhiteSpace(broker.McNumber) || !System.Text.RegularExpressions.Regex.IsMatch(broker.McNumber, @"^\d{1,8}$"))
+        {
+            ModelState.AddModelError(nameof(Broker.McNumber), "MC Number must contain 1 to 8 digits.");
+        }
+        else if (await _db.Brokers.AnyAsync(b => b.McNumber == broker.McNumber))
+        {
+            ModelState.AddModelError(nameof(Broker.McNumber), $"A broker with MC#{broker.McNumber} already exists.");
+        }
+
+        if (broker.IsBlacklisted && string.IsNullOrWhiteSpace(broker.BlacklistReason))
+        {
+            ModelState.AddModelError(nameof(Broker.BlacklistReason), "Please provide a reason when blacklisting a broker.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(broker);
+        }
+
+        if (broker.IsBlacklisted)
+        {
+            broker.BlacklistedAt = DateTime.UtcNow;
+        }
+
+        broker.CreatedAt = DateTime.UtcNow;
+        broker.UpdatedAt = DateTime.UtcNow;
+
+        _db.Brokers.Add(broker);
+        await _db.SaveChangesAsync();
+
+        TempData["Success"] = $"Broker {broker.CompanyName} ({broker.DisplayMc}) saved.";
+        return RedirectToAction(nameof(Brokers));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> EditBroker(int id)
+    {
+        var broker = await _db.Brokers.FirstOrDefaultAsync(b => b.Id == id);
+        if (broker == null)
+        {
+            return NotFound();
+        }
+        return View(broker);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditBroker(int id, Broker broker)
+    {
+        if (id != broker.Id)
+        {
+            return BadRequest();
+        }
+
+        var existing = await _db.Brokers.FirstOrDefaultAsync(b => b.Id == id);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        var normalizedMc = Broker.NormalizeMc(broker.McNumber);
+        ModelState.Remove(nameof(Broker.McNumber));
+        if (string.IsNullOrWhiteSpace(normalizedMc) || !System.Text.RegularExpressions.Regex.IsMatch(normalizedMc, @"^\d{1,8}$"))
+        {
+            ModelState.AddModelError(nameof(Broker.McNumber), "MC Number must contain 1 to 8 digits.");
+        }
+        else if (await _db.Brokers.AnyAsync(b => b.Id != id && b.McNumber == normalizedMc))
+        {
+            ModelState.AddModelError(nameof(Broker.McNumber), $"MC#{normalizedMc} is already in use by another broker.");
+        }
+
+        if (broker.IsBlacklisted && string.IsNullOrWhiteSpace(broker.BlacklistReason))
+        {
+            ModelState.AddModelError(nameof(Broker.BlacklistReason), "Please provide a reason when blacklisting a broker.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(broker);
+        }
+
+        existing.CompanyName = InputSanitizer.StripDangerousTags(broker.CompanyName)?.Trim() ?? string.Empty;
+        existing.McNumber = normalizedMc;
+        existing.AgentName = InputSanitizer.StripDangerousTags(broker.AgentName)?.Trim();
+        existing.Phone = broker.Phone;
+        existing.PhoneExtension = broker.PhoneExtension;
+        existing.Email = broker.Email;
+        existing.IsBlacklisted = broker.IsBlacklisted;
+        existing.BlacklistReason = InputSanitizer.StripDangerousTags(broker.BlacklistReason)?.Trim();
+        existing.BlacklistedAt = broker.IsBlacklisted ? (existing.BlacklistedAt ?? DateTime.UtcNow) : null;
+        existing.Notes = InputSanitizer.StripDangerousTags(broker.Notes)?.Trim();
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        TempData["Success"] = $"Broker {existing.CompanyName} ({existing.DisplayMc}) updated.";
+        return RedirectToAction(nameof(Brokers));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleBrokerBlacklist(int id, bool isBlacklisted, string? reason)
+    {
+        var broker = await _db.Brokers.FirstOrDefaultAsync(b => b.Id == id);
+        if (broker == null)
+        {
+            return NotFound();
+        }
+
+        broker.IsBlacklisted = isBlacklisted;
+        broker.BlacklistReason = isBlacklisted ? (InputSanitizer.StripDangerousTags(reason)?.Trim() ?? "Flagged on Bad Broker list") : null;
+        broker.BlacklistedAt = isBlacklisted ? DateTime.UtcNow : null;
+        broker.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        TempData[isBlacklisted ? "Warning" : "Success"] = isBlacklisted
+            ? $"Broker {broker.CompanyName} ({broker.DisplayMc}) flagged on Bad Broker list."
+            : $"Broker {broker.CompanyName} ({broker.DisplayMc}) removed from Bad Broker list.";
+        return RedirectToAction(nameof(Brokers));
+    }
+
+    // ==========================================
+    // Load Accounting, Settlements & TONU (R3)
+    // ==========================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateTripSettlement(
+        int tripId,
+        int? brokerId,
+        string? invoiceNumber,
+        string? brokerLoadNumber,
+        decimal rateConfirmationAmount,
+        decimal detentionFee = 0m,
+        decimal lumperFee = 0m,
+        decimal otherAccessorials = 0m,
+        decimal deductions = 0m,
+        string? deductionReason = null)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.DriverTrip)
+            .FirstOrDefaultAsync(t => t.Id == tripId);
+
+        if (trip == null)
+        {
+            return NotFound();
+        }
+
+        if (rateConfirmationAmount < 0 || detentionFee < 0 || lumperFee < 0 || otherAccessorials < 0 || deductions < 0)
+        {
+            return BadRequest("Settlement amounts cannot be negative.");
+        }
+
+        trip.BrokerId = brokerId;
+        trip.InvoiceNumber = string.IsNullOrWhiteSpace(invoiceNumber) ? null : InputSanitizer.StripDangerousTags(invoiceNumber.Trim());
+        trip.BrokerLoadNumber = string.IsNullOrWhiteSpace(brokerLoadNumber) ? null : InputSanitizer.StripDangerousTags(brokerLoadNumber.Trim());
+        trip.RateConfirmationAmount = rateConfirmationAmount;
+        trip.DetentionFee = detentionFee;
+        trip.LumperFee = lumperFee;
+        trip.OtherAccessorials = otherAccessorials;
+        trip.Deductions = deductions;
+        trip.DeductionReason = InputSanitizer.StripDangerousTags(deductionReason)?.Trim();
+        trip.UpdatedAt = DateTime.UtcNow;
+
+        var breakdown = SettlementCalculator.ForTrip(trip);
+        if (trip.DriverTrip != null)
+        {
+            trip.DriverTrip.DriverPayment = (double)breakdown.DriverNetPay;
+            trip.DriverTrip.UpdateAt = DateTime.UtcNow;
+        }
+
+        await _db.SaveChangesAsync();
+        TempData["Success"] = $"Settlement updated. Gross: ${breakdown.GrossRate:F2} | 12% Dispatch: ${breakdown.DispatchFee:F2} | 88% Driver Net: ${breakdown.DriverNetPay:F2}";
+        return RedirectToAction(nameof(TripDetails), new { id = tripId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkTripTonu(int tripId, decimal tonuAmount = 150m, decimal deductions = 0m)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.DriverTrip)
+                .ThenInclude(dt => dt!.Driver)
+            .FirstOrDefaultAsync(t => t.Id == tripId);
+
+        if (trip == null)
+        {
+            return NotFound();
+        }
+
+        SettlementBreakdown breakdown;
+        try
+        {
+            breakdown = SettlementCalculator.CalculateTonu(tonuAmount, deductions);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+
+        trip.Status = TripStatus.Tonu;
+        trip.TonuAmount = tonuAmount;
+        trip.Deductions = deductions;
+        trip.UpdatedAt = DateTime.UtcNow;
+
+        if (trip.DriverTrip != null)
+        {
+            trip.DriverTrip.Status = TripStatus.Tonu;
+            trip.DriverTrip.DriverPayment = (double)breakdown.DriverNetPay;
+            trip.DriverTrip.UpdateAt = DateTime.UtcNow;
+            if (trip.DriverTrip.Driver != null)
+            {
+                trip.DriverTrip.Driver.IsAvailable = true;
+            }
+        }
+
+        await _db.SaveChangesAsync();
+        TempData["Warning"] = $"Trip #{trip.Id} marked as TONU (${tonuAmount:F2}). Driver Net Payout: ${breakdown.DriverNetPay:F2}.";
+        return RedirectToAction(nameof(TripDetails), new { id = tripId });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DownloadSettlement(int id)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.Broker)
+            .Include(t => t.Vehicle)
+            .Include(t => t.DriverTrip)
+                .ThenInclude(dt => dt!.Driver)
+            .Include(t => t.DriverTrip)
+                .ThenInclude(dt => dt!.Vehicle)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (trip == null)
+        {
+            return NotFound();
+        }
+
+        var driver = trip.DriverTrip?.Driver ?? new Driver
+        {
+            FirstName = "Unassigned",
+            LastName = "Driver",
+            Email = "dispatch@ruftalogistics.com"
+        };
+
+        var breakdown = SettlementCalculator.ForTrip(trip);
+        var vehicle = trip.DriverTrip?.Vehicle ?? trip.Vehicle;
+        var pdfBytes = _invoiceService.GenerateSettlementStatementPdf(trip, driver, breakdown, vehicle, trip.Broker);
+        return File(pdfBytes, "application/pdf", $"Settlement_Trip_{trip.Id}.pdf");
     }
 }

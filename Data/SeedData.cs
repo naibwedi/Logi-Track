@@ -91,6 +91,59 @@ public static class SeedData
             await db.Vehicles.AddRangeAsync(vehicles);
             await db.SaveChangesAsync();
             logger.LogInformation("Seeded Rufta Logistics LLC initial fleet units (4604, 1717, 6328).");
+
+            if (!await db.Brokers.AnyAsync())
+            {
+                var brokers = new List<Broker>
+                {
+                    new Broker
+                    {
+                        CompanyName = "Total Quality Logistics (TQL)",
+                        McNumber = "322572",
+                        AgentName = "Dispatch Desk",
+                        Phone = "(800) 580-3101",
+                        PhoneExtension = "55926",
+                        Email = "carrierrelations@tql.com",
+                        IsBlacklisted = false,
+                        Notes = "Primary national broker from Rufta Logistics load sheet"
+                    },
+                    new Broker
+                    {
+                        CompanyName = "J.B. Hunt Transport Services",
+                        McNumber = "135797",
+                        AgentName = "JBH360 Carrier Support",
+                        Phone = "(800) 643-3622",
+                        Email = "360support@jbhunt.com",
+                        IsBlacklisted = false,
+                        Notes = "Power-only and dry van freight partner"
+                    },
+                    new Broker
+                    {
+                        CompanyName = "R2 Logistics",
+                        McNumber = "590179",
+                        AgentName = "Midwest Dispatch",
+                        Phone = "(866) 501-7200",
+                        Email = "dispatch@r2logistics.com",
+                        IsBlacklisted = false,
+                        Notes = "Approved Midwest / Southeast lanes"
+                    },
+                    new Broker
+                    {
+                        CompanyName = "Apex Rogue Freight Brokers LLC",
+                        McNumber = "998877",
+                        AgentName = "Unknown",
+                        Phone = "(555) 019-9988",
+                        IsBlacklisted = true,
+                        BlacklistReason = "Unpaid detention & unauthorized rate reduction on prior load",
+                        BlacklistedAt = DateTime.UtcNow.AddDays(-14),
+                        Notes = "DO NOT LOAD - Flagged in Rufta Logistics Bad Broker directory"
+                    }
+                };
+
+                await db.Brokers.AddRangeAsync(brokers);
+                await db.SaveChangesAsync();
+                logger.LogInformation("Seeded Rufta Logistics LLC initial freight brokers.");
+            }
         }
 
         var configuration = serviceProvider.GetRequiredService<IConfiguration>();

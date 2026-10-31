@@ -21,12 +21,14 @@ public class DriverController : Controller
     private readonly ILogger<DriverController> _logger;
     private readonly IEmailSender _emailSender;
     private readonly ICoordinateService _coordinateService;
-    public DriverController(ApplicationDbContext db, ILogger<DriverController> logger, IEmailSender emailSender, ICoordinateService coordinateService)
+    private readonly IInvoiceService _invoiceService;
+    public DriverController(ApplicationDbContext db, ILogger<DriverController> logger, IEmailSender emailSender, ICoordinateService coordinateService, IInvoiceService? invoiceService = null)
     {
         _db = db;
         _logger = logger;
         _emailSender = emailSender;
         _coordinateService = coordinateService;
+        _invoiceService = invoiceService ?? new PdfInvoiceService();
     }
     /// <summary>
     /// Displays the driver dashboard
@@ -228,4 +230,37 @@ public class DriverController : Controller
 
     [HttpGet]
     public IActionResult DriverTripManagement() => RedirectToAction(nameof(CurrentTrips));
+
+    /// <summary>
+    /// Downloads the Driver Settlement Statement PDF voucher for a trip assigned to the current driver.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> DownloadSettlement(int id)
+    {
+        var driverId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(driverId))
+        {
+            return Challenge();
+        }
+
+        var driverTrip = await _db.DriverTrips
+            .Include(dt => dt.Trip)
+                .ThenInclude(t => t.Broker)
+            .Include(dt => dt.Trip)
+                .ThenInclude(t => t.Vehicle)
+            .Include(dt => dt.Driver)
+            .Include(dt => dt.Vehicle)
+            .FirstOrDefaultAsync(dt => dt.TripId == id);
+
+        if (driverTrip == null || driverTrip.DriverId != driverId)
+        {
+            return NotFound();
+        }
+
+        var trip = driverTrip.Trip;
+        var breakdown = SettlementCalculator.ForTrip(trip);
+        var vehicle = driverTrip.Vehicle ?? trip.Vehicle;
+        var pdfBytes = _invoiceService.GenerateSettlementStatementPdf(trip, driverTrip.Driver, breakdown, vehicle, trip.Broker);
+        return File(pdfBytes, "application/pdf", $"Settlement_Trip_{trip.Id}.pdf");
+    }
 }

@@ -37,6 +37,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     //fleet
     public DbSet<Vehicle> Vehicles { get; set; }
 
+    //brokers
+    public DbSet<Broker> Brokers { get; set; }
+
 
     /// <summary>
     /// Configures the model relationships and properties using Fluent API.
@@ -208,6 +211,36 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
         mbuilder.Entity<Driver>(entity =>
         {
+            entity.Property(d => d.CdlNumber).HasMaxLength(30);
+            entity.Property(d => d.CdlState).HasMaxLength(2);
+        });
+
+        //----------------------------------||
+        // Brokers & load accounting         ||
+        //----------------------------------||
+        mbuilder.Entity<Broker>(entity =>
+        {
+            entity.HasIndex(b => b.McNumber).IsUnique();
+            entity.HasMany(b => b.Trips)
+                  .WithOne(t => t.Broker)
+                  .HasForeignKey(t => t.BrokerId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        mbuilder.Entity<Trip>(entity =>
+        {
+            entity.Property(t => t.RateConfirmationAmount).HasPrecision(18, 2);
+            entity.Property(t => t.DetentionFee).HasPrecision(18, 2);
+            entity.Property(t => t.LumperFee).HasPrecision(18, 2);
+            entity.Property(t => t.OtherAccessorials).HasPrecision(18, 2);
+            entity.Property(t => t.Deductions).HasPrecision(18, 2);
+            entity.Property(t => t.TonuAmount).HasPrecision(18, 2);
+            entity.HasIndex(t => t.InvoiceNumber).IsUnique();
+        });
+
+        mbuilder.Entity<Driver>(entity =>
+        {
             entity.HasOne(d => d.Vehicle)
                   .WithMany()
                   .HasForeignKey(d => d.VehicleId)
@@ -245,6 +278,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             {
                 entry.Entity.ConcurrencyToken = Guid.NewGuid();
                 entry.Entity.UpdateAt = DateTime.UtcNow;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<Broker>())
+        {
+            if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
             }
         }
 

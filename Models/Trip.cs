@@ -47,6 +47,31 @@ public class Trip
     public TripStatus Status { get; set; }
     public int? VehicleId { get; set; }
     public Vehicle? Vehicle { get; set; }
+    public int? BrokerId { get; set; }
+    public Broker? Broker { get; set; }
+    /// <summary>Broker's load / PO / reference number from the rate confirmation (e.g. "23044790").</summary>
+    [StringLength(50)]
+    public string? BrokerLoadNumber { get; set; }
+    /// <summary>Carrier's internal invoice number (e.g. "IN001").</summary>
+    [StringLength(20)]
+    public string? InvoiceNumber { get; set; }
+    // Load accounting (USD). Stored as decimal; aggregate in memory (SQLite cannot SUM decimals).
+    [Range(0, 1_000_000)]
+    public decimal? RateConfirmationAmount { get; set; }
+    [Range(0, 100_000)]
+    public decimal DetentionFee { get; set; }
+    [Range(0, 100_000)]
+    public decimal LumperFee { get; set; }
+    [Range(0, 100_000)]
+    public decimal OtherAccessorials { get; set; }
+    /// <summary>Driver deductions (claims, trailer misuse, broken seal, late fees) as a positive amount.</summary>
+    [Range(0, 100_000)]
+    public decimal Deductions { get; set; }
+    [StringLength(500)]
+    public string? DeductionReason { get; set; }
+    /// <summary>Truck Order Not Used payout (standard $150-$200) when the load is cancelled after dispatch.</summary>
+    [Range(0, 1_000)]
+    public decimal? TonuAmount { get; set; }
     [ConcurrencyCheck]
     public Guid ConcurrencyToken { get; set; } = Guid.NewGuid();
     public DateTime CreatedAt { get; set; } = DateTime.Now;
@@ -68,4 +93,6 @@ public enum TripStatus
     Completed,
     CancelledByAdmin,
     CanceledByCustomer,
+    /// <summary>Truck Order Not Used: carrier dispatched, shipper/broker cancelled; TONU payout applies.</summary>
+    Tonu,
 }
