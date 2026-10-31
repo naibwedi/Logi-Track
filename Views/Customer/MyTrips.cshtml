@@ -1,4 +1,4 @@
-﻿@model IEnumerable<logirack.Models.Trip>
+@model IEnumerable<logirack.Models.Trip>
 
 @{
     ViewData["Title"] = "My Trips";
@@ -32,6 +32,10 @@
             <td>@(trip.AdminPrice > 0 ? trip.AdminPrice.ToString("C") : "Pending")</td>
             <td>
                 <a asp-action="TripDetails" asp-route-id="@trip.Id" class="btn btn-info btn-sm">Details</a>
+                @if (trip.Status == logirack.Models.TripStatus.Completed)
+                {
+                    <a asp-action="DownloadInvoice" asp-route-id="@trip.Id" class="btn btn-outline-success btn-sm ms-1">Download Invoice</a>
+                }
             </td>
         </tr>
     }

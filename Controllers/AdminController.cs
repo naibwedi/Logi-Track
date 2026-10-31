@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using logirack.Data;
 using logirack.Models;
 using logirack.Models.ViewModel;
@@ -27,6 +27,8 @@ public class AdminController : Controller
     private readonly IEmailSender _emailSender;
     private readonly PasswordService _passwordService;
     private readonly IHubContext<TripHub> _hubContext;
+    private readonly ICoordinateService _coordinateService;
+    private readonly IInvoiceService _invoiceService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AdminController"/> class.
@@ -35,8 +37,11 @@ public class AdminController : Controller
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
         ILogger<AdminController> logger,
-        IEmailSender emailSender,IHubContext<TripHub> hubContext,
-        PasswordService passwordService)
+        IEmailSender emailSender,
+        IHubContext<TripHub> hubContext,
+        PasswordService passwordService,
+        ICoordinateService coordinateService,
+        IInvoiceService invoiceService)
     {
         _db = db;
         _userManager = userManager;
@@ -45,6 +50,8 @@ public class AdminController : Controller
         _hubContext = hubContext;
         _emailSender = emailSender;
         _passwordService = passwordService;
+        _coordinateService = coordinateService;
+        _invoiceService = invoiceService;
     }
     /// <summary>
     /// Search for drivers based on specified criteria
@@ -135,6 +142,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 PaymentFreq = model.PaymentFreq,
                 IsAvailable = true,
                 DateOfBirth = model.DateOfBirth,
+                CdlNumber = model.CdlNumber,
+                CdlState = model.CdlState?.ToUpperInvariant(),
+                CdlExpirationDate = model.CdlExpirationDate,
+                MedicalCardExpirationDate = model.MedicalCardExpirationDate,
             };
             var result = await _userManager.CreateAsync(newDriver, model.Password);
             if (result.Succeeded)
@@ -228,6 +239,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 .ToListAsync();
 
             var pendingApprovals = await _db.Users.CountAsync(u => !u.IsApproved);
+            var allDriversForCompliance = await _db.Users.OfType<Driver>().ToListAsync();
+            var allVehiclesForCompliance = await _db.Vehicles.ToListAsync();
+            var complianceAlerts = ComplianceService.GetAlerts(allDriversForCompliance, allVehiclesForCompliance, DateTime.UtcNow).ToList();
+            var blacklistedBrokersCount = await _db.Brokers.CountAsync(b => b.IsBlacklisted);
 
             var dashboardStats = new DashboardStats
             {
@@ -239,7 +254,9 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 TotalRevenue = totalRevenue,
                 RecentActivities = recentActivities,
                 AvailableDriversList = availableDriversList,
-                Customers = customers
+                Customers = customers,
+                ComplianceAlerts = complianceAlerts,
+                BlacklistedBrokersCount = blacklistedBrokersCount
             };
 
             return View(dashboardStats);
@@ -284,6 +301,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             PricePerKm = driver.PricePerKm,
             PaymentFreq = driver.PaymentFreq,
             IsAvailable = driver.IsAvailable,
+            CdlNumber = driver.CdlNumber,
+            CdlState = driver.CdlState,
+            CdlExpirationDate = driver.CdlExpirationDate,
+            MedicalCardExpirationDate = driver.MedicalCardExpirationDate,
         };
         return View(model);
     }
@@ -332,6 +353,10 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             driver.PricePerKm = model.PricePerKm;
             driver.PaymentFreq = model.PaymentFreq;
             driver.IsAvailable = model.IsAvailable;
+            driver.CdlNumber = model.CdlNumber;
+            driver.CdlState = model.CdlState?.ToUpperInvariant();
+            driver.CdlExpirationDate = model.CdlExpirationDate;
+            driver.MedicalCardExpirationDate = model.MedicalCardExpirationDate;
             driver.ModifiedOn = DateTime.Now;
             var result = await _userManager.UpdateAsync(driver);
             if (result.Succeeded)
@@ -488,9 +513,29 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
     [HttpGet]
     public async Task<IActionResult> TripDetails(int id)
     {
-        var trip = await _db.Trips.Include(t => t.Customer).FirstOrDefaultAsync(t=>t.Id == id);
-        if(trip == null)
+        var trip = await _db.Trips
+            .Include(t => t.Customer)
+            .Include(t => t.DriverTrip)
+            .Include(t => t.Broker)
+            .FirstOrDefaultAsync(t => t.Id == id);
+        if (trip == null)
             return NotFound();
+
+        var startCoords = _coordinateService.GetCoordinatesForCity(trip.FromCity);
+        var destCoords = _coordinateService.GetCoordinatesForCity(trip.ToCity);
+        double currentLat = startCoords.Latitude;
+        double currentLng = startCoords.Longitude;
+
+        if (trip.DriverTrip != null)
+        {
+            var driverLocation = await _db.Locations.FirstOrDefaultAsync(l => l.DriverID == trip.DriverTrip.DriverId);
+            if (driverLocation != null)
+            {
+                currentLat = driverLocation.Latitude;
+                currentLng = driverLocation.Longitude;
+            }
+        }
+
         var viewModel = new TripDetailsViewModel
         {
             TripId = trip.Id,
@@ -509,9 +554,31 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             GoodTypes = trip.GoodsType,
             Notes = trip.Notes,
             EstimatedPrice = trip.EstimatedPrice,
+            AdminPrice = trip.AdminPrice,
             Status = trip.Status,
             CreatedOn = trip.CreatedAt,
-            PickupDate = trip.PickupTime
+            PickupDate = trip.PickupTime,
+            StartLatitude = startCoords.Latitude,
+            StartLongitude = startCoords.Longitude,
+            DestinationLatitude = destCoords.Latitude,
+            DestinationLongitude = destCoords.Longitude,
+            CurrentLatitude = currentLat,
+            CurrentLongitude = currentLng,
+            BrokerId = trip.BrokerId,
+            BrokerName = trip.Broker?.CompanyName,
+            BrokerMcNumber = trip.Broker?.DisplayMc,
+            IsBrokerBlacklisted = trip.Broker?.IsBlacklisted ?? false,
+            BrokerBlacklistReason = trip.Broker?.BlacklistReason,
+            InvoiceNumber = trip.InvoiceNumber,
+            BrokerLoadNumber = trip.BrokerLoadNumber,
+            RateConfirmationAmount = trip.RateConfirmationAmount,
+            DetentionFee = trip.DetentionFee,
+            LumperFee = trip.LumperFee,
+            OtherAccessorials = trip.OtherAccessorials,
+            Deductions = trip.Deductions,
+            DeductionReason = trip.DeductionReason,
+            TonuAmount = trip.TonuAmount,
+            Settlement = SettlementCalculator.ForTrip(trip)
         };
         return View(viewModel);
     }
@@ -536,8 +603,16 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             return Forbid();
         trip.Status = isApproved ? TripStatus.ApprovedByAdmin : TripStatus.CancelledByAdmin;
         trip.AdminId=admin.Id;
-        trip.UpdatedAt = DateTime.Now;
-        await _db.SaveChangesAsync();
+        trip.UpdatedAt = DateTime.UtcNow;
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            _logger.LogWarning("Concurrency conflict while reviewing trip {TripId}", trip.Id);
+            return Conflict("The trip was modified by another process. Please refresh and try again.");
+        }
         var tripReviewInfo = new
         {
             TripId = trip.Id,
@@ -624,7 +699,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
         tripToUpdate.AdminPrice = model.AdminPrice;
         tripToUpdate.Status = TripStatus.PriceSet;
-        tripToUpdate.UpdatedAt = DateTime.Now;
+        tripToUpdate.UpdatedAt = DateTime.UtcNow;
 
         try
         {
@@ -666,6 +741,12 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             TempData["Success"] = "Price set successfully and customer has been notified.";
             return RedirectToAction(nameof(TripDetails), new { id = model.TripId });
         }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while setting price for trip {TripId}", model.TripId);
+            ModelState.AddModelError(string.Empty, "The trip was modified by another process. Please refresh and try again.");
+            return View(model);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error setting price for trip {TripId}", model.TripId);
@@ -699,6 +780,20 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             Weight = trip.Weight,
             Distance = trip.Distance,
             AvailableDrivers = drivers,
+            AvailableBrokers = await _db.Brokers.OrderBy(b => b.CompanyName).ToListAsync(),
+            BrokerId = trip.BrokerId,
+            InvoiceNumber = trip.InvoiceNumber,
+            BrokerLoadNumber = trip.BrokerLoadNumber,
+            RateConfirmationAmount = trip.RateConfirmationAmount ?? (trip.AdminPrice > 0 ? (decimal)trip.AdminPrice : (decimal)trip.EstimatedPrice),
+            DetentionFee = trip.DetentionFee,
+            LumperFee = trip.LumperFee,
+            OtherAccessorials = trip.OtherAccessorials,
+            Deductions = trip.Deductions,
+            DeductionReason = trip.DeductionReason,
+            AvailableVehicles = await _db.Vehicles
+                .Where(v => v.Status == VehicleStatus.Active)
+                .OrderBy(v => v.UnitNumber)
+                .ToListAsync(),
         };
         return View(viewM);
     }
@@ -717,34 +812,40 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             return View(model);
         }
 
+        await using var transaction = await _db.Database.BeginTransactionAsync();
         try
         {
             var trip = await _db.Trips
-                .Include("DriverTrip")    
-                .Include("Customer")      
+                .Include(t => t.DriverTrip)
+            .Include(t => t.Broker)
+                .Include(t => t.Customer)
                 .FirstOrDefaultAsync(t => t.Id == model.TripId);
 
             if (trip == null)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError($"Trip not found. TripId: {model.TripId}");
                 return NotFound("Trip not found");
             }
 
             if (trip.Status != TripStatus.ApprovedByCustomer)
             {
+                await transaction.RollbackAsync();
                 return BadRequest("Only customer-approved trips can be assigned.");
             }
 
             if (trip.DriverTrip != null)
             {
+                await transaction.RollbackAsync();
                 ModelState.AddModelError("", "This trip is already assigned to a driver");
                 await LoadAvailableDrivers(model);
                 return View(model);
             }
 
-            var driver = await _userManager.FindByIdAsync(model.DriverId) as Driver;
+            var driver = await _db.Drivers.FirstOrDefaultAsync(d => d.Id == model.DriverId);
             if (driver == null)
             {
+                await transaction.RollbackAsync();
                 ModelState.AddModelError("DriverId", "Selected driver not found");
                 await LoadAvailableDrivers(model);
                 return View(model);
@@ -752,6 +853,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
             if (!driver.IsAvailable)
             {
+                await transaction.RollbackAsync();
                 ModelState.AddModelError("DriverId", "Selected driver is not available");
                 await LoadAvailableDrivers(model);
                 return View(model);
@@ -759,43 +861,131 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
 
             if (!driver.IsApproved)
             {
+                await transaction.RollbackAsync();
                 ModelState.AddModelError("DriverId", "Selected driver is not approved");
                 await LoadAvailableDrivers(model);
                 return View(model);
             }
 
-            using var transaction = await _db.Database.BeginTransactionAsync();
-            try
+            Broker? selectedBroker = null;
+            if (model.BrokerId.HasValue && model.BrokerId.Value > 0)
             {
-                var driverTrip = new DriverTrip
+                selectedBroker = await _db.Brokers.FirstOrDefaultAsync(b => b.Id == model.BrokerId.Value);
+                if (selectedBroker != null && selectedBroker.IsBlacklisted)
                 {
-                    TripId = trip.Id,
-                    DriverId = driver.Id,
-                    AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
-                    DriverPayment = driver.PricePerKm * trip.Distance,
-                    Status = TripStatus.Assigned,
-                    AssignmentDate = DateTime.Now,
-                    UpdateAt = DateTime.Now
-                };
-
-                trip.Status = TripStatus.Assigned;
-                driver.IsAvailable = false;
-
-                _db.DriverTrips.Add(driverTrip);
-                await _db.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                TempData["Success"] = $"Trip successfully assigned to {driver.UserName}";
-                return RedirectToAction(nameof(TripRequests));
+                    TempData["Warning"] = $"WARNING: Broker {selectedBroker.CompanyName} ({selectedBroker.DisplayMc}) is on the Bad Broker / Do-Not-Load list! Reason: {selectedBroker.BlacklistReason ?? "Unspecified"}";
+                }
             }
-            catch (Exception)
+
+            if (driver.MedicalCardExpirationDate.HasValue && ComplianceService.IsMedicalCardExpired(driver, DateTime.UtcNow))
             {
                 await transaction.RollbackAsync();
-                throw;
+                ModelState.AddModelError("DriverId", "Selected driver's DOT Medical Card has expired (49 CFR 391.41) and cannot be dispatched.");
+                await LoadAvailableDrivers(model);
+                return View(model);
             }
+
+            Vehicle? selectedVehicle = null;
+            if (model.VehicleId.HasValue && model.VehicleId.Value > 0)
+            {
+                selectedVehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == model.VehicleId.Value);
+                if (selectedVehicle == null)
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("VehicleId", "Selected vehicle not found.");
+                    await LoadAvailableDrivers(model);
+                    return View(model);
+                }
+
+                if (selectedVehicle.Status != VehicleStatus.Active)
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("VehicleId", $"Selected vehicle unit is not Active (current status: {selectedVehicle.Status}).");
+                    await LoadAvailableDrivers(model);
+                    return View(model);
+                }
+
+                if (selectedVehicle.RegistrationExpirationDate < DateTime.UtcNow)
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("VehicleId", "Selected vehicle registration has expired.");
+                    await LoadAvailableDrivers(model);
+                    return View(model);
+                }
+            }
+            else
+            {
+                // Backwards compatibility fallback for legacy test invocations:
+                // Auto-bind to the driver's assigned tractor or the first active vehicle.
+                if (driver.VehicleId.HasValue)
+                {
+                    selectedVehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == driver.VehicleId.Value && v.Status == VehicleStatus.Active);
+                }
+
+                if (selectedVehicle == null)
+                {
+                    selectedVehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Status == VehicleStatus.Active && v.RegistrationExpirationDate >= DateTime.UtcNow);
+                }
+            }
+
+            var driverTrip = new DriverTrip
+            {
+                TripId = trip.Id,
+                DriverId = driver.Id,
+                AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
+                DriverPayment = driver.PricePerKm * trip.Distance,
+                Status = TripStatus.Assigned,
+                VehicleId = selectedVehicle?.Id,
+                AssignmentDate = DateTime.UtcNow,
+                UpdateAt = DateTime.UtcNow
+            };
+
+            trip.Status = TripStatus.Assigned;
+            trip.VehicleId = selectedVehicle?.Id;
+            if (selectedBroker != null)
+            {
+                trip.BrokerId = selectedBroker.Id;
+            }
+            if (!string.IsNullOrWhiteSpace(model.InvoiceNumber))
+            {
+                trip.InvoiceNumber = InputSanitizer.StripDangerousTags(model.InvoiceNumber.Trim());
+            }
+            if (!string.IsNullOrWhiteSpace(model.BrokerLoadNumber))
+            {
+                trip.BrokerLoadNumber = InputSanitizer.StripDangerousTags(model.BrokerLoadNumber.Trim());
+            }
+            if (model.RateConfirmationAmount.HasValue && model.RateConfirmationAmount.Value > 0)
+            {
+                trip.RateConfirmationAmount = model.RateConfirmationAmount.Value;
+                trip.DetentionFee = model.DetentionFee;
+                trip.LumperFee = model.LumperFee;
+                trip.OtherAccessorials = model.OtherAccessorials;
+                trip.Deductions = model.Deductions;
+                trip.DeductionReason = InputSanitizer.StripDangerousTags(model.DeductionReason);
+                var settlement = SettlementCalculator.ForTrip(trip);
+                driverTrip.DriverPayment = (double)settlement.DriverNetPay;
+            }
+            trip.UpdatedAt = DateTime.UtcNow;
+            driver.IsAvailable = false;
+
+            _db.DriverTrips.Add(driverTrip);
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            TempData["Success"] = $"Trip successfully assigned to {driver.UserName}";
+            return RedirectToAction(nameof(TripRequests));
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogWarning(ex, "Concurrency conflict during driver assignment for trip {TripId}", model.TripId);
+            ModelState.AddModelError("", "The trip or driver was modified by another process. Please refresh and try again.");
+            await LoadAvailableDrivers(model);
+            return View(model);
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
             _logger.LogError(ex, "Error assigning trip");
             ModelState.AddModelError("", "An error occurred while assigning the trip");
             await LoadAvailableDrivers(model);
@@ -815,6 +1005,11 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
             }
         }
         model.AvailableDrivers = availableDrivers;
+        model.AvailableBrokers = await _db.Brokers.OrderBy(b => b.CompanyName).ToListAsync();
+        model.AvailableVehicles = await _db.Vehicles
+            .Where(v => v.Status == VehicleStatus.Active)
+            .OrderBy(v => v.UnitNumber)
+            .ToListAsync();
     }
     /// <summary>
     /// Gets page for creating a new trip by admin
@@ -911,6 +1106,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 Distance = model.Distance,
                 Weight = model.weight,
                 PickupTime = model.PickUpTime,
+                VehicleId = driver.VehicleId,
                 CreatedAt = DateTime.Now,
                 AdminPrice = model.Price,
                 AdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -927,6 +1123,7 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
                 AssignedByAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
                 DriverPayment = driver.PricePerKm * model.Distance,
                 Status = TripStatus.Assigned,
+                VehicleId = driver.VehicleId,
                 AssignmentDate = DateTime.Now,
                 UpdateAt = DateTime.Now
             };
@@ -1129,7 +1326,643 @@ public IActionResult SearchDrivers(string searchString, string searchCriteria)
         return View(completedTrips);
     }
 
-   
+    /// <summary>
+    /// Downloads the generated PDF invoice for any completed trip.
+    /// Admin authorization required.
+    /// </summary>
+    /// <param name="id">The trip ID</param>
+    /// <returns>PDF file stream</returns>
+    [HttpGet]
+    public async Task<IActionResult> DownloadInvoice(int id)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.Customer)
+            .FirstOrDefaultAsync(t => t.Id == id);
 
+        if (trip == null)
+        {
+            return NotFound();
+        }
 
+        if (trip.Status != TripStatus.Completed)
+        {
+            return BadRequest("Invoice is only available for completed trips.");
+        }
+
+        var customer = trip.Customer;
+        if (customer == null)
+        {
+            var appUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == trip.CustomerId);
+            customer = appUser as Customer ?? new Customer
+            {
+                Id = trip.CustomerId,
+                UserName = appUser?.UserName,
+                Email = appUser?.Email,
+                PhoneNumber = appUser?.PhoneNumber,
+                FirstName = appUser?.FirstName ?? "Customer",
+                LastName = appUser?.LastName ?? "",
+                CompanyName = appUser?.CompanyName ?? string.Empty
+            };
+        }
+
+        var pdfBytes = _invoiceService.GenerateInvoicePdf(trip, customer);
+        return File(pdfBytes, "application/pdf", $"Invoice_Trip_{trip.Id}.pdf");
+    }
+
+    // ==========================================
+    // Fleet & Equipment Management (M1)
+    // ==========================================
+
+    /// <summary>
+    /// Displays list of all fleet vehicle units.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> VehicleManagement()
+    {
+        var vehicles = await _db.Vehicles
+            .Include(v => v.AssignedDriver)
+            .OrderBy(v => v.UnitNumber)
+            .ToListAsync();
+
+        var drivers = (await _userManager.GetUsersInRoleAsync("Driver"))
+            .OfType<Driver>()
+            .OrderBy(d => d.FirstName)
+            .ThenBy(d => d.LastName)
+            .ToList();
+
+        ViewBag.AvailableDrivers = drivers;
+        return View("VehicleManagement", vehicles);
+    }
+
+    /// <summary>
+    /// Alias for VehicleManagement
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Vehicles()
+    {
+        return await VehicleManagement();
+    }
+
+    /// <summary>
+    /// Displays form to create a new vehicle.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> CreateVehicle()
+    {
+        var drivers = (await _userManager.GetUsersInRoleAsync("Driver"))
+            .OfType<Driver>()
+            .OrderBy(d => d.FirstName)
+            .ThenBy(d => d.LastName)
+            .ToList();
+
+        ViewBag.Drivers = drivers;
+        var model = new Vehicle
+        {
+            Year = DateTime.UtcNow.Year,
+            RegistrationExpirationDate = DateTime.UtcNow.AddYears(1),
+            AnnualDotInspectionExpiration = DateTime.UtcNow.AddYears(1),
+            Form2290ExpirationDate = DateTime.UtcNow.AddYears(1),
+            Status = VehicleStatus.Active
+        };
+        return View(model);
+    }
+
+    /// <summary>
+    /// Creates a new vehicle unit.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateVehicle(Vehicle vehicle)
+    {
+        if (await _db.Vehicles.AnyAsync(v => v.UnitNumber == vehicle.UnitNumber))
+        {
+            ModelState.AddModelError("UnitNumber", "A vehicle with this Unit Number already exists.");
+        }
+
+        if (await _db.Vehicles.AnyAsync(v => v.Vin == vehicle.Vin))
+        {
+            ModelState.AddModelError("Vin", "A vehicle with this VIN already exists.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Drivers = (await _userManager.GetUsersInRoleAsync("Driver"))
+                .OfType<Driver>()
+                .OrderBy(d => d.FirstName)
+                .ThenBy(d => d.LastName)
+                .ToList();
+            return View(vehicle);
+        }
+
+        vehicle.CreatedAt = DateTime.UtcNow;
+        vehicle.UpdatedAt = DateTime.UtcNow;
+
+        _db.Vehicles.Add(vehicle);
+        await _db.SaveChangesAsync();
+
+        if (!string.IsNullOrEmpty(vehicle.AssignedDriverId))
+        {
+            var otherVehicles = await _db.Vehicles
+                .Where(v => v.Id != vehicle.Id && v.AssignedDriverId == vehicle.AssignedDriverId)
+                .ToListAsync();
+            foreach (var ov in otherVehicles)
+            {
+                ov.AssignedDriverId = null;
+            }
+
+            var driver = await _db.Drivers.FindAsync(vehicle.AssignedDriverId);
+            if (driver != null)
+            {
+                driver.VehicleId = vehicle.Id;
+            }
+            await _db.SaveChangesAsync();
+        }
+
+        TempData["Success"] = $"Vehicle Unit {vehicle.UnitNumber} created successfully.";
+        return RedirectToAction(nameof(VehicleManagement));
+    }
+
+    /// <summary>
+    /// Displays form to edit an existing vehicle.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> EditVehicle(int id)
+    {
+        var vehicle = await _db.Vehicles
+            .Include(v => v.AssignedDriver)
+            .FirstOrDefaultAsync(v => v.Id == id);
+
+        if (vehicle == null)
+        {
+            return NotFound();
+        }
+
+        ViewBag.Drivers = (await _userManager.GetUsersInRoleAsync("Driver"))
+            .OfType<Driver>()
+            .OrderBy(d => d.FirstName)
+            .ThenBy(d => d.LastName)
+            .ToList();
+
+        return View(vehicle);
+    }
+
+    /// <summary>
+    /// Updates an existing vehicle unit.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditVehicle(int id, Vehicle vehicle)
+    {
+        if (id != vehicle.Id)
+        {
+            return BadRequest();
+        }
+
+        if (await _db.Vehicles.AnyAsync(v => v.Id != id && v.UnitNumber == vehicle.UnitNumber))
+        {
+            ModelState.AddModelError("UnitNumber", "Unit Number is already in use by another vehicle.");
+        }
+
+        if (await _db.Vehicles.AnyAsync(v => v.Id != id && v.Vin == vehicle.Vin))
+        {
+            ModelState.AddModelError("Vin", "VIN is already in use by another vehicle.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Drivers = (await _userManager.GetUsersInRoleAsync("Driver"))
+                .OfType<Driver>()
+                .OrderBy(d => d.FirstName)
+                .ThenBy(d => d.LastName)
+                .ToList();
+            return View(vehicle);
+        }
+
+        var existing = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == id);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        var previousDriverId = existing.AssignedDriverId;
+
+        existing.UnitNumber = vehicle.UnitNumber;
+        existing.Vin = vehicle.Vin;
+        existing.LicensePlate = vehicle.LicensePlate;
+        existing.LicenseState = vehicle.LicenseState;
+        existing.Make = vehicle.Make;
+        existing.Model = vehicle.Model;
+        existing.Year = vehicle.Year;
+        existing.RegistrationExpirationDate = vehicle.RegistrationExpirationDate;
+        existing.AnnualDotInspectionExpiration = vehicle.AnnualDotInspectionExpiration;
+        existing.Form2290ExpirationDate = vehicle.Form2290ExpirationDate;
+        existing.PrePassTransponderId = vehicle.PrePassTransponderId;
+        existing.Status = vehicle.Status;
+        existing.AssignedDriverId = vehicle.AssignedDriverId;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        if (previousDriverId != vehicle.AssignedDriverId)
+        {
+            if (!string.IsNullOrEmpty(previousDriverId))
+            {
+                var prevDriver = await _db.Drivers.FindAsync(previousDriverId);
+                if (prevDriver != null && prevDriver.VehicleId == id)
+                {
+                    prevDriver.VehicleId = null;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(vehicle.AssignedDriverId))
+            {
+                var otherVehicles = await _db.Vehicles
+                    .Where(v => v.Id != id && v.AssignedDriverId == vehicle.AssignedDriverId)
+                    .ToListAsync();
+                foreach (var ov in otherVehicles)
+                {
+                    ov.AssignedDriverId = null;
+                }
+
+                var newDriver = await _db.Drivers.FindAsync(vehicle.AssignedDriverId);
+                if (newDriver != null)
+                {
+                    newDriver.VehicleId = id;
+                }
+            }
+        }
+
+        await _db.SaveChangesAsync();
+        TempData["Success"] = $"Vehicle Unit {existing.UnitNumber} updated successfully.";
+        return RedirectToAction(nameof(VehicleManagement));
+    }
+
+    /// <summary>
+    /// Changes the operational status of a vehicle.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetVehicleStatus(int id, VehicleStatus status)
+    {
+        var vehicle = await _db.Vehicles.FindAsync(id);
+        if (vehicle == null)
+        {
+            return NotFound();
+        }
+
+        vehicle.Status = status;
+        vehicle.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        TempData["Success"] = $"Vehicle Unit {vehicle.UnitNumber} status changed to {status}.";
+        return RedirectToAction(nameof(VehicleManagement));
+    }
+
+    /// <summary>
+    /// Assigns a driver to a vehicle unit.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AssignDriverToVehicle(int vehicleId, string? driverId)
+    {
+        var vehicle = await _db.Vehicles.FindAsync(vehicleId);
+        if (vehicle == null)
+        {
+            return NotFound();
+        }
+
+        if (!string.IsNullOrEmpty(vehicle.AssignedDriverId))
+        {
+            var oldDriver = await _db.Drivers.FindAsync(vehicle.AssignedDriverId);
+            if (oldDriver != null && oldDriver.VehicleId == vehicleId)
+            {
+                oldDriver.VehicleId = null;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(driverId))
+        {
+            var driver = await _db.Drivers.FindAsync(driverId);
+            if (driver == null)
+            {
+                return NotFound("Driver not found.");
+            }
+
+            var prevVehicles = await _db.Vehicles
+                .Where(v => v.Id != vehicleId && v.AssignedDriverId == driverId)
+                .ToListAsync();
+            foreach (var pv in prevVehicles)
+            {
+                pv.AssignedDriverId = null;
+            }
+
+            vehicle.AssignedDriverId = driverId;
+            driver.VehicleId = vehicleId;
+        }
+        else
+        {
+            vehicle.AssignedDriverId = null;
+        }
+
+        vehicle.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        TempData["Success"] = $"Driver assignment for Vehicle Unit {vehicle.UnitNumber} updated.";
+        return RedirectToAction(nameof(VehicleManagement));
+    }
+
+    /// <summary>
+    /// Unassigns any assigned driver from a vehicle unit.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnassignVehicleDriver(int vehicleId)
+    {
+        return await AssignDriverToVehicle(vehicleId, null);
+    }
+
+    // ==========================================
+    // Broker CRM & Bad Broker Protection (R2)
+    // ==========================================
+
+    [HttpGet]
+    public async Task<IActionResult> BrokerManagement()
+    {
+        var brokers = await _db.Brokers
+            .OrderByDescending(b => b.IsBlacklisted)
+            .ThenBy(b => b.CompanyName)
+            .ToListAsync();
+        return View("Brokers", brokers);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Brokers()
+    {
+        return await BrokerManagement();
+    }
+
+    [HttpGet]
+    public IActionResult CreateBroker()
+    {
+        return View(new Broker());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateBroker(Broker broker)
+    {
+        broker.McNumber = Broker.NormalizeMc(broker.McNumber);
+        broker.CompanyName = InputSanitizer.StripDangerousTags(broker.CompanyName)?.Trim() ?? string.Empty;
+        broker.AgentName = InputSanitizer.StripDangerousTags(broker.AgentName)?.Trim();
+        broker.BlacklistReason = InputSanitizer.StripDangerousTags(broker.BlacklistReason)?.Trim();
+        broker.Notes = InputSanitizer.StripDangerousTags(broker.Notes)?.Trim();
+
+        ModelState.Remove(nameof(Broker.McNumber));
+        if (string.IsNullOrWhiteSpace(broker.McNumber) || !System.Text.RegularExpressions.Regex.IsMatch(broker.McNumber, @"^\d{1,8}$"))
+        {
+            ModelState.AddModelError(nameof(Broker.McNumber), "MC Number must contain 1 to 8 digits.");
+        }
+        else if (await _db.Brokers.AnyAsync(b => b.McNumber == broker.McNumber))
+        {
+            ModelState.AddModelError(nameof(Broker.McNumber), $"A broker with MC#{broker.McNumber} already exists.");
+        }
+
+        if (broker.IsBlacklisted && string.IsNullOrWhiteSpace(broker.BlacklistReason))
+        {
+            ModelState.AddModelError(nameof(Broker.BlacklistReason), "Please provide a reason when blacklisting a broker.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(broker);
+        }
+
+        if (broker.IsBlacklisted)
+        {
+            broker.BlacklistedAt = DateTime.UtcNow;
+        }
+
+        broker.CreatedAt = DateTime.UtcNow;
+        broker.UpdatedAt = DateTime.UtcNow;
+
+        _db.Brokers.Add(broker);
+        await _db.SaveChangesAsync();
+
+        TempData["Success"] = $"Broker {broker.CompanyName} ({broker.DisplayMc}) saved.";
+        return RedirectToAction(nameof(Brokers));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> EditBroker(int id)
+    {
+        var broker = await _db.Brokers.FirstOrDefaultAsync(b => b.Id == id);
+        if (broker == null)
+        {
+            return NotFound();
+        }
+        return View(broker);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditBroker(int id, Broker broker)
+    {
+        if (id != broker.Id)
+        {
+            return BadRequest();
+        }
+
+        var existing = await _db.Brokers.FirstOrDefaultAsync(b => b.Id == id);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        var normalizedMc = Broker.NormalizeMc(broker.McNumber);
+        ModelState.Remove(nameof(Broker.McNumber));
+        if (string.IsNullOrWhiteSpace(normalizedMc) || !System.Text.RegularExpressions.Regex.IsMatch(normalizedMc, @"^\d{1,8}$"))
+        {
+            ModelState.AddModelError(nameof(Broker.McNumber), "MC Number must contain 1 to 8 digits.");
+        }
+        else if (await _db.Brokers.AnyAsync(b => b.Id != id && b.McNumber == normalizedMc))
+        {
+            ModelState.AddModelError(nameof(Broker.McNumber), $"MC#{normalizedMc} is already in use by another broker.");
+        }
+
+        if (broker.IsBlacklisted && string.IsNullOrWhiteSpace(broker.BlacklistReason))
+        {
+            ModelState.AddModelError(nameof(Broker.BlacklistReason), "Please provide a reason when blacklisting a broker.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(broker);
+        }
+
+        existing.CompanyName = InputSanitizer.StripDangerousTags(broker.CompanyName)?.Trim() ?? string.Empty;
+        existing.McNumber = normalizedMc;
+        existing.AgentName = InputSanitizer.StripDangerousTags(broker.AgentName)?.Trim();
+        existing.Phone = broker.Phone;
+        existing.PhoneExtension = broker.PhoneExtension;
+        existing.Email = broker.Email;
+        existing.IsBlacklisted = broker.IsBlacklisted;
+        existing.BlacklistReason = InputSanitizer.StripDangerousTags(broker.BlacklistReason)?.Trim();
+        existing.BlacklistedAt = broker.IsBlacklisted ? (existing.BlacklistedAt ?? DateTime.UtcNow) : null;
+        existing.Notes = InputSanitizer.StripDangerousTags(broker.Notes)?.Trim();
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        TempData["Success"] = $"Broker {existing.CompanyName} ({existing.DisplayMc}) updated.";
+        return RedirectToAction(nameof(Brokers));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleBrokerBlacklist(int id, bool isBlacklisted, string? reason)
+    {
+        var broker = await _db.Brokers.FirstOrDefaultAsync(b => b.Id == id);
+        if (broker == null)
+        {
+            return NotFound();
+        }
+
+        broker.IsBlacklisted = isBlacklisted;
+        broker.BlacklistReason = isBlacklisted ? (InputSanitizer.StripDangerousTags(reason)?.Trim() ?? "Flagged on Bad Broker list") : null;
+        broker.BlacklistedAt = isBlacklisted ? DateTime.UtcNow : null;
+        broker.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        TempData[isBlacklisted ? "Warning" : "Success"] = isBlacklisted
+            ? $"Broker {broker.CompanyName} ({broker.DisplayMc}) flagged on Bad Broker list."
+            : $"Broker {broker.CompanyName} ({broker.DisplayMc}) removed from Bad Broker list.";
+        return RedirectToAction(nameof(Brokers));
+    }
+
+    // ==========================================
+    // Load Accounting, Settlements & TONU (R3)
+    // ==========================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateTripSettlement(
+        int tripId,
+        int? brokerId,
+        string? invoiceNumber,
+        string? brokerLoadNumber,
+        decimal rateConfirmationAmount,
+        decimal detentionFee = 0m,
+        decimal lumperFee = 0m,
+        decimal otherAccessorials = 0m,
+        decimal deductions = 0m,
+        string? deductionReason = null)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.DriverTrip)
+            .FirstOrDefaultAsync(t => t.Id == tripId);
+
+        if (trip == null)
+        {
+            return NotFound();
+        }
+
+        if (rateConfirmationAmount < 0 || detentionFee < 0 || lumperFee < 0 || otherAccessorials < 0 || deductions < 0)
+        {
+            return BadRequest("Settlement amounts cannot be negative.");
+        }
+
+        trip.BrokerId = brokerId;
+        trip.InvoiceNumber = string.IsNullOrWhiteSpace(invoiceNumber) ? null : InputSanitizer.StripDangerousTags(invoiceNumber.Trim());
+        trip.BrokerLoadNumber = string.IsNullOrWhiteSpace(brokerLoadNumber) ? null : InputSanitizer.StripDangerousTags(brokerLoadNumber.Trim());
+        trip.RateConfirmationAmount = rateConfirmationAmount;
+        trip.DetentionFee = detentionFee;
+        trip.LumperFee = lumperFee;
+        trip.OtherAccessorials = otherAccessorials;
+        trip.Deductions = deductions;
+        trip.DeductionReason = InputSanitizer.StripDangerousTags(deductionReason)?.Trim();
+        trip.UpdatedAt = DateTime.UtcNow;
+
+        var breakdown = SettlementCalculator.ForTrip(trip);
+        if (trip.DriverTrip != null)
+        {
+            trip.DriverTrip.DriverPayment = (double)breakdown.DriverNetPay;
+            trip.DriverTrip.UpdateAt = DateTime.UtcNow;
+        }
+
+        await _db.SaveChangesAsync();
+        TempData["Success"] = $"Settlement updated. Gross: ${breakdown.GrossRate:F2} | 12% Dispatch: ${breakdown.DispatchFee:F2} | 88% Driver Net: ${breakdown.DriverNetPay:F2}";
+        return RedirectToAction(nameof(TripDetails), new { id = tripId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkTripTonu(int tripId, decimal tonuAmount = 150m, decimal deductions = 0m)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.DriverTrip)
+                .ThenInclude(dt => dt!.Driver)
+            .FirstOrDefaultAsync(t => t.Id == tripId);
+
+        if (trip == null)
+        {
+            return NotFound();
+        }
+
+        SettlementBreakdown breakdown;
+        try
+        {
+            breakdown = SettlementCalculator.CalculateTonu(tonuAmount, deductions);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+
+        trip.Status = TripStatus.Tonu;
+        trip.TonuAmount = tonuAmount;
+        trip.Deductions = deductions;
+        trip.UpdatedAt = DateTime.UtcNow;
+
+        if (trip.DriverTrip != null)
+        {
+            trip.DriverTrip.Status = TripStatus.Tonu;
+            trip.DriverTrip.DriverPayment = (double)breakdown.DriverNetPay;
+            trip.DriverTrip.UpdateAt = DateTime.UtcNow;
+            if (trip.DriverTrip.Driver != null)
+            {
+                trip.DriverTrip.Driver.IsAvailable = true;
+            }
+        }
+
+        await _db.SaveChangesAsync();
+        TempData["Warning"] = $"Trip #{trip.Id} marked as TONU (${tonuAmount:F2}). Driver Net Payout: ${breakdown.DriverNetPay:F2}.";
+        return RedirectToAction(nameof(TripDetails), new { id = tripId });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DownloadSettlement(int id)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.Broker)
+            .Include(t => t.Vehicle)
+            .Include(t => t.DriverTrip)
+                .ThenInclude(dt => dt!.Driver)
+            .Include(t => t.DriverTrip)
+                .ThenInclude(dt => dt!.Vehicle)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (trip == null)
+        {
+            return NotFound();
+        }
+
+        var driver = trip.DriverTrip?.Driver ?? new Driver
+        {
+            FirstName = "Unassigned",
+            LastName = "Driver",
+            Email = "dispatch@ruftalogistics.com"
+        };
+
+        var breakdown = SettlementCalculator.ForTrip(trip);
+        var vehicle = trip.DriverTrip?.Vehicle ?? trip.Vehicle;
+        var pdfBytes = _invoiceService.GenerateSettlementStatementPdf(trip, driver, breakdown, vehicle, trip.Broker);
+        return File(pdfBytes, "application/pdf", $"Settlement_Trip_{trip.Id}.pdf");
+    }
 }

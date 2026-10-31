@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace logirack.Models
@@ -14,6 +14,8 @@ namespace logirack.Models
         public List<Driver> AvailableDriversList { get; set; } = [];
         public List<Customer> Customers { get; set; } = [];
         public int AssignedTrips { get; set; }  
+        public List<logirack.Services.ComplianceAlert> ComplianceAlerts { get; set; } = [];
+        public int BlacklistedBrokersCount { get; set; }
 
     }
     

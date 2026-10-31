@@ -1,4 +1,4 @@
-﻿using logirack.Models;
+using logirack.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -33,6 +33,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     //admin
     public DbSet<AdminActionLog> AdminActionLogs { get; set; }
     public DbSet<RecentActivity> RecentActivities { get; set; }
+
+    //fleet
+    public DbSet<Vehicle> Vehicles { get; set; }
+
+    //brokers
+    public DbSet<Broker> Brokers { get; set; }
 
 
     /// <summary>
@@ -174,6 +180,121 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(p => p.ProcByAdmin)
             .WithMany(a => a.ProcessedPayments)
             .HasForeignKey(p => p.ProcByAdminID);
-        
+
+        //----------------------------------||
+        // Fleet & Equipment (Vehicle)       ||
+        //----------------------------------||
+        mbuilder.Entity<Vehicle>(entity =>
+        {
+            entity.HasKey(v => v.Id);
+            entity.HasIndex(v => v.UnitNumber).IsUnique();
+            entity.HasIndex(v => v.Vin).IsUnique();
+
+            entity.HasOne(v => v.AssignedDriver)
+                  .WithMany()
+                  .HasForeignKey(v => v.AssignedDriverId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasMany(v => v.Trips)
+                  .WithOne(t => t.Vehicle)
+                  .HasForeignKey(t => t.VehicleId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasMany(v => v.DriverTrips)
+                  .WithOne(dt => dt.Vehicle)
+                  .HasForeignKey(dt => dt.VehicleId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        mbuilder.Entity<Driver>(entity =>
+        {
+            entity.Property(d => d.CdlNumber).HasMaxLength(30);
+            entity.Property(d => d.CdlState).HasMaxLength(2);
+        });
+
+        //----------------------------------||
+        // Brokers & load accounting         ||
+        //----------------------------------||
+        mbuilder.Entity<Broker>(entity =>
+        {
+            entity.HasIndex(b => b.McNumber).IsUnique();
+            entity.HasMany(b => b.Trips)
+                  .WithOne(t => t.Broker)
+                  .HasForeignKey(t => t.BrokerId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        mbuilder.Entity<Trip>(entity =>
+        {
+            entity.Property(t => t.RateConfirmationAmount).HasPrecision(18, 2);
+            entity.Property(t => t.DetentionFee).HasPrecision(18, 2);
+            entity.Property(t => t.LumperFee).HasPrecision(18, 2);
+            entity.Property(t => t.OtherAccessorials).HasPrecision(18, 2);
+            entity.Property(t => t.Deductions).HasPrecision(18, 2);
+            entity.Property(t => t.TonuAmount).HasPrecision(18, 2);
+            entity.HasIndex(t => t.InvoiceNumber).IsUnique();
+        });
+
+        mbuilder.Entity<Driver>(entity =>
+        {
+            entity.HasOne(d => d.Vehicle)
+                  .WithMany()
+                  .HasForeignKey(d => d.VehicleId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        UpdateConcurrencyTokens();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    public override int SaveChanges()
+    {
+        UpdateConcurrencyTokens();
+        return base.SaveChanges();
+    }
+
+    private void UpdateConcurrencyTokens()
+    {
+        foreach (var entry in ChangeTracker.Entries<Trip>())
+        {
+            if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.ConcurrencyToken = Guid.NewGuid();
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<DriverTrip>())
+        {
+            if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.ConcurrencyToken = Guid.NewGuid();
+                entry.Entity.UpdateAt = DateTime.UtcNow;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<Broker>())
+        {
+            if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<Vehicle>())
+        {
+            if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+            }
+        }
     }
 }

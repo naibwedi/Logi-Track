@@ -1,0 +1,208 @@
+@model IEnumerable<logirack.Models.Vehicle>
+
+@{
+    ViewData["Title"] = "Fleet & Equipment Management";
+    Layout = "_Layout";
+    var drivers = ViewBag.AvailableDrivers as List<logirack.Models.Driver> ?? new List<logirack.Models.Driver>();
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">Fleet & Equipment Management</h1>
+            <p class="text-muted mb-0">Commercial power units, registration compliance, and driver tractor assignments</p>
+        </div>
+        <a asp-action="CreateVehicle" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Add Power Unit
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">Unit #</th>
+                            <th scope="col">Vehicle Details</th>
+                            <th scope="col">VIN</th>
+                            <th scope="col">Plate & State</th>
+                            <th scope="col">PrePass ID</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Compliance / Expirations</th>
+                            <th scope="col">Assigned Driver</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center py-4 text-muted">
+                                    No fleet vehicles found. Click "Add Power Unit" to register a tractor.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var vehicle in Model)
+                            {
+                                var isRegExpired = vehicle.RegistrationExpirationDate < DateTime.UtcNow;
+                                var isRegExpiringSoon = !isRegExpired && vehicle.RegistrationExpirationDate < DateTime.UtcNow.AddDays(30);
+
+                                var isDotExpired = vehicle.AnnualDotInspectionExpiration.HasValue && vehicle.AnnualDotInspectionExpiration.Value < DateTime.UtcNow;
+                                var isDotExpiringSoon = !isDotExpired && vehicle.AnnualDotInspectionExpiration.HasValue && vehicle.AnnualDotInspectionExpiration.Value < DateTime.UtcNow.AddDays(30);
+
+                                <tr>
+                                    <td>
+                                        <strong class="fs-5 text-primary">@vehicle.UnitNumber</strong>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">@vehicle.Year @vehicle.Make @vehicle.Model</div>
+                                    </td>
+                                    <td>
+                                        <code class="text-dark bg-light px-2 py-1 rounded">@vehicle.Vin</code>
+                                    </td>
+                                    <td>
+                                        <span>@vehicle.LicensePlate</span>
+                                        <span class="badge bg-secondary ms-1">@vehicle.LicenseState</span>
+                                    </td>
+                                    <td>
+                                        @(string.IsNullOrWhiteSpace(vehicle.PrePassTransponderId) ? "-" : vehicle.PrePassTransponderId)
+                                    </td>
+                                    <td>
+                                        @if (vehicle.Status == logirack.Models.VehicleStatus.Active)
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                        else if (vehicle.Status == logirack.Models.VehicleStatus.Maintenance)
+                                        {
+                                            <span class="badge bg-warning text-dark">Maintenance</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Decommissioned</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            <div>
+                                                <strong>Reg:</strong> @vehicle.RegistrationExpirationDate.ToString("yyyy-MM-dd")
+                                                @if (isRegExpired)
+                                                {
+                                                    <span class="badge bg-danger ms-1">Expired</span>
+                                                }
+                                                else if (isRegExpiringSoon)
+                                                {
+                                                    <span class="badge bg-warning text-dark ms-1">Expiring Soon</span>
+                                                }
+                                            </div>
+                                            @if (vehicle.AnnualDotInspectionExpiration.HasValue)
+                                            {
+                                                <div class="text-muted">
+                                                    <strong>DOT:</strong> @vehicle.AnnualDotInspectionExpiration.Value.ToString("yyyy-MM-dd")
+                                                    @if (isDotExpired)
+                                                    {
+                                                        <span class="badge bg-danger ms-1">Expired</span>
+                                                    }
+                                                    else if (isDotExpiringSoon)
+                                                    {
+                                                        <span class="badge bg-warning text-dark ms-1">Expiring Soon</span>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (vehicle.AssignedDriver != null)
+                                        {
+                                            <div>
+                                                <strong>@vehicle.AssignedDriver.FirstName @vehicle.AssignedDriver.LastName</strong>
+                                                <div class="text-muted small">@vehicle.AssignedDriver.Email</div>
+                                                <form asp-action="UnassignVehicleDriver" method="post" class="d-inline mt-1">
+                                                    <input type="hidden" name="vehicleId" value="@vehicle.Id" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1 mt-1" style="font-size: 0.75rem;">
+                                                        Unassign
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">Unassigned</span>
+                                            <button type="button" class="btn btn-outline-primary btn-sm py-0 px-1 ms-1" style="font-size: 0.75rem;" data-bs-toggle="collapse" data-bs-target="#assignDriver-@vehicle.Id">
+                                                Assign
+                                            </button>
+                                            <div class="collapse mt-2" id="assignDriver-@vehicle.Id">
+                                                <form asp-action="AssignDriverToVehicle" method="post" class="d-flex gap-1">
+                                                    <input type="hidden" name="vehicleId" value="@vehicle.Id" />
+                                                    <select name="driverId" class="form-select form-select-sm" style="font-size: 0.8rem;">
+                                                        <option value="">Select Driver...</option>
+                                                        @foreach (var driver in drivers)
+                                                        {
+                                                            <option value="@driver.Id">@driver.FirstName @driver.LastName</option>
+                                                        }
+                                                    </select>
+                                                    <button type="submit" class="btn btn-sm btn-primary py-0 px-2">Set</button>
+                                                </form>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="dropdown d-inline-block">
+                                            <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="statusMenu-@vehicle.Id" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Status
+                                            </button>
+                                            <ul class="dropdown-menu" aria-labelledby="statusMenu-@vehicle.Id">
+                                                <li>
+                                                    <form asp-action="SetVehicleStatus" method="post" class="dropdown-item p-0">
+                                                        <input type="hidden" name="id" value="@vehicle.Id" />
+                                                        <input type="hidden" name="status" value="@logirack.Models.VehicleStatus.Active" />
+                                                        <button type="submit" class="btn btn-link dropdown-item text-success">Set Active</button>
+                                                    </form>
+                                                </li>
+                                                <li>
+                                                    <form asp-action="SetVehicleStatus" method="post" class="dropdown-item p-0">
+                                                        <input type="hidden" name="id" value="@vehicle.Id" />
+                                                        <input type="hidden" name="status" value="@logirack.Models.VehicleStatus.Maintenance" />
+                                                        <button type="submit" class="btn btn-link dropdown-item text-warning">Set Maintenance</button>
+                                                    </form>
+                                                </li>
+                                                <li>
+                                                    <form asp-action="SetVehicleStatus" method="post" class="dropdown-item p-0">
+                                                        <input type="hidden" name="id" value="@vehicle.Id" />
+                                                        <input type="hidden" name="status" value="@logirack.Models.VehicleStatus.Decommissioned" />
+                                                        <button type="submit" class="btn btn-link dropdown-item text-danger">Set Decommissioned</button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <a asp-action="EditVehicle" asp-route-id="@vehicle.Id" class="btn btn-warning btn-sm ms-1">
+                                            Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

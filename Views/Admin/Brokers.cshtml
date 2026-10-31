@@ -1,0 +1,142 @@
+@model IEnumerable<logirack.Models.Broker>
+
+@{
+    ViewData["Title"] = "Freight Broker CRM & Bad Broker Protection";
+    var totalCount = Model.Count();
+    var blacklistedCount = Model.Count(b => b.IsBlacklisted);
+    var activeCount = totalCount - blacklistedCount;
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1"><i class="fas fa-handshake me-2 text-primary"></i>Freight Broker CRM &amp; MC# Directory</h1>
+            <p class="text-muted mb-0">Manage broker contacts, FMCSA Motor Carrier numbers, and "Bad Broker" Do-Not-Load protections</p>
+        </div>
+        <a asp-action="CreateBroker" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Add Freight Broker
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Warning"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase fw-semibold">Total Registered Brokers</div>
+                    <div class="fs-2 fw-bold text-dark">@totalCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 border-start border-success border-4">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase fw-semibold">Approved / Active Brokers</div>
+                    <div class="fs-2 fw-bold text-success">@activeCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 border-start border-danger border-4">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase fw-semibold">Bad Brokers (Do-Not-Load)</div>
+                    <div class="fs-2 fw-bold text-danger">@blacklistedCount</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Company Legal Name</th>
+                            <th>FMCSA MC#</th>
+                            <th>Primary Agent</th>
+                            <th>Phone / Ext</th>
+                            <th>Dispatch Email</th>
+                            <th>Status / Risk</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    No freight brokers registered yet. Click <strong>Add Freight Broker</strong> to add an MC#.
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var broker in Model)
+                        {
+                            <tr class="@(broker.IsBlacklisted ? "table-danger" : "")">
+                                <td class="fw-bold">
+                                    @broker.CompanyName
+                                    @if (broker.IsBlacklisted && !string.IsNullOrWhiteSpace(broker.BlacklistReason))
+                                    {
+                                        <div class="small text-danger mt-1">
+                                            <i class="fas fa-ban me-1"></i><strong>Do-Not-Load Reason:</strong> @broker.BlacklistReason
+                                        </div>
+                                    }
+                                </td>
+                                <td><span class="badge bg-dark font-monospace">@broker.DisplayMc</span></td>
+                                <td>@(broker.AgentName ?? "—")</td>
+                                <td>
+                                    @(broker.Phone ?? "—")
+                                    @if (!string.IsNullOrWhiteSpace(broker.PhoneExtension))
+                                    {
+                                        <span class="text-muted small">ext. @broker.PhoneExtension</span>
+                                    }
+                                </td>
+                                <td>@(broker.Email ?? "—")</td>
+                                <td>
+                                    @if (broker.IsBlacklisted)
+                                    {
+                                        <span class="badge bg-danger"><i class="fas fa-skull-crossbones me-1"></i>BAD BROKER / DO NOT LOAD</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success"><i class="fas fa-check me-1"></i>Approved</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <a asp-action="EditBroker" asp-route-id="@broker.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        <form asp-action="ToggleBrokerBlacklist" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@broker.Id" />
+                                            <input type="hidden" name="isBlacklisted" value="@((!broker.IsBlacklisted).ToString().ToLowerInvariant())" />
+                                            <input type="hidden" name="reason" value="@(broker.IsBlacklisted ? "" : "Flagged by Dispatch as Bad Broker / Non-Payment Risk")" />
+                                            <button type="submit" class="btn btn-sm @(broker.IsBlacklisted ? "btn-outline-success" : "btn-outline-danger")">
+                                                @(broker.IsBlacklisted ? "Clear Flag" : "Flag Bad Broker")
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

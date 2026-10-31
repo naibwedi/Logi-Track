@@ -1,7 +1,13 @@
-﻿@model logirack.Models.Trip
+@model logirack.Models.Trip
+@inject logirack.Services.ICoordinateService CoordinateService
 
 @{
     ViewData["Title"] = "Trip Details";
+    var startCoords = CoordinateService.GetCoordinatesForCity(Model.FromCity);
+    var destCoords = CoordinateService.GetCoordinatesForCity(Model.ToCity);
+    var currentLat = ViewBag.CurrentLatitude is double cLat ? cLat : startCoords.Latitude;
+    var currentLng = ViewBag.CurrentLongitude is double cLng ? cLng : startCoords.Longitude;
+    var isLiveTrackable = Model.Status == TripStatus.Assigned || Model.Status == TripStatus.InProgress || Model.Status == TripStatus.Completed;
 }
 
 <h1 class="h2">Trip details for trip @Model.Id</h1>
@@ -18,6 +24,40 @@
 <p><strong>Status:</strong> @Model.Status.ToString()</p>
 <p><strong>Notes:</strong> @Model.Notes</p>
 
+@if (isLiveTrackable)
+{
+    <div class="card my-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Live Driver & Route Tracking</h5>
+            <span id="tracking-status-badge" class="badge @(Model.Status == TripStatus.InProgress ? "bg-success" : "bg-primary")">
+                @(Model.Status == TripStatus.InProgress ? "Driver En Route (Live)" : Model.Status.ToString())
+            </span>
+        </div>
+        <div class="card-body">
+            <div id="trip-map" style="height: 420px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"
+                 data-trip-id="@Model.Id"
+                 data-from-city="@Model.FromCity"
+                 data-to-city="@Model.ToCity"
+                 data-from-address="@Model.FromAddress"
+                 data-to-address="@Model.ToAddress"
+                 data-start-lat="@startCoords.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                 data-start-lng="@startCoords.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                 data-dest-lat="@destCoords.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                 data-dest-lng="@destCoords.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                 data-current-lat="@currentLat.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                 data-current-lng="@currentLng.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+            </div>
+            <div class="mt-2 text-muted small d-flex justify-content-between">
+                <div>
+                    <strong>Current GPS:</strong> Lat <span id="current-lat-val">@currentLat.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)</span>, 
+                    Lng <span id="current-lng-val">@currentLng.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)</span>
+                </div>
+                <div>Updates broadcast in real-time via SignalR</div>
+            </div>
+        </div>
+    </div>
+}
+
 @if (Model.Status == TripStatus.PriceSet)
 {
     <form asp-action="RespondToPrice" method="post">
@@ -29,14 +69,31 @@
         </div>
     </form>
 }
-
 else if (Model.Status == TripStatus.CancelledByAdmin || Model.Status == TripStatus.CanceledByCustomer)
 {
     <p>This trip has been cancelled.</p>
 }
-else if (Model.Status == TripStatus.ApprovedByCustomer || Model.Status == TripStatus.Assigned || Model.Status == TripStatus.InProgress || Model.Status == TripStatus.Completed)
+else if (Model.Status == TripStatus.ApprovedByCustomer || Model.Status == TripStatus.Assigned || Model.Status == TripStatus.InProgress)
 {
     <p>No further actions are required at this time.</p>
 }
+else if (Model.Status == TripStatus.Completed)
+{
+    <div class="alert alert-success my-3 d-flex justify-content-between align-items-center">
+        <div>
+            <strong>Trip Completed:</strong> This shipment has been delivered and settled.
+        </div>
+        <a asp-action="DownloadInvoice" asp-route-id="@Model.Id" class="btn btn-success">
+            Download Invoice (PDF)
+        </a>
+    </div>
+}
 
 <a href="@Url.Action("MyTrips")" class="btn btn-secondary mt-3">Back to My Trips</a>
+
+@if (isLiveTrackable)
+{
+    @section Scripts {
+        <script src="~/js/tripTracking.js" asp-append-version="true"></script>
+    }
+}

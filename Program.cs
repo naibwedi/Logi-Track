@@ -72,10 +72,15 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 // Add controllers and Razor pages
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
+});
 builder.Services.AddRazorPages();
 // Register custom services
 builder.Services.AddScoped<PasswordService>();
+builder.Services.AddSingleton<ICoordinateService, CityCoordinateService>();
+builder.Services.AddScoped<IInvoiceService, PdfInvoiceService>();
 
 
 // Manually configure SendGrid client

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace logirack.Models.ViewModel;
 /// <summary>
@@ -17,7 +17,7 @@ public class SubmitTripViewModel
     public string ToCity { get; set; }=string.Empty;
     
     [Required]
-    [StringLength(100)]
+    [StringLength(200)]
     [Display(Name = "From Address")]
     public string FromAddress { get; set; }=string.Empty;
     
@@ -27,7 +27,7 @@ public class SubmitTripViewModel
     public string GoodType { get; set; }=string.Empty;
     
     [Required]
-    [StringLength(100)]
+    [StringLength(200)]
     [Display(Name = "To Address")]
     public string ToAddress { get; set; }=string.Empty;
     
@@ -53,6 +53,7 @@ public class SubmitTripViewModel
     [Range(0.1, double.MaxValue, ErrorMessage ="Distance must be greater than 0,1km")]
     [Display(Name = "Volum in m^3")]
     public double Volume { get; set; }
+    [StringLength(1000, ErrorMessage = "Notes cannot exceed 1000 characters.")]
     [Display(Name = "Aditional Notes")]
     public string Notes { get; set; }=string.Empty;
     [Required]

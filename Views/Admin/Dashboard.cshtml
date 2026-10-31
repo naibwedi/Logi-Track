@@ -1,10 +1,39 @@
-﻿@model logirack.Models.DashboardStats
+@model logirack.Models.DashboardStats
 
 @{
 ViewData["Title"] = "Admin Dashboard";
 }
 
 <h1 class="mb-4">Admin Dashboard</h1>
+
+@if (Model.ComplianceAlerts != null && Model.ComplianceAlerts.Any())
+{
+    <div class="card border-warning shadow-sm mb-4">
+        <div class="card-header bg-warning bg-opacity-25 d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0 text-dark">DOT Safety &amp; Regulatory Expiration Alerts (@Model.ComplianceAlerts.Count)</h2>
+            @if (Model.BlacklistedBrokersCount > 0)
+            {
+                <a asp-action="Brokers" class="badge bg-danger text-decoration-none">@Model.BlacklistedBrokersCount Bad Broker(s) Flagged</a>
+            }
+        </div>
+        <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+                @foreach (var alert in Model.ComplianceAlerts)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center @(alert.Severity == logirack.Services.ComplianceSeverity.Expired ? "list-group-item-danger" : "")">
+                        <div>
+                            <span class="badge @(alert.Severity == logirack.Services.ComplianceSeverity.Expired ? "bg-danger" : "bg-warning text-dark") me-2">
+                                @alert.Severity.ToString().ToUpperInvariant()
+                            </span>
+                            <strong>@alert.Category — @alert.EntityLabel:</strong> @alert.Message
+                        </div>
+                        <span class="small text-muted font-monospace">Exp: @alert.ExpirationDate.ToString("yyyy-MM-dd")</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}
 
 <section class="trip-status-overview">
     <h2>Trip Status Overview</h2>

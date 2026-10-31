@@ -9,6 +9,7 @@
         <th>Phone Number</th>
         <th>Price per Km</th>
         <th>Payment Frequency</th>
+        <th>CDL / DOT Medical Card</th>
         <th>Actions</th>
     </tr>
     </thead>
@@ -30,6 +31,23 @@
         <td>@driver.PhoneNumber</td>
         <td>@driver.PricePerKm</td>
         <td>@driver.PaymentFreq</td>
+        <td>
+            @if (!string.IsNullOrWhiteSpace(driver.CdlNumber))
+            {
+                <div class="small font-monospace">CDL: @driver.CdlNumber (@(driver.CdlState ?? "US"))</div>
+            }
+            @if (driver.MedicalCardExpirationDate.HasValue)
+            {
+                var medExpired = logirack.Services.ComplianceService.IsMedicalCardExpired(driver, DateTime.UtcNow);
+                <span class="badge @(medExpired ? "bg-danger" : "bg-success")">
+                    Med: @driver.MedicalCardExpirationDate.Value.ToString("yyyy-MM-dd") @(medExpired ? "(EXPIRED)" : "")
+                </span>
+            }
+            else
+            {
+                <span class="badge bg-secondary">Med Card Not Set</span>
+            }
+        </td>
         <td>
             <a asp-action="EditDriver" asp-route-id="@driver.Id" class="btn btn-warning btn-sm">Edit</a>
             <form asp-action="DeleteDriver" asp-route-id="@driver.Id" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this driver?');">

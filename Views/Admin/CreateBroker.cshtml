@@ -1,0 +1,82 @@
+@model logirack.Models.Broker
+
+@{
+    ViewData["Title"] = "Add Freight Broker";
+}
+
+<div class="container py-4" style="max-width: 780px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Add Freight Broker</h1>
+        <a asp-action="Brokers" class="btn btn-outline-secondary">Back to Brokers</a>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form asp-action="CreateBroker" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label asp-for="CompanyName" class="form-label fw-semibold"></label>
+                        <input asp-for="CompanyName" class="form-control" placeholder="e.g., Total Quality Logistics (TQL)" required />
+                        <span asp-validation-for="CompanyName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="McNumber" class="form-label fw-semibold"></label>
+                        <input asp-for="McNumber" class="form-control font-monospace" placeholder="e.g., 322572" required />
+                        <span asp-validation-for="McNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="AgentName" class="form-label fw-semibold"></label>
+                        <input asp-for="AgentName" class="form-control" placeholder="Agent / Dispatcher Contact" />
+                        <span asp-validation-for="AgentName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Email" class="form-label fw-semibold"></label>
+                        <input asp-for="Email" class="form-control" type="email" placeholder="agent@broker.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label asp-for="Phone" class="form-label fw-semibold"></label>
+                        <input asp-for="Phone" class="form-control" placeholder="(800) 580-3101" />
+                        <span asp-validation-for="Phone" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="PhoneExtension" class="form-label fw-semibold"></label>
+                        <input asp-for="PhoneExtension" class="form-control" placeholder="e.g., 55926" />
+                        <span asp-validation-for="PhoneExtension" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check form-switch mt-2">
+                            <input asp-for="IsBlacklisted" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsBlacklisted" class="form-check-label fw-bold text-danger">
+                                Flag as Bad Broker / Do-Not-Load
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="BlacklistReason" class="form-label fw-semibold text-danger"></label>
+                        <input asp-for="BlacklistReason" class="form-control" placeholder="Reason for blacklisting (e.g., Unpaid detention, double brokering, rate switching)" />
+                        <span asp-validation-for="BlacklistReason" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Notes" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="Payment terms, factoring notes, lane preferences"></textarea>
+                        <span asp-validation-for="Notes" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end gap-2">
+                    <a asp-action="Brokers" class="btn btn-light">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Broker</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

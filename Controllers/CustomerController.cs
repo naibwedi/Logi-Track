@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using logirack.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -21,16 +21,19 @@ namespace logirack.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<CustomerController> _logger;
         private readonly IEmailSender _emailSender;
-        private SignInManager<ApplicationUser> _signInManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IInvoiceService _invoiceService;
 
         public CustomerController(UserManager<ApplicationUser> userManager, 
-            ILogger<CustomerController> logger, IEmailSender emailSender, ApplicationDbContext db, SignInManager<ApplicationUser> signInManager)
+            ILogger<CustomerController> logger, IEmailSender emailSender, ApplicationDbContext db, SignInManager<ApplicationUser> signInManager,
+            IInvoiceService invoiceService)
         {
             _db = db;
             _emailSender = emailSender;
             _userManager = userManager;
             _logger = logger;
             _signInManager = signInManager;
+            _invoiceService = invoiceService;
         }
 
         // Home page for the customer
@@ -117,7 +120,14 @@ namespace logirack.Controllers
             double estimatedPrice = CalculateTripPriceEstimate(model);
             _logger.LogInformation("Order submitted successfully by user {Email} with estimated price {Price}.",
                 user.Email, estimatedPrice);
-            //you forgot to create a new trip entity based on the request for that uu Didn't see any trip on the table  see any 
+            // Sanitize user inputs to prevent injection and enforce bounds
+            model.FromAddress = InputSanitizer.Sanitize(model.FromAddress, 200);
+            model.ToAddress = InputSanitizer.Sanitize(model.ToAddress, 200);
+            model.FromCity = InputSanitizer.Sanitize(model.FromCity, 100);
+            model.ToCity = InputSanitizer.Sanitize(model.ToCity, 100);
+            model.Notes = InputSanitizer.Sanitize(model.Notes, 1000);
+            model.GoodType = InputSanitizer.Sanitize(model.GoodType, 100);
+
             var trip = new Trip
             {
                 CustomerId = user.Id,
@@ -126,8 +136,8 @@ namespace logirack.Controllers
                 ToCity = model.ToCity,
                 FromAddress = model.FromAddress,
                 ToAddress = model.ToAddress,
-                FromZipCode = model.FromZipCode,
-                ToZipCode = model.ToZipCode,
+                FromZipCode = model.FromZipCode?.Trim() ?? string.Empty,
+                ToZipCode = model.ToZipCode?.Trim() ?? string.Empty,
                 Weight = model.Weight,
                 Volume = model.Volume,
                 Distance = model.Distance,
@@ -137,8 +147,8 @@ namespace logirack.Controllers
                 EstimatedPrice = estimatedPrice,
                 AdminPrice = 0, //wiil be set by Admin
                 Status = TripStatus.Requested,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
             //Save on db 
             _db.Trips.Add(trip);
@@ -188,7 +198,7 @@ namespace logirack.Controllers
             var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == id && t.CustomerId == user.Id);
             if (trip == null)
             {
-                return RedirectToAction("Dashboard");
+                return NotFound();
             }
 
             return View(trip);
@@ -221,13 +231,68 @@ namespace logirack.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
             if (user is null) return Challenge();
-            var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == id && t.CustomerId == user.Id);
+            var trip = await _db.Trips
+                .Include(t => t.DriverTrip)
+                .FirstOrDefaultAsync(t => t.Id == id && t.CustomerId == user.Id);
             if (trip == null)
             {
                 return NotFound();
             }
 
+            if (trip.DriverTrip != null)
+            {
+                var driverLocation = await _db.Locations.FirstOrDefaultAsync(l => l.DriverID == trip.DriverTrip.DriverId);
+                if (driverLocation != null)
+                {
+                    ViewBag.CurrentLatitude = driverLocation.Latitude;
+                    ViewBag.CurrentLongitude = driverLocation.Longitude;
+                }
+            }
+
             return View(trip);
+        }
+
+        /// <summary>
+        /// Downloads the generated PDF invoice for a completed trip.
+        /// Enforces customer ownership and completed status.
+        /// </summary>
+        /// <param name="id">The trip ID</param>
+        /// <returns>PDF file stream</returns>
+        [HttpGet]
+        public async Task<IActionResult> DownloadInvoice(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user is null) return Challenge();
+
+            var trip = await _db.Trips
+                .Include(t => t.Customer)
+                .FirstOrDefaultAsync(t => t.Id == id && t.CustomerId == user.Id);
+
+            if (trip == null)
+            {
+                _logger.LogWarning("Customer {UserId} attempted unauthorized or non-existent invoice download for trip {TripId}", user.Id, id);
+                return NotFound();
+            }
+
+            if (trip.Status != TripStatus.Completed)
+            {
+                _logger.LogWarning("Invoice download rejected for trip {TripId}: status is {Status}, not Completed", trip.Id, trip.Status);
+                return BadRequest("Invoice is only available for completed trips.");
+            }
+
+            var customer = trip.Customer ?? (user as Customer) ?? new Customer
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                CompanyName = user.CompanyName
+            };
+
+            var pdfBytes = _invoiceService.GenerateInvoicePdf(trip, customer);
+            return File(pdfBytes, "application/pdf", $"Invoice_Trip_{trip.Id}.pdf");
         }
 
         //Handels Customer's response to admin's price 
@@ -316,9 +381,17 @@ namespace logirack.Controllers
                 }
             }
 
-            trip.UpdatedAt = DateTime.Now;
-            await _db.SaveChangesAsync();
-            return RedirectToAction("MyTrips");
+            try
+            {
+                trip.UpdatedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+                return RedirectToAction("MyTrips");
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                _logger.LogWarning("Concurrency conflict occurred while responding to trip {TripId}", trip.Id);
+                return Conflict("The trip was modified by another process. Please refresh and try again.");
+            }
         }
         [HttpPost]
         [Authorize]

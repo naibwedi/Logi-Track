@@ -1,8 +1,9 @@
-﻿@model logirack.Models.ViewModel.TripDetailsViewModel
+@model logirack.Models.ViewModel.TripDetailsViewModel
 
 @{
     ViewData["Title"] = "Trip Details";
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Ensure this path is correct
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isLiveTrackable = Model.Status == TripStatus.Assigned || Model.Status == TripStatus.InProgress || Model.Status == TripStatus.Completed;
 }
 
 <div class="container my-4">
@@ -45,6 +46,75 @@
             </div>
 
             <!-- Cargo Details -->
+            @if (Model.IsBrokerBlacklisted)
+            {
+                <div class="alert alert-danger mb-4">
+                    <strong>BAD BROKER WARNING (@Model.BrokerName - @Model.BrokerMcNumber):</strong>
+                    @(Model.BrokerBlacklistReason ?? "Flagged on Do-Not-Load list.")
+                </div>
+            }
+
+            @if (Model.Settlement != null)
+            {
+                <div class="card border-primary mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <span>Load Accounting &amp; Driver Settlement (12% Dispatch / 88% Driver Split)</span>
+                        <div>
+                            @if (!string.IsNullOrWhiteSpace(Model.InvoiceNumber))
+                            {
+                                <span class="badge bg-light text-dark font-monospace me-1">Invoice: @Model.InvoiceNumber</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.BrokerLoadNumber))
+                            {
+                                <span class="badge bg-warning text-dark font-monospace">Load #: @Model.BrokerLoadNumber</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center mb-3">
+                            <div class="col-md-3">
+                                <div class="text-muted small">Gross Rate</div>
+                                <div class="fs-5 fw-bold">$@Model.Settlement.GrossRate.ToString("F2")</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Factoring Fee (1.5%)</div>
+                                <div class="fs-5 text-secondary">-$@Model.Settlement.FactoringFee.ToString("F2")</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Dispatch Fee (12.0%)</div>
+                                <div class="fs-5 text-primary">-$@Model.Settlement.DispatchFee.ToString("F2")</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Driver Net Pay (88%)</div>
+                                <div class="fs-4 fw-bold text-success">$@Model.Settlement.DriverNetPay.ToString("F2")</div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                            <div>
+                                <strong>Broker:</strong> @(Model.BrokerName ?? "Direct Shipper")
+                                @if (!string.IsNullOrWhiteSpace(Model.BrokerMcNumber))
+                                {
+                                    <span class="badge bg-dark font-monospace ms-1">@Model.BrokerMcNumber</span>
+                                }
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a asp-action="DownloadSettlement" asp-route-id="@Model.TripId" class="btn btn-sm btn-outline-primary">
+                                    Download Driver Settlement PDF
+                                </a>
+                                @if (Model.Status != TripStatus.Completed && Model.Status != TripStatus.Tonu)
+                                {
+                                    <form asp-action="MarkTripTonu" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="tripId" value="@Model.TripId" />
+                                        <input type="hidden" name="tonuAmount" value="150" />
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">Mark TONU ($150)</button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
             <div class="mb-4">
                 <h2 class="h5">Cargo Details</h2>
                 <div class="row">
@@ -68,6 +138,36 @@
                     </div>
                 </div>
             </div>
+
+            @if (isLiveTrackable)
+            {
+                <div class="mb-4">
+                    <h2 class="h5">Live Route & Driver Tracking</h2>
+                    <div id="trip-map" style="height: 420px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"
+                         data-trip-id="@Model.TripId"
+                         data-from-city="@Model.FromCity"
+                         data-to-city="@Model.ToCity"
+                         data-from-address="@Model.FromAddress"
+                         data-to-address="@Model.ToAddress"
+                         data-start-lat="@Model.StartLatitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                         data-start-lng="@Model.StartLongitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                         data-dest-lat="@Model.DestinationLatitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                         data-dest-lng="@Model.DestinationLongitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                         data-current-lat="@Model.CurrentLatitude.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                         data-current-lng="@Model.CurrentLongitude.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                    </div>
+                    <div class="mt-2 text-muted small d-flex justify-content-between">
+                        <div>
+                            <strong>Current Position:</strong> Lat <span id="current-lat-val">@Model.CurrentLatitude.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)</span>, 
+                            Lng <span id="current-lng-val">@Model.CurrentLongitude.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)</span>
+                        </div>
+                        <span id="tracking-status-badge" class="badge @(Model.Status == TripStatus.InProgress ? "bg-success" : "bg-primary")">
+                            @(Model.Status == TripStatus.InProgress ? "Live In-Progress" : Model.Status.ToString())
+                        </span>
+                    </div>
+                </div>
+            }
+
             <div class="mb-4">
                 <h2 class="h5">Admin Actions</h2>
                 <div class="row">
@@ -109,9 +209,23 @@
                             Assign to Driver
                         </a>
                         }
+                        @if (Model.Status == TripStatus.Completed)
+                        {
+                        <a asp-action="DownloadInvoice" asp-route-id="@Model.TripId"
+                           class="btn btn-outline-success">
+                            Download PDF Invoice
+                        </a>
+                        }
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@if (isLiveTrackable)
+{
+    @section Scripts {
+        <script src="~/js/tripTracking.js" asp-append-version="true"></script>
+    }
+}

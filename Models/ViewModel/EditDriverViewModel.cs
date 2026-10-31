@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 
 
@@ -36,5 +36,21 @@ public class EditDriverViewModel
     
     [Display(Name ="is Available")]
     public bool IsAvailable { get; set; }
+
+    [StringLength(30)]
+    [Display(Name = "CDL Number")]
+    public string? CdlNumber { get; set; }
+
+    [StringLength(2)]
+    [Display(Name = "CDL State")]
+    public string? CdlState { get; set; }
+
+    [DataType(DataType.Date)]
+    [Display(Name = "CDL Expiration Date")]
+    public DateTime? CdlExpirationDate { get; set; }
+
+    [DataType(DataType.Date)]
+    [Display(Name = "DOT Medical Card Expiration Date")]
+    public DateTime? MedicalCardExpirationDate { get; set; }
     
 }

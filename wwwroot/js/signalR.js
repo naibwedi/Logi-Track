@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 //SignalR connection
 if (typeof signalR !== "undefined") {
@@ -6,6 +6,8 @@ const connection = new signalR.HubConnectionBuilder()
     .withUrl("/tripHub") // URL to the SignalR Hub
     .withAutomaticReconnect() 
     .build();
+
+window.signalRConnection = connection;
 
 //the connection
 connection.start()
