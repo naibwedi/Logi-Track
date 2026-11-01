@@ -27,6 +27,7 @@ publish/
 
 # Application secrets
 appsettings.Development.json
+.env
 
 # Logs
 logs/

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   logitrack:
     build:
@@ -7,14 +5,17 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - BootstrapAdmin__Email=admin@ruftalogistics.com
-      - BootstrapAdmin__Password=RuftaAdmin2026!ChangeMe
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Data Source=/app/data/app.db
+      DataProtection__KeysPath: /app/keys
+      BootstrapAdmin__Email: ${BOOTSTRAP_ADMIN_EMAIL:?Set BOOTSTRAP_ADMIN_EMAIL}
+      BootstrapAdmin__Password: ${BOOTSTRAP_ADMIN_PASSWORD:?Set BOOTSTRAP_ADMIN_PASSWORD}
+      SendGrid__ApiKey: ${SENDGRID_API_KEY:-}
+      SendGrid__FromEmail: ${SENDGRID_FROM_EMAIL:-}
+      Contact__Recipient: ${CONTACT_RECIPIENT:-}
     volumes:
-      # Mount directory on host VM to persist SQLite app.db
       - ./data:/app/data
-    ports:
-      - "5000:5000"
+      - ./keys:/app/keys
 
   caddy:
     image: caddy:alpine
@@ -22,6 +23,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data

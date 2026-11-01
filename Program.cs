@@ -16,6 +16,8 @@ using System.Threading.RateLimiting;
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+var emailConfigured = !string.IsNullOrWhiteSpace(builder.Configuration["SendGrid:ApiKey"])
+    && !string.IsNullOrWhiteSpace(builder.Configuration["SendGrid:FromEmail"]);
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -59,8 +61,8 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
         }
         else
         {
-            options.SignIn.RequireConfirmedAccount = true;
-            options.SignIn.RequireConfirmedEmail = true;
+            options.SignIn.RequireConfirmedAccount = emailConfigured;
+            options.SignIn.RequireConfirmedEmail = emailConfigured;
         }
         options.Lockout.AllowedForNewUsers = true;
         options.Lockout.MaxFailedAccessAttempts = 5;
@@ -115,19 +117,6 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
 });
-
-if (!builder.Environment.IsDevelopment())
-{
-    string[] requiredSettings =
-    [
-        "SendGrid:ApiKey",
-        "SendGrid:FromEmail",
-        "Contact:Recipient"
-    ];
-    var missingSettings = requiredSettings.Where(key => string.IsNullOrWhiteSpace(builder.Configuration[key])).ToArray();
-    if (missingSettings.Length > 0)
-        throw new InvalidOperationException($"Missing production configuration: {string.Join(", ", missingSettings)}");
-}
 
 var app = builder.Build();
 

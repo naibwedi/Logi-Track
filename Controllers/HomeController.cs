@@ -11,12 +11,16 @@ public class HomeController : Controller
     private readonly ILogger<HomeController> _logger;
     private readonly IEmailSender _emailSender;
     private readonly string _contactRecipient;
+    private readonly bool _emailConfigured;
 
     public HomeController(ILogger<HomeController> logger, IEmailSender emailSender, IConfiguration configuration)
     {
         _logger = logger;
         _emailSender = emailSender;
         _contactRecipient = configuration["Contact:Recipient"] ?? string.Empty;
+        _emailConfigured = !string.IsNullOrWhiteSpace(configuration["SendGrid:ApiKey"])
+            && !string.IsNullOrWhiteSpace(configuration["SendGrid:FromEmail"])
+            && !string.IsNullOrWhiteSpace(_contactRecipient);
     }
 
     public IActionResult Index()
@@ -46,6 +50,14 @@ public class HomeController : Controller
 
         if (!ModelState.IsValid)
         {
+            ViewData["Email"] = email;
+            ViewData["Message"] = message;
+            return View();
+        }
+
+        if (!HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment() && !_emailConfigured)
+        {
+            ModelState.AddModelError(string.Empty, "Contact email is temporarily unavailable. Please try again later.");
             ViewData["Email"] = email;
             ViewData["Message"] = message;
             return View();

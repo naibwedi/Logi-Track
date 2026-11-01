@@ -60,7 +60,7 @@ Production configuration is supplied through environment variables:
 - `DataProtection__KeysPath` (use a persistent mounted directory)
 - `BootstrapAdmin__Email` and `BootstrapAdmin__Password` (first startup only)
 
-Production startup fails clearly when PostgreSQL, SendGrid, or the contact recipient is missing.
+When SendGrid is not configured, email delivery and the public contact submission are disabled. Customer access still requires administrator approval.
 
 ## Docker
 
@@ -75,6 +75,8 @@ docker run --rm -p 8080:8080 \
   -v logitrack-keys:/app/.keys \
   logitrack
 ```
+
+For the bundled VM deployment, copy `.env.example` to `.env`, replace every required value, and run `docker compose up -d --build`. Never commit `.env`.
 
 ## Security notice
 
