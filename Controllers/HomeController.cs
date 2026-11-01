@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using logirack.Models;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace logirack.Controllers;
 
@@ -35,6 +36,7 @@ public class HomeController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("contact")]
     public async Task<IActionResult> Contact(string email, string message)
     {
         if (string.IsNullOrWhiteSpace(email) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(email))
@@ -73,7 +75,7 @@ public class HomeController : Controller
         return RedirectToAction(nameof(Contact));
     }
 
-    [HttpGet]
+    [AcceptVerbs("GET", "POST")]
     public IActionResult RequestError(int code)
     {
         Response.StatusCode = code;

@@ -228,6 +228,27 @@ public sealed class ApplicationSmokeTests : IClassFixture<LogiTrackFactory>
         Assert.Equal(HttpStatusCode.Redirect, valid.StatusCode);
         Assert.Equal("/Home/Contact", valid.Headers.Location?.OriginalString);
     }
+
+    [Fact]
+    public async Task Contact_form_is_rate_limited()
+    {
+        using var factory = new LogiTrackFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        for (var attempt = 1; attempt <= 6; attempt++)
+        {
+            var page = await client.GetStringAsync("/Home/Contact");
+            var token = Regex.Match(page, "name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^\"]+)\"").Groups[1].Value;
+            var response = await client.PostAsync("/Home/Contact", new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["email"] = "customer@example.test",
+                ["message"] = "Please contact me about a delivery.",
+                ["__RequestVerificationToken"] = token
+            }));
+
+            Assert.Equal(attempt <= 5 ? HttpStatusCode.Redirect : HttpStatusCode.TooManyRequests, response.StatusCode);
+        }
+    }
 }
 
 public sealed class LogiTrackFactory : WebApplicationFactory<Program>

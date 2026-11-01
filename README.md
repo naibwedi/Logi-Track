@@ -56,10 +56,11 @@ Production configuration is supplied through environment variables:
 - `SendGrid__ApiKey`
 - `SendGrid__FromEmail`
 - `SendGrid__FromName`
+- `Contact__Recipient`
 - `DataProtection__KeysPath` (use a persistent mounted directory)
 - `BootstrapAdmin__Email` and `BootstrapAdmin__Password` (first startup only)
 
-Email delivery is safely skipped when SendGrid is not configured.
+Production startup fails clearly when PostgreSQL, SendGrid, or the contact recipient is missing.
 
 ## Docker
 
@@ -69,6 +70,9 @@ docker run --rm -p 8080:8080 \
   -e ConnectionStrings__PostgreSQLConnection="..." \
   -e SendGrid__ApiKey="..." \
   -e SendGrid__FromEmail="..." \
+  -e Contact__Recipient="..." \
+  -e DataProtection__KeysPath="/app/.keys" \
+  -v logitrack-keys:/app/.keys \
   logitrack
 ```
 
