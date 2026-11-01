@@ -1,5 +1,8 @@
 # Logi-Track
 
+For a complete product, architecture, UI, security, test, and Google Cloud
+operations handoff, read [`AI_HANDOFF.md`](AI_HANDOFF.md).
+
 ASP.NET Core MVC logistics application for managing customer trip requests,
 admin pricing and approval, driver assignments, completion, and payment records.
 
