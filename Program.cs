@@ -26,6 +26,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
     options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("35.191.0.0"), 16));
     options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("130.211.0.0"), 22));
+    // The app is not published directly by Docker; only the Caddy container can
+    // reach it on the private Compose network. Trust that proxy so HTTPS scheme
+    // forwarding works without trusting headers from the public internet.
+    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("172.16.0.0"), 12));
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
