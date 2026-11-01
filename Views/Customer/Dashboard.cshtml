@@ -2,18 +2,21 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="dashboard-fullscreen">
-    <h1>Dashboard</h1>
-    <p>Welcome, @User.Identity?.Name!</p>
-    <div class="button-group">
-        <a asp-action="CreateTrip" class="btn btn-primary">Create New Trip</a>
-        <a asp-action="MyTrips" class="btn btn-secondary">View My Trips</a>
-        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
-            Delete Account
-        </button>
+<div class="role-dashboard">
+    <div class="card border-0 shadow-sm role-dashboard-card">
+        <div class="card-body p-4 p-md-5">
+            <h1 class="h2">Customer dashboard</h1>
+            <p class="text-muted mb-4">Welcome, @User.Identity?.Name. Create a shipment request or review your existing trips.</p>
+            <div class="button-group">
+                <a asp-action="CreateTrip" class="btn btn-primary">Create New Trip</a>
+                <a asp-action="MyTrips" class="btn btn-outline-primary">View My Trips</a>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
+                    Delete Account
+                </button>
+            </div>
+        </div>
     </div>
 </div>
-<!-- Modal for account deletion confirmation i forgte it using AI help  -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -41,4 +44,4 @@
     </div>
 </div>
 
-<link rel="stylesheet" href="/css/Dashboard.css">
+@section Styles { <link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" /> }

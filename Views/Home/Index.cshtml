@@ -90,13 +90,13 @@
 
 <!-- Call to Action Section -->
 <section class="cta">
-    <h2>Ready to Optimize Your Fleet with us!</h2>
+    <h2>Ready to optimize your fleet?</h2>
     <a class="btn learn-more" asp-controller="Home" asp-action="Services">Learn More</a>
     @if (User.Identity?.IsAuthenticated != true)
     {
 
 
-        <button class="btn btn-secondary cta-button" onclick="window.location.href='/Identity/Account/Register'">Register</button>
+        <a class="btn btn-secondary cta-button" asp-area="Identity" asp-page="/Account/Register">Register</a>
     }
 </section>
 

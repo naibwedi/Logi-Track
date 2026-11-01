@@ -3,16 +3,20 @@
 Layout = "_Layout";
 ViewData["Title"] = "SuperAdmin Dashboard";
 }
-<div class="dashboard-fullscreen">
-    <div class="dashboard-container">
-        <h1>SuperAdmin Dashboard</h1>
+<div class="role-dashboard">
+    <div class="card border-0 shadow-sm role-dashboard-card">
+        <div class="card-body p-4 p-md-5">
+        <p class="text-uppercase small fw-semibold text-primary mb-2">System administration</p>
+        <h1 class="h2 mb-3">SuperAdmin Dashboard</h1>
+        <p class="text-muted mb-4">Manage administrator access and review the people who can operate LogiTrack.</p>
         <div class="button-group">
             <a asp-action="AdminList" class="btn btn-primary">View Admin List</a>
-            <a asp-action="CreateAdmin" class="btn btn-secondary">Create New Admin</a>
+            <a asp-action="CreateAdmin" class="btn btn-outline-primary">Create New Admin</a>
+        </div>
         </div>
     </div>
 </div>
-<link rel="stylesheet" href="~/css/Dashboard.css" />
+@section Styles { <link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" /> }
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

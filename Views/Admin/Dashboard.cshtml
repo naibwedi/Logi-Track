@@ -4,6 +4,8 @@
 ViewData["Title"] = "Admin Dashboard";
 }
 
+@section Styles { <link rel="stylesheet" href="~/css/adminDashboard.css" asp-append-version="true" /> }
+
 <h1 class="mb-4">Admin Dashboard</h1>
 
 @if (Model.ComplianceAlerts != null && Model.ComplianceAlerts.Any())
@@ -66,6 +68,10 @@ ViewData["Title"] = "Admin Dashboard";
 <section class="recent-activities">
     <h2>Recent Trip Activities</h2>
     <div id="recent-activities" class="activities-list">
+        @if (!Model.RecentActivities.Any())
+        {
+        <p class="text-muted mb-0">No trip activity has been recorded yet.</p>
+        }
         @foreach (var activity in Model.RecentActivities.OrderByDescending(a => a.Timestamp))
         {
         <div class="activity-item">
@@ -79,6 +85,14 @@ ViewData["Title"] = "Admin Dashboard";
 
 <section class="add-new-trip">
     <h2>Create New Trip</h2>
+    @if (!Model.Customers.Any() || !Model.AvailableDriversList.Any())
+    {
+    <div class="alert alert-info text-start" role="status">
+        Add at least one customer and one available driver before creating a trip.
+    </div>
+    }
+    else
+    {
     <form asp-action="AddNewTripByAdmin" asp-controller="Admin" method="post">
         <div asp-validation-summary="All" class="text-danger" role="alert"></div>
         <div class="form-row">
@@ -105,48 +119,53 @@ ViewData["Title"] = "Admin Dashboard";
         <div class="form-row">
             <div class="form-group">
                 <label for="FromCity">From City</label>
-                <input type="text" id="FromCity" name="FromCity" required />
+                <input class="form-control" type="text" id="FromCity" name="FromCity" required />
             </div>
             <div class="form-group">
                 <label for="ToCity">To City</label>
-                <input type="text" id="ToCity" name="ToCity" required />
+                <input class="form-control" type="text" id="ToCity" name="ToCity" required />
             </div>
             <div class="form-group">
                 <label for="Distance">Distance (km)</label>
-                <input type="number" id="Distance" name="Distance" step="0.1" required />
+                <input class="form-control" type="number" id="Distance" name="Distance" min="0.1" step="0.1" required />
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label for="Weight">Weight (kg)</label>
-                <input type="number" id="Weight" name="Weight" step="0.1" required />
+                <input class="form-control" type="number" id="Weight" name="Weight" min="0.1" step="0.1" required />
             </div>
             <div class="form-group">
                 <label for="Price">Price</label>
-                <input type="number" id="Price" name="Price" step="0.01" required />
+                <input class="form-control" type="number" id="Price" name="Price" min="0" step="0.01" required />
             </div>
             <div class="form-group">
                 <label for="PickUpTime">Pickup Time</label>
-                <input type="datetime-local" id="PickUpTime" name="PickUpTime" required />
+                <input class="form-control" type="datetime-local" id="PickUpTime" name="PickUpTime" required />
             </div>
         </div>
 
         <div class="form-row">
-            <div class="form-group"><label for="FromAddress">Pickup address</label><input id="FromAddress" name="FromAddress" required /></div>
-            <div class="form-group"><label for="FromZipCode">Pickup postcode</label><input id="FromZipCode" name="FromZipCode" required /></div>
-            <div class="form-group"><label for="ToAddress">Delivery address</label><input id="ToAddress" name="ToAddress" required /></div>
-            <div class="form-group"><label for="ToZipCode">Delivery postcode</label><input id="ToZipCode" name="ToZipCode" required /></div>
-            <div class="form-group"><label for="GoodsType">Goods type</label><input id="GoodsType" name="GoodsType" required /></div>
+            <div class="form-group"><label for="FromAddress">Pickup address</label><input class="form-control" id="FromAddress" name="FromAddress" required /></div>
+            <div class="form-group"><label for="FromZipCode">Pickup postcode</label><input class="form-control" id="FromZipCode" name="FromZipCode" required /></div>
+            <div class="form-group"><label for="ToAddress">Delivery address</label><input class="form-control" id="ToAddress" name="ToAddress" required /></div>
+            <div class="form-group"><label for="ToZipCode">Delivery postcode</label><input class="form-control" id="ToZipCode" name="ToZipCode" required /></div>
+            <div class="form-group"><label for="GoodsType">Goods type</label><input class="form-control" id="GoodsType" name="GoodsType" required /></div>
         </div>
 
-        <button type="submit" class="btn-primary">Create Trip</button>
+        <button type="submit" class="btn btn-primary">Create Trip</button>
     </form>
+    }
 </section>
 
 <section class="manage-drivers">
     <h2>Active Drivers</h2>
     <div class="drivers-grid">
+        @if (!Model.RecentActivities.Any(a => a.ActivityType == "Driver"))
+        {
+        <p class="text-muted">No active driver activity is available yet.</p>
+        }
         @foreach (var driver in Model.RecentActivities.Where(a => a.ActivityType == "Driver").Take(4))
         {
         <div class="driver-card">

@@ -2,6 +2,7 @@
 @{ ViewData["Title"] = "Payment tracking"; }
 
 <h1>Payment tracking</h1>
+<div class="table-responsive">
 <table class="table table-striped">
     <thead><tr><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
     <tbody>
@@ -11,4 +12,5 @@
     }
     </tbody>
 </table>
-@if (!Model.Any()) { <p>No payments have been recorded.</p> }
+</div>
+@if (!Model.Any()) { <div class="alert alert-info" role="status">No payments have been recorded.</div> }

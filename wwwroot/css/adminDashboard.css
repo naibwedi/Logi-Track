@@ -136,7 +136,9 @@ body {
 
 .form-row {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
+    gap: 1rem;
     margin-bottom: 20px;
 }
 
@@ -144,7 +146,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    margin: 0 10px;
+    flex: 1 1 12rem;
 }
 
 .form-group label {
@@ -155,10 +157,7 @@ body {
 }
 
 .form-group input {
-    padding: 10px;
-    width: 180px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    width: 100%;
 }
 
 .form-select {
@@ -299,6 +298,13 @@ body {
 .financial-details .detail .positive {
     color: green;
     font-size: 1rem;
+}
+
+@media (max-width: 767.98px) {
+    .add-new-trip, .manage-drivers, .financial-overview { padding: 1.25rem; }
+    .financial-stats, .financial-details { flex-direction: column; margin-top: 0; gap: 1rem; }
+    .financial-details .detail { width: 100%; margin-right: 0; }
+    .activity-item { align-items: flex-start; flex-wrap: wrap; }
 }
 
 /* Button Styles */

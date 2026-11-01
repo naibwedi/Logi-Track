@@ -3,7 +3,8 @@
 
 <h1>Completed-trip invoices</h1>
 <p>This report contains the completed work ready for payment processing.</p>
-<table class="table table-striped">
+<div class="table-responsive">
+<table class="table table-striped align-middle">
     <thead><tr><th>Trip</th><th>Driver</th><th>Route</th><th>Completed</th><th>Driver payment</th><th>Actions</th></tr></thead>
     <tbody>
     @foreach (var item in Model)
@@ -23,4 +24,5 @@
     }
     </tbody>
 </table>
-@if (!Model.Any()) { <p>No completed trips are ready.</p> }
+</div>
+@if (!Model.Any()) { <div class="alert alert-info" role="status">No completed trips are ready.</div> }

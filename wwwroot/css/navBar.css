@@ -12,8 +12,12 @@
 .brand-logo {
     display: block;
     width: auto;
-    height: 44px;
+    height: 68px;
     object-fit: contain;
+}
+
+.navbar-brand {
+    padding-block: .25rem;
 }
 
 .role-label {
@@ -80,6 +84,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     .navbar-nav { align-items: stretch; gap: 0; }
     .admin-dashboard a, .driver-dashboard a { font-size: 1rem; margin-right: 0; }
     .role-label { padding: .5rem 0; }
+}
+
+@media (max-width: 575.98px) {
+    .brand-logo { height: 56px; }
 }
 
 /* Styling for Driver navbar */

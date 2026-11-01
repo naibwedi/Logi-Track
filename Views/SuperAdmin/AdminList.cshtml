@@ -5,7 +5,10 @@ ViewBag.Title = "Admin List";
 Layout = "_Layout";
 }
 
-<h1 class="h2">Admin list</h1>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <div><h1 class="h2 mb-1">Admin list</h1><p class="text-muted mb-0">Manage accounts with administrative access.</p></div>
+    <a asp-action="CreateAdmin" class="btn btn-primary">Create new admin</a>
+</div>
 
 @if (TempData["Success"] != null)
 {
@@ -21,9 +24,15 @@ Layout = "_Layout";
 </div>
 }
 
-<a asp-action="CreateAdmin" class="btn btn-primary mb-3">Create New Admin</a>
-
+@if (!Model.Any())
+{
+<div class="alert alert-info" role="status">No administrator accounts have been created yet.</div>
+}
+else
+{
+<div class="table-responsive border rounded">
 <table class="table table-striped">
+    <caption class="visually-hidden">Administrator accounts</caption>
     <thead>
     <tr>
         <th>First Name</th>
@@ -52,6 +61,8 @@ Layout = "_Layout";
     }
     </tbody>
 </table>
+</div>
+}
 
 @section Scripts {
 @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
